@@ -1,0 +1,57 @@
+# Changes
+# 0.0.1: Tue 17 Dec 2013 12:25:55 EST
+# Fixed Dir.* usage to be compatible on ruby 1.8
+# 0.0.2: Tue 17 Dec 2013 12:33:32 EST
+# Fixed AI publisher typo
+# 0.0.3: Tue 17 Dec 2013 13:36:13 EST
+# Fixed system command output
+# 0.0.4: Tue 17 Dec 2013 16:44:33 EST
+# Fixed processing of questions
+# 0.0.5: Wed 18 Dec 2013 07:10:32 EST
+# Added code to delete AI client and service
+# 0.0.6: Wed 18 Dec 2013 07:50:35 EST
+# Added code to be able to create only one AI architecture service
+# 0.0.7: Wed 18 Dec 2013 14:27:02 EST
+# Added AI service manifest creation code
+# 0.0.8: Wed 18 Dec 2013 18:42:33 EST
+# Improved verbose output
+# 0.0.9: Wed 18 Dec 2013 19:06:36 EST
+# Fixed ISO file determination
+# 0.1.0: Wed 18 Dec 2013 22:15:55 EST
+# Added to delete service
+# 0.1.1: Thu 19 Dec 2013 10:20:38 EST
+# Cleaned up server configuration code
+# 0.1.2: Thu 19 Dec 2013 10:51:20 EST
+# Fixed service creation
+# 0.1.3: Thu 19 Dec 2013 12:20:31 EST
+# Fixed auto_install directory to include release information
+# 0.1.4: Thu 19 Dec 2013 14:37:25 EST
+# Fixed issue with XML
+# 0.1.5: Thu 19 Dec 2013 15:57:03 EST
+# Fixed order of questions
+# 0.1.6: Thu 19 Dec 2013 16:21:00 EST
+# Fixed pkg url in manifest
+# 0.1.7: Thu 19 Dec 2013 20:04:44 EST
+# Cleaned up deletion code
+# 0.1.8: Thu 19 Dec 2013 22:26:47 EST
+# Fixed bugs with AI manifest creation
+# 0.1.9: Fri 20 Dec 2013 19:30:28 EST
+# Added additional questions to profile
+# 0.2.0: Fri 20 Dec 2013 20:03:01 EST
+# Fixed bugs with error handling and XML creation
+# 0.2.1: Fri 20 Dec 2013 21:10:40 EST
+# Added code to change timeout and default menu item in netboot grub.cfg
+# 0.2.2: Fri 20 Dec 2013 21:26:36 EST
+# Fixed XML output bugs
+# 0.2.3: Sun 22 Dec 2013 15:40:34 EST
+# Added code to use local file based repository if it exists
+# 0.2.4: Sun 22 Dec 2013 16:25:34 EST
+# Added code to extract release version from repository
+# 0.2.5: Mon 23 Dec 2013 18:15:04 EST
+# Added code to remove range entry from dhcpd config
+# 0.2.6: Mon 23 Dec 2013 19:14:37 EST
+# Added code to restart dhcp service
+# 0.2.7: Mon 23 Dec 2013 19:24:20 EST
+# Fixed bug with backing up dhcp config
+# 0.2.8: Tue 24 Dec 2013 04:01:06 EST
+# Fixed bug with editing grub.cfg
