@@ -3,15 +3,12 @@
 # Delecte a service
 # This will also delete all the clients under it
 
-def delete_ai_service(service_name)
+def unconfigure_ai_service(service_name)
   service_base_name=get_service_base_name(service_name)
   smf_service_name="svc:/application/pkg/server:"+service_base_name
   smf_service_test=%x[svcs -a |grep '#{smf_service_name}']
   if smf_service_test.match(/pkg/)
-    disable_smf_service(smf_service_name)
-    message="Removing:\tSMF service "+service_base_name
-    command="svccfg -s pkg/server delete "+service_base_name
-    output=execute_command(message,command)
+    unconfigure_pkg_repo(service_name)
   end
   if !service_name.match(/i386|sparc/)
     ["i386","sparc"].each do |sys_arch|
@@ -177,9 +174,18 @@ def copy_repo_iso(repo_version_dir)
   return
 end
 
+# Check AI service is running
+
+def check_ai_service(service_name)
+  message="Checking:\tAI service "+service_name
+  command="installadm list |grep '#{service_name}'"
+  output=execute_command(message,command)
+  return output
+end
+
 # Routine to create AI service
 
-def create_ai_services(iso_repo_version,publisher_url,client_arch)
+def configure_ai_services(iso_repo_version,publisher_url,client_arch)
   puts "Creating:\tAI services"
   client_arch_list=[]
   if !client_arch.downcase.match(/i386|sparc/)
@@ -191,10 +197,12 @@ def create_ai_services(iso_repo_version,publisher_url,client_arch)
     lc_sys_arch=sys_arch.downcase
     auto_install_dir=$ai_base_dir+"/"+iso_repo_version+"_"+lc_sys_arch
     service_name=iso_repo_version+"_"+lc_sys_arch
-    #check_zfs_fs_exists(auto_install_dir)
-    message="Creating:\tAI service for #{lc_sys_arch}"
-    command="installadm create-service -a #{lc_sys_arch} -n #{service_name} -p solaris=#{publisher_url} -d #{auto_install_dir}"
-    execute_command(message,command)
+    service_check=check_ai_service(service_name)
+    if !service_check.match(/#{service_name}/)
+      message="Creating:\tAI service for #{lc_sys_arch}"
+      command="installadm create-service -a #{lc_sys_arch} -n #{service_name} -p solaris=#{publisher_url} -d #{auto_install_dir}"
+      execute_command(message,command)
+    end
   end
   return
 end
@@ -230,59 +238,6 @@ def get_install_services()
   command="installadm list"
   output=execute_command(message,command)
   return output
-end
-
-# Add apache proxy
-
-def add_apache_proxy(publisher_host,publisher_port,service_base_name)
-  apache_config_file="/etc/apache2/2.2/httpd.conf"
-  apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
-  if !apache_check.match(/#{service_base_name}/)
-    message="Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
-    command="cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
-    execute_command(message,command)
-    message="Adding:\t\tProxy entry to "+apache_config_file
-    command="echo 'ProxyPass /"+service_base_name+" http://"+publisher_host+":"+publisher_port+" nocanon max=200' >>"+apache_config_file
-    execute_command(message,command)
-    smf_service_name="apache22"
-    enable_smf_service(smf_service_name)
-    refresh_smf_service(smf_service_name)
-  end
-  return
-end
-
-# Remove apache proxy
-
-def remove_apache_proxy(service_base_name)
-  apache_config_file="/etc/apache2/2.2/httpd.conf"
-  apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
-  if apache_check.match(/#{service_base_name}/)
-    message="Restoring:\t"+apache_config_file+".no_"+service_base_name+" to "+apache_config_file
-    command="cp #{apache_config_file}.no_#{service_base_name} #{apache_config_file}"
-    execute_command(message,command)
-    smf_service_name="apache22"
-    refresh_smf_service(smf_service_name)
-  end
-end
-
-# Create server manifest for AI service
-
-def create_ai_server_manifest(publisher_host,publisher_port,service_name,repo_version_dir)
-  message=""
-  commands=[]
-  commands.push("svccfg -s pkg/server add #{service_name}")
-  commands.push("svccfg -s pkg/server:#{service_name} addpg pkg application")
-  commands.push("svccfg -s pkg/server:#{service_name} setprop pkg/port=#{publisher_port}")
-  commands.push("svccfg -s pkg/server:#{service_name} setprop pkg/inst_root=#{repo_version_dir}")
-  commands.push("svccfg -s pkg/server:#{service_name} addpg general framework")
-  commands.push("svccfg -s pkg/server:#{service_name} addpropvalue general/complete astring: #{service_name}")
-  commands.push("svccfg -s pkg/server:#{service_name} addpropvalue general/enabled boolean: true")
-  commands.push("svccfg -s pkg/server:#{service_name} setprop pkg/readonly=true")
-  commands.push("svccfg -s pkg/server:#{service_name} setprop pkg/proxy_base = astring: http://#{publisher_host}/#{service_name}")
-  commands.each do |command|
-    execute_command(message,command)
-  end
-  return
 end
 
 # Code to get Solaris relase from file system under repository
@@ -338,7 +293,6 @@ def fix_server_dhcpd_range(publisher_host)
   return
 end
 
-
 # Main server routine called from modest main code
 
 def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
@@ -367,9 +321,13 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
         service_base_name=get_service_base_name(service_name)
       end
       ai_version_dir=check_ai_base_dir()
-      create_ai_server_manifest(publisher_host,publisher_port,service_base_name,repo_version_dir)
-      add_apache_proxy(publisher_host,publisher_port,service_base_name)
-      create_ai_services(iso_repo_version,publisher_url,client_arch)
+      read_only="true"
+      configure_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
+      if $use_alt_repo == 1
+        alt_service_name=service_base_name+"_"+$alt_repo_name
+        configure_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
+      end
+      configure_ai_services(iso_repo_version,publisher_url,client_arch)
     else
       # Check we have ISO to get repository data from
       if !iso_file.match(/[A-z|0-9]/)
@@ -408,9 +366,13 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
           copy_repo_iso(repo_version_dir)
           ai_version_dir=check_ai_base_dir()
           #repo_version=get_repo_version()
-          create_ai_server_manifest(publisher_host,publisher_port,service_base_name,repo_version_dir)
-          add_apache_proxy(publisher_host,publisher_port,service_base_name)
-          create_ai_services(iso_repo_version,publisher_url,client_arch)
+          read_only="true"
+          configure_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
+          if $use_alt_repo == 1
+            alt_service_name=check_alt_service_name(service_name)
+            configure_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
+          end
+          configure_ai_services(iso_repo_version,publisher_url,client_arch)
         end
       end
     end

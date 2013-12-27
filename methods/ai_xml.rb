@@ -153,8 +153,28 @@ def create_ai_manifest(q_struct,output_file)
         xml.software_data(:action => "install") {
           xml.name(q_struct["repo_url"].value)
           xml.name(q_struct["server_install"].value)
+          xml.name("pkg:/runtime/ruby-18")
         }
       }
+      if $use_alt_repo == 1
+        xml.software(:type => "IPS") {
+          xml.destination {
+            xml.image {
+              xml.facet("facet.local.*",:set => "false")
+              xml.facet("facet.local.en",:set => "true")
+              xml.facet("facet.local.en_US",:set => "true")
+            }
+          }
+          xml.source {
+            xml.publisher(:name => "solaris") {
+              xml.origin(:name => q_struct["alt_publisher_url"].value)
+            }
+          }
+          xml.software_data(:action => "install") {
+            xml.name(q_struct["puppet_install"].value)
+          }
+        }
+      end
     }
   }
   file=File.open(output_file,"w")
