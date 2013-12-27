@@ -19,9 +19,19 @@ def populate_ai_manifest_questions(publisher_host,publisher_port)
   name="publisher_url"
   publisher_url=get_publisher_url(publisher_host,publisher_port)
   config=Ai.new(
-    question  = "Publisher location",
+    question  = "Publisher URL",
     value     = publisher_url,
     valid     = "",
+    eval      = "no"
+    )
+  q_struct[name]=config
+  q_order.push(name)
+
+  name="server_install"
+  config=Ai.new(
+    question  = "Server install",
+    value     = "pkg:/group/system/solaris-large-server",
+    valid     = "pkg:/group/system/solaris-large-server,pkg:/group/system/solaris-small-server",
     eval      = "no"
     )
   q_struct[name]=config
@@ -30,7 +40,7 @@ def populate_ai_manifest_questions(publisher_host,publisher_port)
   name="repo_url"
   repo_url=get_repo_url(publisher_url,publisher_host,publisher_port)
   config=Ai.new(
-    question  = "Solaris repository verstion",
+    question  = "Solaris repository version",
     value     = repo_url,
     valid     = "",
     eval      = "no"
@@ -48,6 +58,29 @@ def populate_ai_manifest_questions(publisher_host,publisher_port)
   q_struct[name]=config
   q_order.push(name)
 
+  if $use_alt_repo == 1
+    name="alt_publisher_url"
+    alt_publisher_url=get_alt_publisher_url(publisher_host,publisher_port)
+    config=Ai.new(
+      question  = "Alternate publisher URL",
+      value     = alt_publisher_url,
+      valid     = "",
+      eval      = "no"
+      )
+    q_struct[name]=config
+    q_order.push(name)
+
+    name="puppet_install"
+    config=Ai.new(
+      question  = "Puppet install",
+      value     = "pkg:/application/puppet",
+      valid     = "",
+      eval      = "no"
+      )
+    q_struct[name]=config
+    q_order.push(name)
+  end
+
   return q_struct,q_order
 end
 
@@ -60,7 +93,7 @@ def populate_ai_profile_questions(client_ip,client_name)
   name="root_password"
   config=Ai.new(
     question  = "Root password",
-    value     = $default_root_passwd,
+    value     = $default_root_password,
     valid     = "",
     eval      = "get_password_crypt(answer)"
     )
@@ -100,7 +133,7 @@ def populate_ai_profile_questions(client_ip,client_name)
   name="account_password"
   config=Ai.new(
     question  = "Account password",
-    value     = $default_admin_passwd,
+    value     = $default_admin_password,
     valid     = "",
     eval      = "get_password_crypt(answer)"
     )
@@ -344,8 +377,16 @@ def process_questions(q_struct,q_order)
         new_value=eval"[#{new_value}]"
         q_struct[key].value=new_value.join
       end
-      print q_struct[key].question+"? [ "+q_struct[key].value+" ] "
-      answer=gets.chomp
+      if $use_defaults == 0
+        print q_struct[key].question+"? [ "+q_struct[key].value+" ] "
+        answer=gets.chomp
+      else
+        answer=q_struct[key].value
+        if $verbose_mode == 1
+          puts "Setting:\t"+q_struct[key].question+" to "+q_struct[key].value
+          correct=1
+        end
+      end
       if answer != ""
         if answer != q_struct[key].value
           if q_struct[key].valid.match(/[A-z|0-9]/)

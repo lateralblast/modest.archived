@@ -41,6 +41,9 @@ Solaris AI
   - Resolves the issue of DHCP licenses running out
 - Creates an individual configuration profile for each client
   - Configures network and other services
+- Includes code to optionally create alternate package repository
+  - Automatically builds packages for facter, hiera, and puppet
+  - Adds packages to base installation manifest
 - Post installation script capability (work in progress)
 
 All:
@@ -150,15 +153,18 @@ Usage
 	-n: Set service name
 	-z: Delete service name
 	-W: Update apache proxy entry for AI
+	-R: Use alternate package repository (additional packages like puppet)
+	-Z: Destroy ZFS filesystem as part of uninstallation	
+	-D: Use default values for questions
 
 Command Examples
 ================
 
-Delete AI service:              
+Unconfigure AI service:              
 
 	modest.rb -A -z sol_11_1
 
-Create all AI services:
+Configure all AI services:
          
 	modest.rb -A -S
 
@@ -170,6 +176,10 @@ Create AI client:
 
 	modest.rb -A -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193
 
+Create AI client (use default values):               
+
+	modest.rb -A -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -D
+
 Update AI proxy:
 
 	modest.rb -A -W -n sol_11_1
@@ -177,6 +187,14 @@ Update AI proxy:
 Delete AI client:
 
 	modest.rb -A -d sol11u01vm03
+
+Configure alternate repo:
+
+	modest.rb -A -R
+
+Unconfigure alternate repo:
+
+	modest.rb -A -R -z sol_11_1_alt
 
 Session Examples
 ================
@@ -436,7 +454,7 @@ XML Manifest Examples
 
 The following are XML manifest examples for a Solaris 11 AI server.
 
-Install service manifest:
+Install service manifest (without alternate package repository):
 
 	<!DOCTYPE auto_install SYSTEM "file:///usr/share/install/ai.dtd.1">
 	<auto_install>
@@ -466,6 +484,60 @@ Install service manifest:
 	      <software_data action="install">
 	        <name>pkg:/entire@0.5.11-0.175.1</name>
 	        <name>pkg:/group/system/solaris-large-server</name>
+	        <name>pkg:/runtime/ruby-18</name>
+	      </software_data>
+	    </software>
+	  </ai_instance>
+	</auto_install>
+
+Install service manifest (without alternate package repository):
+
+	<!DOCTYPE auto_install SYSTEM "file:///usr/share/install/ai.dtd.1">
+	<auto_install>
+	  <ai_instance auto_reboot="true" name="orig_default">
+	    <target>
+	      <logical>
+	        <zpool name="rpool" is_root="true">
+	          <filesystem mountpoint="/export" name="export"/>
+	          <filesystem name="export/home"/>
+	          <be name="solaris"/>
+	        </zpool>
+	      </logical>
+	    </target>
+	    <software type="IPS">
+	      <destination>
+	        <image>
+	          <facet set="false">facet.local.*</facet>
+	          <facet set="true">facet.local.en</facet>
+	          <facet set="true">facet.local.en_US</facet>
+	        </image>
+	      </destination>
+	      <source>
+	        <publisher name="solaris">
+	          <origin name="http://192.168.1.191:10081"/>
+	        </publisher>
+	      </source>
+	      <software_data action="install">
+	        <name>pkg:/entire@0.5.11-0.175.1</name>
+	        <name>pkg:/group/system/solaris-large-server</name>
+	        <name>pkg:/runtime/ruby-18</name>
+	      </software_data>
+	    </software>
+	    <software type="IPS">
+	      <destination>
+	        <image>
+	          <facet set="false">facet.local.*</facet>
+	          <facet set="true">facet.local.en</facet>
+	          <facet set="true">facet.local.en_US</facet>
+	        </image>
+	      </destination>
+	      <source>
+	        <publisher name="solaris">
+	          <origin name="http://192.168.1.191:10082"/>
+	        </publisher>
+	      </source>
+	      <software_data action="install">
+	        <name>pkg:/application/puppet</name>
 	      </software_data>
 	    </software>
 	  </ai_instance>

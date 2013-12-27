@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.2.8
+# Version:      0.2.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -25,7 +25,7 @@ require 'builder'
 # Set up some global variables/defaults
 
 $script=$0
-$options="F:a:c:d:e:f:i:n:z:ACJKSVWtv"
+$options="F:a:c:d:e:f:i:n:z:ACDJKRSVWZtv"
 $verbose_mode=0
 $test_mode=0
 $iso_base_dir="/export/isos"
@@ -33,6 +33,9 @@ $repo_base_dir="/export/repo"
 $iso_mount_dir="/cdrom"
 $ai_base_dir="/export/auto_install"
 $work_dir=""
+$tmp_dir=""
+$alt_repo_name="alt"
+$alt_prefix_name="solaris"
 $home_dir=ENV["HOME"]
 $default_zpool="rpool"
 $default_ai_port="10081"
@@ -48,6 +51,9 @@ $default_files="files"
 $default_hosts="files dns"
 $default_root_password="XXXX"
 $default_admin_password="YYYY"
+$use_alt_repo=0
+$destroy_fs=0
+$use_defaults=0
 
 # Load methods
 
@@ -89,6 +95,14 @@ end
 def refresh_smf_service(smf_service_name)
   function="refresh"
   handle_smf_service(function,smf_service_name)
+end
+
+# Check SMF service
+
+def check_smf_service(smf_service_name)
+  message="Checking:\tService "+smf_service_name
+  command="svcs -a |grep '#{smf_service_name}"
+  output=execute_command(message,command)
 end
 
 # Convert current date to a string that can be used in file names
@@ -142,15 +156,20 @@ def print_usage()
   puts "-n: Set service name"
   puts "-z: Delete service name"
   puts "-W: Update apache proxy entry for AI"
+  puts "-R: Use alternate package repository (additional packages like puppet)"
+  puts "-Z: Destroy ZFS filesystem as part of uninstallation"
+  puts "-D: Use default values for questions"
   puts ""
   puts "Examples:"
   puts ""
-  puts "Delete AI service:\t\t"+$script+" -A -z sol_11_1"
-  puts "Create all AI services:\t\t"+$script+" -A -S"
+  puts "Unconfigure AI service:\t\t"+$script+" -A -z sol_11_1"
+  puts "Configure all AI services:\t"+$script+" -A -S"
   puts "Configure AI client services:\t"+$script+" -A -C -a i386"
   puts "Create AI client:\t\t"+$script+" -A -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
   puts "Update AI proxy:\t\t"+$script+" -A -W -n sol_11_1"
   puts "Delete AI client:\t\t"+$script+" -A -d sol11u01vm03"
+  puts "Configure alternate repo:\t"+$script+" -A -R"
+  puts "Unconfigure alternate repo:\t"+$script+" -A -R -z sol_11_1_alt"
   puts ""
   exit
 end
@@ -165,6 +184,8 @@ def print_version()
   puts name+" v. "+version+" "+packager
   exit
 end
+
+# Find client MAC
 
 def get_client_mac(client_name)
   ethers_file="/etc/ethers"
@@ -198,6 +219,20 @@ def check_zfs_fs_exists(dir_name)
     message="Warning:\t"+dir_name+" does not exist"
     command="zfs create #{$default_zpool}#{dir_name}"
     output=execute_command(message,command)
+  end
+  return output
+end
+
+# Destroy a ZFS filesystem
+
+def destroy_zfs_fs(dir_name)
+  output=""
+  if $destroy_fs == 1
+    if File.directory?(dir_name)
+      message="Warning:\tDestroying "+dir_name
+      command="zfs destroy #{$default_zpool}#{dir_name}"
+      output=execute_command(message,command)
+    end
   end
   return output
 end
@@ -253,11 +288,12 @@ def check_local_config()
     end
   end
   puts "Setting:\tWork directory to "+$work_dir
-  if !File.directory?($work_dir)
-    message="Creating:\t"+$work_dir
-    command="mkdir #{$work_dir}"
-    execute_command(message,command)
+  check_dir_exists($work_dir)
+  if !$tmp_dir.match(/[A-z]/)
+    $tmp_dir=$work_dir+"/tmp"
   end
+  puts "Setting:\tTemp directory to "+$work_dir
+  check_dir_exists($tmp_dir)
   os_name=%x["uname"]
   if !os_name.match(/SunOS/)
     $test_mode=1
@@ -318,7 +354,7 @@ end
 
 check_local_config()
 
-if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"]
+if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"]
   puts "Warning:\tClient name not given"
   exit
 else
@@ -367,26 +403,31 @@ if opt["P"]
 else
   publisher_port=$default_ai_port
 end
+
 if opt["H"]
   publisher_host=opt["H"]
 else
   publisher_host=$default_host
 end
+
 if opt["n"]
   service_name=opt["n"]
 else
   service_name=""
 end
+
 if opt["e"]
   client_mac=opt["e"]
 else
   client_mac=""
 end
+
 if opt["i"]
   client_ip=opt["i"]
 else
   client_mac=""
 end
+
 if opt["n"]
   service_name=opt["n"]
   if !service_name.match(/^[A-z]/)
@@ -395,16 +436,31 @@ if opt["n"]
 else
   service_name=""
 end
+
 if opt["f"]
   iso_file=opt["f"]
 else
   iso_file=""
 end
+
 if opt["a"]
   client_arch=opt["a"]
   client_arch=client_arch.downcase
 else
   client_arch=""
+end
+
+if opt["Z"]
+  $destroy_fs=1
+end
+
+if opt["R"]
+  $use_alt_repo=1
+end
+
+if opt["D"]
+  $use_defaults=1
+  puts "Setting:\tAnswers to defaults"
 end
 
 # Routines for AI (Solaris 11)
@@ -422,42 +478,55 @@ if opt["A"]
     exit
   end
   if opt["z"]
-    service_name=opt["z"]
-    delete_ai_service(service_name)
-    exit
+    if !opt["R"]
+      unconfigure_ai_service(service_name)
+      exit
+    end
   end
   if opt["d"]
     client_name=opt["d"]
-    delete_ai_client(client_name,service_name,client_mac)
+    unconfigure_ai_client(client_name,service_name,client_mac)
   else
     if !opt["a"]
-      if !opt["S"] and !opt["C"]
+      if !opt["S"] and !opt["C"] and !opt["R"]
         puts "Warning:\tArchitecture not specified"
         puts "Warning:\tUse -a i386 or -a sparc"
         exit
       end
     end
-    if opt["S"] or opt["C"]
-      if !opt["C"]
-        configure_ai_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
+    if opt["S"] or opt["C"] or opt["R"]
+      if opt["R"]
+        if !opt["S"]
+          if opt["z"]
+            unconfigure_alt_pkg_repo(service_name)
+          else
+            configure_alt_pkg_repo(publisher_host,publisher_port,service_name)
+          end
+        end
       end
-      configure_ai_client_services(client_arch,publisher_host,publisher_port,service_name)
+      if opt ["C"] or opt["S"]
+        if !opt["C"]
+          configure_ai_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
+        end
+        configure_ai_client_services(client_arch,publisher_host,publisher_port,service_name)
+      end
     else
-      if !opt["e"]
-        puts "Warning:\tNo client MAC address given"
-        exit
+      if opt["c"]
+        if !opt["e"]
+          puts "Warning:\tNo client MAC address given"
+          exit
+        end
+        if !client_arch.match(/i386|sparc/)
+          puts "Warning:\tInvalid architecture specified"
+          puts "Warning:\tUse -a i386 or -a sparc"
+          exit
+        end
+        if !opt["i"]
+          puts "Warning:\tNo client IP address given"
+          exit
+        end
+        configure_ai_client(client_name,client_arch,client_mac,client_ip)
       end
-      if !client_arch.match(/i386|sparc/)
-        puts "Warning:\tInvalid architecture specified"
-        puts "Warning:\tUse -a i386 or -a sparc"
-        exit
-      end
-      if !opt["i"]
-        puts "Warning:\tNo client IP address given"
-        exit
-      end
-      configure_ai_client(client_name,client_arch,client_mac,client_ip)
     end
   end
 end
-

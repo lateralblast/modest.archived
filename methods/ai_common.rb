@@ -40,6 +40,17 @@ def get_publisher_url(publisher_host,publisher_port)
   return publisher_url
 end
 
+# Get alternate publisher url
+
+def get_alt_publisher_url(publisher_host,publisher_port)
+  publisher_port=publisher_port.to_i+1
+  publisher_port=publisher_port.to_s
+  publisher_url="http://"+publisher_host+":"+publisher_port
+  return publisher_url
+end
+
+# Get service name
+
 def get_service_name(client_arch)
   message="Determining:\tService name for "+client_arch
   command="installadm list |grep -v default |grep '#{client_arch}' |awk '{print $1}'"
@@ -47,6 +58,8 @@ def get_service_name(client_arch)
   service_name=service_name.chomp
   return service_name
 end
+
+# Get service base name
 
 def get_service_base_name(service_name)
   service_base_name=service_name
@@ -56,4 +69,85 @@ def get_service_base_name(service_name)
     service_base_name=service_base_name.gsub(/_$/,"")
   end
   return service_base_name
+end
+
+# Add apache proxy
+
+def add_apache_proxy(publisher_host,publisher_port,service_base_name)
+  apache_config_file="/etc/apache2/2.2/httpd.conf"
+  apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
+  if !apache_check.match(/#{service_base_name}/)
+    message="Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
+    command="cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
+    execute_command(message,command)
+    message="Adding:\t\tProxy entry to "+apache_config_file
+    command="echo 'ProxyPass /"+service_base_name+" http://"+publisher_host+":"+publisher_port+" nocanon max=200' >>"+apache_config_file
+    execute_command(message,command)
+    smf_service_name="apache22"
+    enable_smf_service(smf_service_name)
+    refresh_smf_service(smf_service_name)
+  end
+  return
+end
+
+# Remove apache proxy
+
+def remove_apache_proxy(service_base_name)
+  apache_config_file="/etc/apache2/2.2/httpd.conf"
+  apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
+  if apache_check.match(/#{service_base_name}/)
+    restore_file=apache_config_file+".no_"+service_base_name
+    if File.exists?(restore_file)
+      message="Restoring:\t"+restore_file+" to "+apache_config_file
+      command="cp #{restore_file} #{apache_config_file}"
+      execute_command(message,command)
+      smf_service_name="apache22"
+      refresh_smf_service(smf_service_name)
+    end
+  end
+end
+
+# Configure a package repository
+
+def configure_pkg_repo(publisher_host,publisher_port,service_name,repo_version_dir,read_only)
+  smf_service_name="pkg/server:#{service_name}"
+  message="Checking:\tIf service "+smf_service_name+" exists"
+  command="svcs -a |grep '#{smf_service_name}"
+  output=execute_command(message,command)
+  if !output.match(/#{smf_service_name}/)
+    message=""
+    commands=[]
+    commands.push("svccfg -s pkg/server add #{service_name}")
+    commands.push("svccfg -s #{smf_service_name} addpg pkg application")
+    commands.push("svccfg -s #{smf_service_name} setprop pkg/port=#{publisher_port}")
+    commands.push("svccfg -s #{smf_service_name} setprop pkg/inst_root=#{repo_version_dir}")
+    commands.push("svccfg -s #{smf_service_name} addpg general framework")
+    commands.push("svccfg -s #{smf_service_name} addpropvalue general/complete astring: #{service_name}")
+    commands.push("svccfg -s #{smf_service_name} addpropvalue general/enabled boolean: true")
+    commands.push("svccfg -s #{smf_service_name} setprop pkg/readonly=#{read_only}")
+    commands.push("svccfg -s #{smf_service_name} setprop pkg/proxy_base = astring: http://#{publisher_host}/#{service_name}")
+    commands.each do |command|
+      execute_command(message,command)
+    end
+    refresh_smf_service(smf_service_name)
+    add_apache_proxy(publisher_host,publisher_port,service_name)
+  end
+  return
+end
+
+# Delete a package repository
+
+def unconfigure_pkg_repo(service_name)
+  smf_name="pkg/server:#{service_name}"
+  message="Checking:\tIf repository service "+service_name+" exists"
+  command="svcs -a |grep '#{smf_name}'"
+  output=execute_command(message,command)
+  if output.match(/#{service_name}/)
+    disable_smf_service(smf_name)
+    message="Removing\tPackage repository service "+service_name
+    command="svccfg -s pkg/server delete #{service_name}"
+    execute_command(message,command)
+    remove_apache_proxy(service_name)
+  end
+  return
 end

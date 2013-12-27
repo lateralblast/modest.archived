@@ -178,10 +178,14 @@ end
 # Code to change timeout and default menu entry in grub
 
 def update_grub_cfg(client_mac)
+  copy=[]
   netboot_mac=client_mac.gsub(/:/,"")
-  netboot_mac="00"+netboot_mac
+  netboot_mac="01"+netboot_mac
   netboot_mac=netboot_mac.upcase
   grub_file="/etc/netboot/grub.cfg."+netboot_mac
+  if $verbose_mode == 1
+    puts "Updating:\tGrub config file "+grub_file
+  end
   if File.exists?(grub_file)
     text=File.read(grub_file)
     text.each do |line|
