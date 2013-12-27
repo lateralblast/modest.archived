@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.2.9
+# Version:      0.4.0
 # Release:      1
 # License:      Open Source
 # Group:        System
