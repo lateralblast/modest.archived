@@ -1,4 +1,5 @@
-#!/usr/bin/env ruby
+
+# AI server code
 
 # Delecte a service
 # This will also delete all the clients under it
@@ -93,85 +94,6 @@ def check_version_dir(dir_name,repo_version)
   puts "Checking:\t"+full_version_dir
   output=check_zfs_fs_exists(full_version_dir)
   return full_version_dir
-end
-
-# Mount full repo isos under iso directory
-# Eg /export/isos
-# An example full repo file name
-# /export/isos/sol-11_1-repo-full.iso
-# It will attempt to mount them
-# Eg /cdrom
-# If there is something mounted there already it will unmount it
-
-def mount_full_repo_iso(iso_file)
-  puts "Processing:\t"+iso_file
-  output=check_dir_exists($iso_mount_dir)
-  message="Checking:\tExisting mounts"
-  command="df |awk '{print $1}' |grep '^#{$iso_mount_dir}$'"
-  output=execute_command(message,command)
-  if output.match(/[A-z]/)
-    message="Unmounting:\t"+$iso_mount_dir
-    command="umount "+$iso_mount_dir
-    output=execute_command(message,command)
-  end
-  message="Mounting:\tISO "+iso_file+" on "+$iso_mount_dir
-  command="mount -F hsfs "+iso_file+" "+$iso_mount_dir
-  output=execute_command(message,command)
-  iso_repo_dir=$iso_mount_dir+"/repo"
-  if !File.directory?(iso_repo_dir)
-    puts "Warning:\tISO did not mount, or this is not a repository ISO"
-    puts "Warning:\t"+iso_repo_dir+" does not exit"
-    if $test_mode != 1
-      exit
-    end
-  end
-  return
-end
-
-# Create a ZFS filesystem for ISOs if it doesn't exist
-# Eg /export/isos
-# This could be an NFS mount from elsewhere
-# If a directory already exists it will do nothing
-# It will check that there are ISOs in the directory
-# If none exist it will exit
-
-def check_iso_base_dir()
-  iso_list=[]
-  puts "Checking:\t"+$iso_base_dir
-  output=check_zfs_fs_exists($iso_base_dir)
-  message="Getting:\t"+$iso_base_dir+" contents"
-  command="ls #{$iso_base_dir}/*repo-full*.iso"
-  iso_list=execute_command(message,command)
-  if !iso_list.grep(/full/)
-    puts "Warning:\tNo full repository ISO images exist in "+$iso_base_dir
-    if $test_mode != 1
-      exit
-    end
-  end
-  return iso_list
-end
-
-# Copy repository from ISO to local filesystem
-
-def copy_repo_iso(repo_version_dir)
-  puts "Checking:\tIf we can copy data from full repo ISO"
-  iso_repo_dir=$iso_mount_dir+"/repo"
-  if !File.directory?(repo_version_dir)
-    puts "Warning:\tRepository directory "+repo_version_dir+" does not exist"
-    if $test_mode != 1
-      exit
-    end
-  end
-  test_dir=repo_version_dir+"/publisher"
-  if !File.directory?(test_dir)
-    message="Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
-    command="rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
-    output=execute_command(message,command)
-    message="Rebuilding:\tRepository in "+repo_version_dir
-    command="pkgrepo -s #{repo_version_dir} rebuild"
-    output=execute_command(message,command)
-  end
-  return
 end
 
 # Check AI service is running
@@ -330,21 +252,22 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
       configure_ai_services(iso_repo_version,publisher_url,client_arch)
     else
       # Check we have ISO to get repository data from
+      search_string="repo-full"
       if !iso_file.match(/[A-z|0-9]/)
         if File.exists?(iso_file)
           iso_list[0]=iso_file
         else
-          iso_list=check_iso_base_dir()
+          iso_list=check_iso_base_dir(search_string)
         end
       else
-        iso_list=check_iso_base_dir()
+        iso_list=check_iso_base_dir(search_string)
       end
       # If we do have ISO use them to set up repositories
       if iso_list.grep(/full/)
         # If we have a repo ISO process it
         iso_list.each do |iso_file|
           iso_file=iso_file.chomp
-          mount_full_repo_iso(iso_file)
+          mount_iso(iso_file)
           # Get repo version from file name
           # Eg sol-11_1-repo-full.iso
           # Would be 11_1
@@ -363,7 +286,7 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
             iso_repo_version=get_ai_solaris_release(repo_version_dir)
           end
           check_repo_version_dir(repo_version_dir)
-          copy_repo_iso(repo_version_dir)
+          copy_iso(iso_file,repo_version_dir)
           ai_version_dir=check_ai_base_dir()
           #repo_version=get_repo_version()
           read_only="true"
@@ -378,5 +301,16 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
     end
     fix_server_dhcpd_range(publisher_host)
   end
+  return
+end
+
+# List AI services
+
+def list_ai_services()
+  message="Listing:\nAvoilable AI services"
+  command="installadm list |grep 'auto_install' |grep -v default |awk '{print $1}'"
+  output=execute_command(message,command)
+  puts "Available AI services:"
+  puts output
   return
 end

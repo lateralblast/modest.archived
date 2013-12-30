@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 
 # Output AI profile XML
 

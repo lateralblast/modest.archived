@@ -1,4 +1,7 @@
-#!/usr/bin/env ruby
+
+# Clienbt code for AI
+
+# Delete an AI client
 
 def delete_ai_client(client_name,service_name,client_mac)
   if !client_mac.match(/[A-z|0-9]/) or !service_name.match(/[A-z|0-9]/)
@@ -78,15 +81,6 @@ def check_valid_gid(answer)
   return correct
 end
 
-# Calculate route
-
-def get_ipv4_default_route(client_ip)
-  octets=client_ip.split(/\./)
-  octets[3]="254"
-  ipv4_default_route=octets.join(".")
-  return ipv4_default_route
-end
-
 # Get the user home directory ZFS dataset name
 
 def get_account_home_zfs_dataset(q_struct)
@@ -99,30 +93,6 @@ end
 def get_account_home_mountpoint(q_struct)
   account_home_mountpoint="/export/home/"+q_struct["account_login"].value
   return account_home_mountpoint
-end
-
-# Code to check answers
-
-def evaluate_answer(q_struct,key,answer)
-  correct=1
-  if q_struct[key].eval != "no"
-    new_value=q_struct[key].eval
-    if new_value.match(/^get/)
-      new_value=eval"[#{new_value}]"
-      answer=new_value
-      q_struct[key].value=answer
-    else
-      correct=eval"[#{new_value}]"
-      if correct == 1
-        q_struct[key].value=answer
-      end
-    end
-  end
-  answer=answer.to_s
-  if $verbose_mode == 1
-    puts "Setting "+key+" to "+answer
-  end
-  return correct,q_struct
 end
 
 # Import AI manifest
@@ -291,5 +261,26 @@ def configure_ai_client(client_name,client_arch,client_mac,client_ip)
   service_name=get_service_name(client_arch)
   import_ai_profile(output_file,client_name,client_mac,service_name)
   create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
+  return
+end
+
+# List AI services
+
+def list_ai_clients()
+  puts "Current AI clients:"
+  client_info=%x[installadm list -p |grep -v '^--' |grep -v '^Service']
+  client_info=client_info.split(/\n/)
+  service_name=""
+  client_name=""
+  client_info.each do |line|
+    if line.match(/^[A-z]/)
+      service_name=line
+    else
+      client_name=line
+      client_name=client_name.gsub(/^\s+/,"")
+      client_name=client_name.gsub(/\s+/," ")
+      puts client_name+" service = "+service_name
+    end
+  end
   return
 end

@@ -71,42 +71,6 @@ def get_service_base_name(service_name)
   return service_base_name
 end
 
-# Add apache proxy
-
-def add_apache_proxy(publisher_host,publisher_port,service_base_name)
-  apache_config_file="/etc/apache2/2.2/httpd.conf"
-  apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
-  if !apache_check.match(/#{service_base_name}/)
-    message="Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
-    command="cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
-    execute_command(message,command)
-    message="Adding:\t\tProxy entry to "+apache_config_file
-    command="echo 'ProxyPass /"+service_base_name+" http://"+publisher_host+":"+publisher_port+" nocanon max=200' >>"+apache_config_file
-    execute_command(message,command)
-    smf_service_name="apache22"
-    enable_smf_service(smf_service_name)
-    refresh_smf_service(smf_service_name)
-  end
-  return
-end
-
-# Remove apache proxy
-
-def remove_apache_proxy(service_base_name)
-  apache_config_file="/etc/apache2/2.2/httpd.conf"
-  apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
-  if apache_check.match(/#{service_base_name}/)
-    restore_file=apache_config_file+".no_"+service_base_name
-    if File.exists?(restore_file)
-      message="Restoring:\t"+restore_file+" to "+apache_config_file
-      command="cp #{restore_file} #{apache_config_file}"
-      execute_command(message,command)
-      smf_service_name="apache22"
-      refresh_smf_service(smf_service_name)
-    end
-  end
-end
-
 # Configure a package repository
 
 def configure_pkg_repo(publisher_host,publisher_port,service_name,repo_version_dir,read_only)

@@ -79,3 +79,49 @@
 # Fixed grub.cfg update code
 # 0.4.0: Fri 27 Dec 2013 15:37:09 EST
 # Added ruby to base installation
+# 0.4.1: Sat 28 Dec 2013 13:54:14 EST
+# Fixed multiline output
+# 0.4.2: Sat 28 Dec 2013 15:37:35 EST
+# Added Linux ISO mount and copy code
+# 0.4.3: Sat 28 Dec 2013 17:59:49 EST
+# Added code to add and remove apache alias for kickstart directory
+# 0.4.4: Sat 28 Dec 2013 19:42:06 EST
+# Added code to list AI services
+# 0.4.5: Sat 28 Dec 2013 20:24:49 EST
+# Added code to list AI clients
+# 0.4.6: Sat 28 Dec 2013 20:46:53 EST
+# Added code to list Kickstart services
+# 0.4.7: Sat 28 Dec 2013 20:53:20 EST
+# Added code to list Kickstart clients
+# 0.4.8: Sun 29 Dec 2013 08:19:26 EST
+# Initial Kickstart client support
+# 0.4.9: Sun 29 Dec 2013 09:44:18 EST
+# Fixed question processing
+# 0.5.0: Sun 29 Dec 2013 10:48:45 EST
+# Added capability to change question structure
+# 0.5.1: Sun 29 Dec 2013 12:05:10 EST
+# Added initial kistart file output code
+# 0.5.2: Sun 29 Dec 2013 12:34:55 EST
+# Fixed bugs with kickstart file creation
+# 0.5.3: Sun 29 Dec 2013 16:49:16 EST
+# Added code to copy Linux PXE boot files from RPM file
+# 0.5.4: Sun 29 Dec 2013 21:40:59 EST
+# Fixed Linux ISO copy
+# 0.5.5: Sun 29 Dec 2013 22:30:45 EST
+# Added code to copy boot images to tftpboot directory
+# 0.5.6: Mon 30 Dec 2013 00:13:55 EST
+# Added code to create PXE boot files of kickstart client
+# 0.5.7: Mon 30 Dec 2013 00:29:55 EST
+# Fixed Linux PXE boot image copy code
+# 0.5.8: Mon 30 Dec 2013 07:45:31 EST
+# Added code to unonfigure Linux client PXE boot
+# 0.5.9: Mon 30 Dec 2013 09:17:20 EST
+# Fixed KS dhcp code
+# 0.6.0: Mon 30 Dec 2013 13:03:53 EST
+# Added code to add admin user to kickstart file
+# 0.6.1: Mon 30 Dec 2013 15:19:13 EST
+# Updated kickstart alternate packages
+# 0.6.2: Mon 30 Dec 2013 17:15:34 EST
+# Fixed kickstart post
+# 0.6.3: Mon 30 Dec 2013 19:34:31 EST
+# Fixed post package install

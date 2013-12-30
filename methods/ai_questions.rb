@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 
 # Populate array of structs containing AI manifest questions
 
@@ -123,7 +122,7 @@ def populate_ai_profile_questions(client_ip,client_name)
   name="account_login"
   config=Ai.new(
     question  = "Account login name",
-    value     = "sysadmin",
+    value     = $default_admin_user,
     valid     = "",
     eval      = "no"
     )
@@ -364,46 +363,3 @@ name="system_environment"
 
   return q_struct,q_order
 end
-
-# Process questions (array of structs)
-
-def process_questions(q_struct,q_order)
-  puts ""
-  q_order.each do |key|
-    correct=0
-    while correct != 1 do
-      if q_struct[key].value.match(/^get/)
-        new_value=q_struct[key].value
-        new_value=eval"[#{new_value}]"
-        q_struct[key].value=new_value.join
-      end
-      if $use_defaults == 0
-        print q_struct[key].question+"? [ "+q_struct[key].value+" ] "
-        answer=gets.chomp
-      else
-        answer=q_struct[key].value
-        if $verbose_mode == 1
-          puts "Setting:\t"+q_struct[key].question+" to "+q_struct[key].value
-          correct=1
-        end
-      end
-      if answer != ""
-        if answer != q_struct[key].value
-          if q_struct[key].valid.match(/[A-z|0-9]/)
-            if q_struct[key].valid.match(/#{answer}/)
-              (correct,q_struct)=evaluate_answer(q_struct,key,answer)
-            end
-          else
-            (correct,q_struct)=evaluate_answer(q_struct,key,answer)
-          end
-        end
-      else
-        answer=q_struct[key].value
-        (correct,q_struct)=evaluate_answer(q_struct,key,answer)
-        correct=1
-      end
-    end
-  end
-  return q_struct
-end
-
