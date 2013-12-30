@@ -7,7 +7,7 @@ A Ruby script to configure server and client configuration for PXE/DHCP and BOOT
 
 - Solaris 11 base Automated Installer (AI) service
 - Solaris 10 and early Jumpstart services (to be added)
-- Linux Kickstart services (to be added)
+- Linux Kickstart services
 
 This script is a wrapper which sits on top of the exisitng tools.
 It changes defaults to be more suitable to customer environments,
@@ -45,6 +45,14 @@ Solaris AI
   - Automatically builds packages for facter, hiera, and puppet
   - Adds packages to base installation manifest
 - Post installation script capability (work in progress)
+
+Linux Kickstart
+
+- Creates an Apache directory and alias for a HTTP based installation
+- Creates PXE configuration that jumps straight into an installation and pulls kickstart file from server
+- Includes code for optionally installing additional packages
+  - Automatically downloads Puppet packages
+  - Add packages to post installation
 
 All:
 
@@ -157,8 +165,8 @@ Usage
 	-Z: Destroy ZFS filesystem as part of uninstallation	
 	-D: Use default values for questions
 
-Command Examples
-================
+Solaris 11 AI Examples
+======================
 
 Unconfigure AI service:              
 
@@ -195,6 +203,53 @@ Configure alternate repo:
 Unconfigure alternate repo:
 
 	modest.rb -A -R -z sol_11_1_alt
+
+Linux Kickstart Examples
+========================
+
+Unconfigure KS service:		
+
+	modest.rb -A -z rh_5_9
+
+Configure KS services:		
+
+	modest.rb -K -S -l redhat
+
+Create KS client:		
+
+	modest.rb -K -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9
+
+Configure KS client PXE:	
+
+	modest.rb -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9
+
+Enable KS alias:		
+
+	modest.rb -K -W -n centos_5_9
+
+Disable KS alias:		
+
+	modest.rb -K -W -z centos_5_9
+
+Delete KS client:		
+
+	modest.rb -K -d centos59vm01
+
+Import PXE files:		
+
+	modest.rb -K -P -n centos_5_9
+
+Unconfigure KS client PXE:	
+
+	modest.rb -K -P -d centos59vm01
+
+Configure alternate repo:	
+
+	modest.rb -K -R -n centos_5_9
+
+Unconfigure alternate repo:	
+
+	modest.rb -K -R -z centos_5_9
 
 Session Examples
 ================
