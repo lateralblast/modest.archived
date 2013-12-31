@@ -3,7 +3,7 @@
 
 # Delete an AI client
 
-def delete_ai_client(client_name,service_name,client_mac)
+def unconfigure_ai_client(client_name,client_mac,service_name)
   if !client_mac.match(/[A-z|0-9]/) or !service_name.match(/[A-z|0-9]/)
     repo_list=%x[installadm list -p |grep -v '^-' |grep -v '^Service']
     temp_client_name=""

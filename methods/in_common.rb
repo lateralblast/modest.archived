@@ -210,7 +210,7 @@ def check_iso_base_dir(search_string)
   puts "Checking:\t"+$iso_base_dir
   output=check_zfs_fs_exists($iso_base_dir)
   message="Getting:\t"+$iso_base_dir+" contents"
-  command="ls #{$iso_base_dir}/*#{search_string}*.iso"
+  command="ls #{$iso_base_dir}/*.iso |grep '#{search_string}'"
   iso_list=execute_command(message,command)
   if !iso_list.grep(/full/)
     puts "Warning:\tNo full repository ISO images exist in "+$iso_base_dir
@@ -378,14 +378,9 @@ def copy_iso(iso_file,repo_version_dir)
     iso_repo_dir=$iso_mount_dir+"/repo"
     test_dir=repo_version_dir+"/publisher"
   else
-    if iso_file.match(/CentOS/)
+    if iso_file.match(/CentOS|rhel/)
       iso_repo_dir=$iso_mount_dir
-      test_dir=repo_version_dir+"/CentOS"
-    else
-      if iso_file.match(/rhel/)
-        iso_repo_dir=$iso_mount_dir
-        test_dir=repo_version_dir+"/RHEL"
-      end
+      test_dir=repo_version_dir+"/isolinux"
     end
   end
   if !File.directory?(repo_version_dir)
@@ -404,8 +399,8 @@ def copy_iso(iso_file,repo_version_dir)
       output=execute_command(message,command)
     else
       check_dir_exists(test_dir)
-      message="Copying:\t"+iso_repo_dir+" contents to "+test_dir
-      command="rsync -a #{iso_repo_dir}/* #{test_dir}"
+      message="Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
+      command="rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
       output=execute_command(message,command)
     end
   end

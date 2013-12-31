@@ -125,3 +125,5 @@
 # Fixed kickstart post
 # 0.6.3: Mon 30 Dec 2013 19:34:31 EST
 # Fixed post package install
+# 0.6.4: Tue 31 Dec 2013 14:44:05 EST
+# Cleaned up main routine and made code more modular

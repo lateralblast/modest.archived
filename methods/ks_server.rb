@@ -34,9 +34,12 @@ end
 
 # Copy Linux ISO contents to
 
-def configure_ks_repo(iso_file,repo_version_dir,search_string)
+def configure_ks_repo(iso_file,repo_version_dir)
   check_zfs_fs_exists(repo_version_dir)
-  check_dir=repo_version_dir+"/"+search_string
+  check_dir=repo_version_dir+"/isolinux"
+  if $verbose_mode == 1
+    puts "Checking:\tDirectory "+check_dir+" exits"
+  end
   if !File.directory?(check_dir)
     mount_iso(iso_file)
     copy_iso(iso_file,repo_version_dir)
@@ -59,6 +62,8 @@ def configure_ks_pxeboot(service_name)
   if !File.directory?(test_dir)
     if service_name.match(/centos/)
       rpm_dir=$repo_base_dir+"/"+service_name+"/CentOS"
+    else
+      rpm_dir=$repo_base_dir+"/"+service_name+"/Packages"
     end
     if File.directory?(rpm_dir)
       message="Locating syslinux package"
@@ -95,30 +100,42 @@ end
 
 # Configure Kickstart server
 
-def configure_ks_server(linux_distro,linux_version)
-  if linux_distro.downcase.match(/centos/)
-    search_string="CentOS"
+def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
+  if service_name.match(/[A-z]/)
+    if service_name.downcase.match(/centos/)
+      search_string="CentOS"
+    end
+    if service_name.downcase.match(/redhat/)
+      search_string="rhel"
+    end
+  else
+    search_string="[CentOS|rhel]"
   end
-  if linux_distro.downcase.match(/redhat/)
-    search_string="rhel"
+  if iso_file.match(/[A-z]/)
+    if File.exists?(iso_file)
+      iso_list[0]=iso_file
+    else
+      puts "Warning:\tISO file "+is_file+" does not exist"
+    end
+  else
+    iso_list=check_iso_base_dir(search_string)
   end
-  iso_list=check_iso_base_dir(search_string)
   iso_list.each do |iso_file|
     iso_file=iso_file.chomp
-    iso_linux_version=iso_file.chomp
-    iso_linux_version=iso_linux_version.split(/-/)
+    iso_linux_info=File.basename(iso_file)
+    iso_linux_info=iso_linux_info.split(/-/)
+    linux_distro=iso_linux_info[0]
+    linux_distro=linux_distro.downcase
     if linux_distro.match(/centos/)
-      iso_linux_version=iso_linux_version[1]
+      iso_linux_version=iso_linux_info[1]
     else
-      iso_linux_version=iso_linux_version[2]
+      iso_linux_version=iso_linux_info[2]
     end
-    if iso_linux_version.match(/#{linux_version}/) or linux_version == ""
-      iso_linux_version=iso_linux_version.gsub(/\./,"_")
-      release_dir=linux_distro+"_"+iso_linux_version
-      repo_version_dir=$repo_base_dir+"/"+release_dir
-      add_apache_alias(release_dir)
-      configure_ks_repo(iso_file,repo_version_dir,search_string)
-    end
+    iso_linux_version=iso_linux_version.gsub(/\./,"_")
+    release_dir=linux_distro+"_"+iso_linux_version
+    repo_version_dir=$repo_base_dir+"/"+release_dir
+    add_apache_alias(release_dir)
+    configure_ks_repo(iso_file,repo_version_dir)
     configure_ks_pxeboot(release_dir)
   end
   return

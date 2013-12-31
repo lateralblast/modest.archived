@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.6.3
+# Version:      0.6.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -25,7 +25,7 @@ require 'builder'
 # Set up some global variables/defaults
 
 $script=$0
-$options="F:a:c:d:e:f:i:l:n:r:z:ACDJKLPRSVWZtv"
+$options="F:a:c:d:e:f:h:i:l:n:p:r:z:ACDJKLMPRSVWZtv"
 $verbose_mode=0
 $test_mode=0
 $iso_base_dir="/export/isos"
@@ -92,13 +92,14 @@ def print_usage()
   puts "-A: Configure AI"
   puts "-J: Configure Jumpstart"
   puts "-K: Configure Kicstart"
+  puts "-M: Maintenance mode"
   puts "-a: Architecture"
   puts "-e: Client MAC Address"
   puts "-i: Clinet IP Address"
   puts "-S: Configure server"
   puts "-C: Configure client services"
-  puts "-P: Puplisher server port number"
-  puts "-H: Puplisher server Hostname/IP"
+  puts "-p: Puplisher server port number"
+  puts "-h: Puplisher server Hostname/IP"
   puts "-t: Run it test mode (in client mode create files but don't import them)"
   puts "-v: Run in verbose mode"
   puts "-f: ISO file to use"
@@ -106,40 +107,47 @@ def print_usage()
   puts "-d: Delete client"
   puts "-n: Set service name"
   puts "-z: Delete service name"
+  puts "-M: Maintenance operations"
+  puts "-P: Configure PXE"
   puts "-W: Update apache proxy entry for AI"
   puts "-R: Use alternate package repository (additional packages like puppet)"
   puts "-Z: Destroy ZFS filesystem as part of uninstallation"
   puts "-D: Use default values for questions"
   puts ""
-  puts "Examples:"
+  puts "Server related examples:"
   puts ""
-  puts "Unconfigure AI service:\t\t"+$script+" -A -z sol_11_1"
-  puts "Configure all AI services:\t"+$script+" -A -S"
-  puts "Configure AI client services:\t"+$script+" -A -C -a i386"
-  puts "Create AI client:\t\t"+$script+" -A -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
-  puts "Enable AI proxy:\t\t"+$script+" -A -W -n sol_11_1"
-  puts "Disable AI proxy:\t\t"+$script+" -A -W -z sol_11_1"
-  puts "Delete AI client:\t\t"+$script+" -A -d sol11u01vm03"
-  puts "Configure alternate repo:\t"+$script+" -A -R"
-  puts "Unconfigure alternate repo:\t"+$script+" -A -R -z sol_11_1_alt"
-  puts
-  puts "Unconfigure KS service:\t\t"+$script+" -A -z rh_5_9"
-  puts "Configure KS services:\t\t"+$script+" -K -S -l redhat"
-  puts "Create KS client:\t\t"+$script+" -K -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
-  puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
-  puts "Enable KS alias:\t\t"+$script+" -K -W -n centos_5_9"
-  puts "Disable KS alias:\t\t"+$script+" -K -W -z centos_5_9"
-  puts "Delete KS client:\t\t"+$script+" -K -d centos59vm01"
-  puts "Import PXE files:\t\t"+$script+" -K -P -n centos_5_9"
-  puts "Unconfigure KS client PXE:\t"+$script+" -K -P -d centos59vm01"
-  puts "Configure alternate repo:\t"+$script+" -K -R -n centos_5_9"
-  puts "Unconfigure alternate repo:\t"+$script+" -K -R -z centos_5_9"
-  puts
   puts "List AI services:\t\t"+$script+" -A -S -L"
-  puts "List AI clients:\t\t"+$script+" -A -L"
   puts "List KS services:\t\t"+$script+" -K -S -L"
-  puts "List KS clients:\t\t"+$script+" -K -L"
-  puts ""
+  puts "Configure all AI services:\t"+$script+" -A -S"
+  puts "Configure KS services:\t\t"+$script+" -K -S"
+  puts "Unconfigure AI service:\t\t"+$script+" -A -S -z sol_11_1"
+  puts "Unconfigure KS service:\t\t"+$script+" -K -S -z rh_5_9"
+  puts
+  puts "Maintenance related examples:"
+  puts
+  puts "Configure AI client services:\t"+$script+" -A -M -C -a i386"
+  puts "Enable AI proxy:\t\t"+$script+" -A -M -W -n sol_11_1"
+  puts "Disable AI proxy:\t\t"+$script+" -A -M -W -z sol_11_1"
+  puts "Configure AI alternate repo:\t"+$script+" -A -M -R"
+  puts "Unconfigure AI alternate repo:\t"+$script+" -A -M -R -z sol_11_1_alt"
+  puts "Configure KS alternate repo:\t"+$script+" -K -M -R -n centos_5_9"
+  puts "Unconfigure KS alternate repo:\t"+$script+" -K -M -R -z centos_5_9"
+  puts "Enable KS alias:\t\t"+$script+" -K -M -W -n centos_5_9"
+  puts "Disable KS alias:\t\t"+$script+" -K -M -W -z centos_5_9"
+  puts "Import KS PXE files:\t\t"+$script+" -K -M -P -n centos_5_9"
+  puts "Delete $KS PXE files:\t\t"+$script+" -K -M -P -z centos_5_9"
+  puts "Unconfigure KS client PXE:\t"+$script+" -K -M -P -d centos59vm01"
+  puts
+  puts "Client related examples:"
+  puts
+  puts "List AI clients:\t\t"+$script+" -A -C -L"
+  puts "List KS clients:\t\t"+$script+" -K -C -L"
+  puts "Create AI client:\t\t"+$script+" -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
+  puts "Delete AI client:\t\t"+$script+" -A -C -d sol11u01vm03"
+  puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
+  puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
+  puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
+  puts
   exit
 end
 
@@ -273,17 +281,24 @@ else
     service_name=opt["n"]
   end
   if opt["c"] or opt["d"]
-    puts "Information:\tSetting client name to "+client_name
+    if $verbose_mode == 1
+      puts "Information:\tSetting client name to "+client_name
+    end
   end
   if opt["z"] or opt["n"]
-    puts "Information:\tSetting service name to "+service_name
+    if $verbose_mode == 1
+      puts "Information:\tSetting service name to "+service_name
+    end
   end
 end
 
 # Get MAC address if given
 
-if opt["c"]
+if opt["e"]
   client_mac=opt["e"]
+end
+if $verbose_mode == 1
+   puts "Information:\tClient ethernet MAC address is "+client_mac
 end
 
 # Routines for Jumpstart (Solaris 10 and earlier)
@@ -301,31 +316,40 @@ if opt["J"]
   end
 end
 
-# Setup some defaults
+# Get/set publisher port
 
-if opt["P"]
-  publisher_port=opt["P"]
+if opt["p"]
+  publisher_port=opt["p"]
 else
   publisher_port=$default_ai_port
 end
+if $verbose_mode == 1
+   puts "Information:\tSetting publisher port to "+publisher_port
+end
 
-if opt["H"]
-  publisher_host=opt["H"]
+# Get/set publisher host
+
+if opt["h"]
+  publisher_host=opt["h"]
 else
   publisher_host=$default_host
 end
-
-if opt["e"]
-  client_mac=opt["e"]
-else
-  client_mac=""
+if $verbose_mode == 1
+   puts "Information:\tSetting publisher host to "+publisher_port
 end
+
+# Get IP address if given
 
 if opt["i"]
   client_ip=opt["i"]
 else
   client_mac=""
 end
+if $verbose_mode == 1
+   puts "Information:\tClient IP address is "+client_ip
+end
+
+# Get/set service name
 
 if opt["n"]
   service_name=opt["n"]
@@ -338,26 +362,45 @@ else
   end
 end
 
+# Get ISO file if given
+
 if opt["f"]
   iso_file=opt["f"]
+  if $verbose_mode == 1
+     puts "Information:\tUsing ISO "+iso_file
+  end
 else
   iso_file=""
 end
 
+# Get architecture if given
+
 if opt["a"]
   client_arch=opt["a"]
   client_arch=client_arch.downcase
+  if $verbose_mode == 1
+     puts "Information:\tSetting architecture to "+client_arch
+  end
 else
   client_arch=""
 end
 
+# If given -Z destroy ZFS filesystems as part of unconfigure
+
 if opt["Z"]
   $destroy_fs=1
+  if $verbose_mode == 1
+     puts "Warning:\tDestroying ZFS filesystems"+client_arch
+  end
 end
+
+# If given -R use alternate repos
 
 if opt["R"]
   $use_alt_repo=1
 end
+
+# If given -D choose defaults for questions
 
 if opt["D"]
   $use_defaults=1
@@ -366,143 +409,93 @@ if opt["D"]
   end
 end
 
-if opt["l"]
-  linux_distro=opt["l"]
-else
-  linux_distro=""
-end
+# Handle AI, KS, or JS
 
-if opt["r"]
-  linux_version=opt["r"]
-else
-  linux_version=""
-end
-
-# Routines for AI (Solaris 11)
-
-if opt["A"]
-  if opt["L"] and opt["S"]
-    list_ai_services()
-    exit
+if opt["A"] or opt["K"] or opt["J"]
+  # Set function
+  if opt["A"]
+    funct="ai"
   end
-  if opt["W"]
-    if !opt["n"]
-      puts "Warning:\tNo service name"
-      exit
-    else
-      service_name=opt["n"]
-      service_base_name=get_service_base_name(service_name)
-    end
-    add_apache_proxy(publisher_host,publisher_port,service_base_name)
-    exit
+  if opt["K"]
+    funct="ks"
   end
-  if opt["z"]
-    if !opt["R"]
-      unconfigure_ai_service(service_name)
+  if opt["J"]
+    funct="js"
+  end
+  # Handle server related functions
+  if opt ["S"]
+    # List server services
+    if opt["L"]
+      eval"[list_#{funct}_services()]"
       exit
     end
+    # Unconfigure server services
+    if opt["z"]
+      eval"[unconfigure_#{funct}_services(service_name)]"
+      exit
+    end
+    eval"[configure_#{funct}_server(client_arch,publisher_host,publisher_port,service_name,iso_file)]"
+    exit
   end
+  # Handle client related services
   if opt["d"]
-    client_name=opt["d"]
-    unconfigure_ai_client(client_name,service_name,client_mac)
-  else
-    if opt["L"] and opt["C"]
-      list_ai_clients()
-      exit
-    end
-    if !opt["S"] and !opt["C"] and !opt["R"]
-      check_client_arch(client_arch)
-    end
-    if opt["S"] or opt["C"] or opt["R"]
-      if opt["R"]
-        if !opt["S"]
-          if opt["z"]
-            unconfigure_alt_pkg_repo(service_name)
-          else
-            configure_alt_pkg_repo(publisher_host,publisher_port,service_name)
-          end
-        end
-      end
-      if opt ["C"] or opt["S"]
-        if !opt["C"]
-          configure_ai_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
-        end
-        configure_ai_client_services(client_arch,publisher_host,publisher_port,service_name)
-      end
-    else
-      if opt["c"]
-        check_client_mac(client_mac)
-        check_client_arch(client_arch)
-        check_client_ip(client_ip)
-        configure_ai_client(client_name,client_arch,client_mac,client_ip)
-      end
-    end
-  end
-end
-
-# Routines for Kickstart (Linux)
-
-if opt["K"]
-  if opt["W"]
-    if opt["z"]
-      remove_apache_alias(service_name)
-    else
-      add_apache_alias(service_name)
-    end
+    eval"[unconfigure_#{funct}_client(client_name,client_mac,service_name)]"
     exit
   end
-  if opt["R"] and !opt["S"] and !opt["c"]
-    check_ks_service_name(service_name)
-    if opt["z"]
-      unconfigure_alt_pkg_ks(service_name)
-    else
-      configure_alt_pkg_ks(service_name)
-    end
-    exit
-  end
-  if opt["S"]
-    if opt["P"]
-      if opt["z"]
-        unconfigure_ks_pxeboot(service_name)
-      else
-        configure_ks_pxeboot(service_name)
-      end
-      exit
-    end
-    if opt['L']
-      list_ks_services()
-      exit
-    end
-    if opt["z"]
-      unconfigure_ks_server(service_name)
-    else
-      check_linux_distro(linux_distro)
-      configure_ks_server(linux_distro,linux_version)
-    end
-  else
-    if opt['L']
-      list_ks_clients()
-      exit
-    end
-    if !opt["d"]
-      check_client_mac(client_mac)
-      check_client_ip(client_ip)
-      check_ks_service_name(service_name)
-    end
+  # Perform maintenance related functions
+  if opt["M"]
+    # Handle PXE services
     if opt["P"]
       if opt["d"]
-        un_configure_ks_client_pxeboot(client_name)
-        un_configure_ks_client_dhcp(client_name)
-      else
-        configure_ks_client_pxeboot(client_name,client_mac,service_name)
-        configure_ks_client_dhcp(client_name,client_mac,client_ip)
+        eval"[unconfigure_#{funct}_pxeclient(client_name)]"
+      end
+      if opt["z"]
+        eval"[unconfigure_#{funct}_pxeboot(service_name)]"
+      end
+      if opt["n"]
+        eval"[configure_#{funct}_pxeboot(service_name)]"
       end
       exit
     end
-    if opt["z"]
-      unconfigure_ks_client(client_name)
-    else
-      configure_ks_client(client_name,client_mac,client_ip,service_name)
+    # Handle web services
+    if opt["W"]
+      eval"[add_#{funct}_service(service_name)]"
+      if opt["n"]
+        eval"[add_#{funct}_apache(service_name)]"
+      else
+        eval"[remove_#{funct}_apache(service_name)]"
+      end
+      exit
+    end
+    if opt["C"]
+      eval"[configure_#{funct}_client_services(client_arch,publisher_host,publisher_port,service_name)]"
+      exit
+    end
+    # Handle alternate packages (non OS install related)
+    if opt["R"]
+      if opt["z"]
+        eval"[unconfigure_#{funct}_alt_repo()]"
+      else
+        eval"[configure_#{funct}_alt_repo()]"
+      end
+      exit
+    end
+  end
+  # Perform client related functions
+  if opt["C"]
+      # List clients
+    if opt["L"]
+      eval"[list_#{funct}_clients()]"
+      exit
+    end
+    if opt["c"]
+      if !opt["K"]
+        check_client_arch(client_arch)
+      end
+      check_client_mac(client_mac)
+      check_client_arch(client_arch)
+      check_client_ip(client_ip)
+      eval"[configure_#{funct}_client(client_name,client_arch,client_arch,client_ip)]"
     end
   end
 end
