@@ -265,6 +265,8 @@ Manually unconfigure alternate repo (normally done as part of server unconfigura
 Session Examples
 ================
 
+Configuring AI Server:
+
 	# ./modest.rb -A -S -v
 	Information:    Running in verbose mode
 	Setting:        Work directory to /opt/modest
@@ -434,9 +436,9 @@ Session Examples
 	Importing:      /opt/modest/sol_11_1_sparc_ai_manifest.xml to service sol_11_1_sparc
 	Executing:      installadm update-manifest -n sol_11_1_sparc -m orig_default -f /opt/modest/sol_11_1_sparc_ai_manifest.xml	
 
-Creating a client:
+Creating an AI client:
 
-	# ./modest.rb -A -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -v
+	# ./modest.rb -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -v
 	Information:    Running in verbose mode
 	Setting:        Work directory to /opt/modest
 	Determining:    Default host IP
@@ -716,3 +718,61 @@ Client profile manifest:
 	    <instance name="default" enabled="true"/>
 	  </service>
 	</service_bundle>
+
+Example Kickstart config:
+
+	# kickstart file for centos59vm01 - modest 0.6.2
+	text
+	install
+	cdrom
+	url --url=http://192.168.1.191/centos_5_9
+	lang en_US.UTF-8
+	langsupport --default=en_US.UTF-8 en_US.UTF-8
+	keyboard us
+	network --device eth0 --bootproto static --ip 192.168.1.194 --netmask 255.255.255.0 --gateway 192.168.1.254 --nameserver 8.8.8.8 --hostname centos59vm01
+	rootpw --iscrypted $1$W0QbHjDm$mgVU.lVRzN6KyWGzMLxxy1
+	selinux --enforcing
+	authconfig --enableshadow --enablemd5
+	timezone Australia/Melbourne
+	bootloader --location=mbr
+	clearpart --all --drives=sda --initlabel
+	part /boot --fstype ext3 --size=100 --ondisk=sda
+	part pv.2 --size=0 --grow --ondisk=sda
+	volgroup VolGroup00 --pesize=32768 pv.2
+	logvol swap --fstype swap --name=LogVol01 --vgname=VolGroup00 --size=512 --grow --maxsize=1024
+	logvol / --fstype ext3 --name=LogVol00 --vgname=VolGroup00 --size=1024 --grow
+	reboot
+	
+	%packages
+	@ core
+	grub
+	e2fsprogs
+	lvm2
+	kernel-devel
+	kernel-headers
+	libselinux-ruby
+	tk
+
+	%post
+	groupadd wheel
+	groupadd sysadmin
+	useradd -p $1$36WEOLla$.kaa3v72sGfxpg34pYg051 -g sysadmin -G wheel -d /home/sysadmin -m sysadmin
+	echo "sysadmin	ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+	mkdir /tmp/rpms
+	cd /tmp/rpms
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-1.8.7.374-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-augeas-0.4.1-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-rgen-0.6.5-1.el5.noarch.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-shadow-1.4.1-7.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-libs-1.8.7.374-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/rubygem-json-1.5.5-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/augeas-libs-0.10.0-4.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/rubygems-1.3.7-1.el5.noarch.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-rdoc-1.8.7.374-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-irb-1.8.7.374-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/facter-1.7.4-1.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/hiera-1.3.0-1.el5.noarch.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9/alt/puppet-3.4.1-1.el5.noarch.rpm
+	rpm -i *.rpm
+	cd /tmp
+	rm -rf /tmp/rpms
