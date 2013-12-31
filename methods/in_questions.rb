@@ -17,7 +17,7 @@ def process_questions(q_struct,q_order)
       else
         answer=q_struct[key].value
         if $verbose_mode == 1
-          puts "Setting "+key+" to "+answer
+          puts "Setting:\t"+key+" to "+answer
         end
         correct=1
       end

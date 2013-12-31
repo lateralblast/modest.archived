@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.6.4
+# Version:      0.6.5
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -121,7 +121,7 @@ def print_usage()
   puts "Configure all AI services:\t"+$script+" -A -S"
   puts "Configure KS services:\t\t"+$script+" -K -S"
   puts "Unconfigure AI service:\t\t"+$script+" -A -S -z sol_11_1"
-  puts "Unconfigure KS service:\t\t"+$script+" -K -S -z rh_5_9"
+  puts "Unconfigure KS service:\t\t"+$script+" -K -S -z centos_5_9"
   puts
   puts "Maintenance related examples:"
   puts
@@ -296,9 +296,11 @@ end
 
 if opt["e"]
   client_mac=opt["e"]
-end
-if $verbose_mode == 1
-   puts "Information:\tClient ethernet MAC address is "+client_mac
+  if $verbose_mode == 1
+     puts "Information:\tClient ethernet MAC address is "+client_mac
+  end
+else
+  client_mac=""
 end
 
 # Routines for Jumpstart (Solaris 10 and earlier)
@@ -342,11 +344,11 @@ end
 
 if opt["i"]
   client_ip=opt["i"]
+  if $verbose_mode == 1
+     puts "Information:\tClient IP address is "+client_ip
+  end
 else
-  client_mac=""
-end
-if $verbose_mode == 1
-   puts "Information:\tClient IP address is "+client_ip
+  client_ip=""
 end
 
 # Get/set service name
@@ -431,15 +433,10 @@ if opt["A"] or opt["K"] or opt["J"]
     end
     # Unconfigure server services
     if opt["z"]
-      eval"[unconfigure_#{funct}_services(service_name)]"
+      eval"[unconfigure_#{funct}_server(service_name)]"
       exit
     end
     eval"[configure_#{funct}_server(client_arch,publisher_host,publisher_port,service_name,iso_file)]"
-    exit
-  end
-  # Handle client related services
-  if opt["d"]
-    eval"[unconfigure_#{funct}_client(client_name,client_mac,service_name)]"
     exit
   end
   # Perform maintenance related functions
@@ -447,13 +444,13 @@ if opt["A"] or opt["K"] or opt["J"]
     # Handle PXE services
     if opt["P"]
       if opt["d"]
-        eval"[unconfigure_#{funct}_pxeclient(client_name)]"
+        eval"[unconfigure_#{funct}_pxe_client(client_name)]"
       end
       if opt["z"]
-        eval"[unconfigure_#{funct}_pxeboot(service_name)]"
+        eval"[unconfigure_#{funct}_pxe_boot(service_name)]"
       end
       if opt["n"]
-        eval"[configure_#{funct}_pxeboot(service_name)]"
+        eval"[configure_#{funct}_pxe_boot(service_name)]"
       end
       exit
     end
@@ -461,9 +458,9 @@ if opt["A"] or opt["K"] or opt["J"]
     if opt["W"]
       eval"[add_#{funct}_service(service_name)]"
       if opt["n"]
-        eval"[add_#{funct}_apache(service_name)]"
+        eval"[add_#{funct}_apache_entry(service_name)]"
       else
-        eval"[remove_#{funct}_apache(service_name)]"
+        eval"[remove_#{funct}_apache_entry -service_name)]"
       end
       exit
     end
@@ -483,9 +480,14 @@ if opt["A"] or opt["K"] or opt["J"]
   end
   # Perform client related functions
   if opt["C"]
-      # List clients
+    # List clients
     if opt["L"]
       eval"[list_#{funct}_clients()]"
+      exit
+    end
+    # Unconfigure client
+    if opt["d"]
+      eval"[unconfigure_#{funct}_client(client_name,client_mac,service_name)]"
       exit
     end
     if opt["c"]
@@ -495,7 +497,7 @@ if opt["A"] or opt["K"] or opt["J"]
       check_client_mac(client_mac)
       check_client_arch(client_arch)
       check_client_ip(client_ip)
-      eval"[configure_#{funct}_client(client_name,client_arch,client_arch,client_ip)]"
+      eval"[configure_#{funct}_client(client_name,client_arch,client_mac,client_ip,service_name)]"
     end
   end
 end

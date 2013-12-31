@@ -127,3 +127,5 @@
 # Fixed post package install
 # 0.6.4: Tue 31 Dec 2013 14:44:05 EST
 # Cleaned up main routine and made code more modular
+# 0.6.5: Tue 31 Dec 2013 16:41:31 EST
+# Cleaned up code

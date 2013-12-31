@@ -138,7 +138,7 @@ end
 
 # Import a profile and associate it with a client
 
-def import_ai_profile(output_file,client_name,client_mac,service_name)
+def import_ai_client_profile(output_file,client_name,client_mac,service_name)
   message="Creating:\tProfile for client "+client_name+" with MAC address "+client_mac
   command="installadm create-profile -n #{service_name} -f #{output_file} -p #{client_name} -c mac='#{client_mac}'"
   output=execute_command(message,command)
@@ -147,7 +147,7 @@ end
 
 # Code to change timeout and default menu entry in grub
 
-def update_grub_cfg(client_mac)
+def update_ai_client_grub_cfg(client_mac)
   copy=[]
   netboot_mac=client_mac.gsub(/:/,"")
   netboot_mac="01"+netboot_mac
@@ -210,7 +210,7 @@ end
 
 # Fix entry for client so it is given a fixed IP rather than one from the range
 
-def fix_client_dhcpd_entry(client_name,client_mac,client_ip)
+def update_ai_client_dhcpd_entry(client_name,client_mac,client_ip)
   copy=[]
   client_mac=client_mac.gsub(/:/,"")
   client_mac=client_mac.upcase
@@ -240,8 +240,8 @@ def create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
   command="installadm create-client -n #{service_name} -e #{client_mac}"
   output=execute_command(message,command)
   if client_arch.match(/i386/) or client_arch.mach(/i386/)
-    fix_client_dhcpd_entry(client_name,client_mac,client_ip)
-    update_grub_cfg(client_mac)
+    update_ai_client_dhcpd_entry(client_name,client_mac,client_ip)
+    update_ai_client_grub_cfg(client_mac)
     smf_service="svc:/network/dhcp/server:ipv4"
     refresh_smf_service(smf_service)
   end
@@ -250,16 +250,16 @@ end
 
 # Main code to actually add a client
 
-def configure_ai_client(client_name,client_arch,client_mac,client_ip)
+def configure_ai_client(client_name,client_arch,client_mac,client_ip,service_name)
   # Populate questions for AI profile
-  (q_struct,q_order)=populate_ai_profile_questions(client_ip,client_name)
+  (q_struct,q_order)=populate_ai_client_profile_questions(client_ip,client_name)
   q_struct=process_questions(q_struct,q_order)
   output_file=$work_dir+"/"+client_name+"_ai_profile.xml"
-  create_ai_profile(q_struct,output_file)
-  puts "Configuring client "+client_name+" with MAC address "+client_mac
+  create_ai_client_profile(q_struct,output_file)
+  puts "Configuring:\tClient "+client_name+" with MAC address "+client_mac
   output_file=$work_dir+"/"+client_name+"_ai_profile.xml"
   service_name=get_service_name(client_arch)
-  import_ai_profile(output_file,client_name,client_mac,service_name)
+  import_ai_client_profile(output_file,client_name,client_mac,service_name)
   create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
   return
 end

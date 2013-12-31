@@ -1,7 +1,7 @@
 
 # Output AI profile XML
 
-def create_ai_profile(q_struct,output_file)
+def create_ai_client_profile(q_struct,output_file)
   xml_output=[]
   xml=Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.declare! :DOCTYPE, :service_bundle, :SYSTEM, "/usr/share/lib/xml/dtd/service_bundle.dtd.1"

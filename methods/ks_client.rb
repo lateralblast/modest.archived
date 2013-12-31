@@ -1,9 +1,15 @@
 
 # Kickstart client routines
 
+def unconfigure_ks_client(client_name,client_mac,service_name)
+  unconfigure_ks_pxe_client(client_name)
+  unconfigure_ks_dhcp_client(client_name)
+  return
+end
+
 # Unconfigure client PXE boot
 
-def un_configure_ks_client_pxeboot(client_name)
+def unconfigure_ks_pxe_client(client_name)
   client_mac=get_client_mac(client_name)
   tftp_pxe_file=client_mac.gsub(/:/,"")
   tftp_pxe_file=tftp_pxe_file.upcase
@@ -24,12 +30,13 @@ def un_configure_ks_client_pxeboot(client_name)
     command="rm #{pxe_cfg_file}"
     output=execute_command(message,command)
   end
+  unconfigure_ks_dhcp_client(client_name)
   return
 end
 
 # Unconfigure client DHCPd
 
-def un_configure_ks_client_dhcp(client_name)
+def unconfigure_ks_dhcp_client(client_name)
   dhcpd_file="/etc/inet/dhcpd4.conf"
   message="Checking:\fIf DHCPd configuration contains "+client_name
   command="cat #{dhcpd_file} | grep '#{client_name}'"
@@ -45,7 +52,7 @@ end
 
 # Configure client PXE boot
 
-def configure_ks_client_pxeboot(client_name,client_mac,service_name)
+def configure_ks_client_pxe_boot(client_name,client_mac,service_name)
   tftp_pxe_file=client_mac.gsub(/:/,"")
   tftp_pxe_file=tftp_pxe_file.upcase
   tftp_pxe_file="01"+tftp_pxe_file+".pxelinux"
@@ -106,7 +113,7 @@ end
 
 # Configure client
 
-def configure_ks_client(client_name,client_mac,client_ip,service_name)
+def configure_ks_client(client_name,client_arch,client_mac,client_ip,service_name)
   repo_version_dir=$repo_base_dir+"/"+service_name
   (q_struct,q_order)=populate_ks_questions(service_name,client_name,client_ip)
   process_questions(q_struct,q_order)

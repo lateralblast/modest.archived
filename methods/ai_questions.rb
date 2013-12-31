@@ -85,7 +85,7 @@ end
 
 # Populate array of structs with profile questions
 
-def populate_ai_profile_questions(client_ip,client_name)
+def populate_ai_client_profile_questions(client_ip,client_name)
   q_struct={}
   q_order=[]
 

@@ -56,7 +56,7 @@ end
 
 # Configure PXE boot
 
-def configure_ks_pxeboot(service_name)
+def configure_ks_pxe_boot(service_name)
   pxe_boot_dir=$tftp_dir+"/"+service_name
   test_dir=pxe_boot_dir+"/usr"
   if !File.directory?(test_dir)
@@ -94,7 +94,7 @@ end
 
 # Unconfigure PXE boot
 
-def unconfigure_pxe_boot(service_name)
+def unconfigure_ks_pxe_boot(service_name)
   return
 end
 
@@ -136,7 +136,7 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
     repo_version_dir=$repo_base_dir+"/"+release_dir
     add_apache_alias(release_dir)
     configure_ks_repo(iso_file,repo_version_dir)
-    configure_ks_pxeboot(release_dir)
+    configure_ks_pxe_boot(release_dir)
   end
   return
 end

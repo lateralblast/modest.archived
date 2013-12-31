@@ -4,7 +4,7 @@
 # Delecte a service
 # This will also delete all the clients under it
 
-def unconfigure_ai_service(service_name)
+def unconfigure_ai_server(service_name)
   service_base_name=get_service_base_name(service_name)
   smf_service_name="svc:/application/pkg/server:"+service_base_name
   smf_service_test=%x[svcs -a |grep '#{smf_service_name}']
@@ -182,7 +182,7 @@ def get_ai_solaris_release(repo_version_dir)
     else
       puts "Warning:\tCould not find "+release_file
       puts "Warning:\tCould not verify solaris release from repository"
-      puts "Seeting:\tSolaris release to 11"
+      puts "Setting:\tSolaris release to 11"
       iso_repo_version="11"
     end
   end
