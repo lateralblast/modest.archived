@@ -25,7 +25,7 @@ require 'builder'
 # Set up some global variables/defaults
 
 $script=$0
-$options="F:a:c:d:e:f:h:i:l:n:p:r:z:ACDJKLMPRSVWZtv"
+$options="F:a:c:d:e:f:h:i:n:p:z:ACDJKLMPRSVWZtv"
 $verbose_mode=0
 $test_mode=0
 $iso_base_dir="/export/isos"

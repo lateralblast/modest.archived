@@ -138,7 +138,7 @@ This saves time and reduces the likely hood of error. It also makes sure sensibl
 Usage
 =====
 
-	modest.rb -[F:a:c:d:e:f:i:n:z:ACJKSVWtv]
+	Usage: ./modest.rb -[F:a:c:d:e:f:h:i:n:p:z:ACDJKLMPRSVWZtv]
 
 	-h: Display usage
 	-c: Create client
@@ -146,13 +146,14 @@ Usage
 	-A: Configure AI
 	-J: Configure Jumpstart
 	-K: Configure Kicstart
+	-M: Maintenance mode
 	-a: Architecture
 	-e: Client MAC Address
-	-i: Clinet IP Address
+	-i: Client IP Address
 	-S: Configure server
 	-C: Configure client services
-	-P: Puplisher server port number
-	-H: Puplisher server Hostname/IP
+	-p: Puplisher server port number
+	-h: Puplisher server Hostname/IP
 	-t: Run it test mode (in client mode create files but don't import them)
 	-v: Run in verbose mode
 	-f: ISO file to use
@@ -160,96 +161,106 @@ Usage
 	-d: Delete client
 	-n: Set service name
 	-z: Delete service name
+	-M: Maintenance operations
+	-P: Configure PXE
 	-W: Update apache proxy entry for AI
 	-R: Use alternate package repository (additional packages like puppet)
-	-Z: Destroy ZFS filesystem as part of uninstallation	
+	-Z: Destroy ZFS filesystem as part of uninstallation
 	-D: Use default values for questions
 
 Solaris 11 AI Examples
 ======================
 
-Unconfigure AI service:              
+Unconfigure AI service sol_11_!:              
 
-	modest.rb -A -z sol_11_1
+	modest.rb -A -S -z sol_11_1
 
-Configure all AI services:
+Configure AI services (if not repos exist, it will search /export/isos for valid repo isos to build repo):
          
 	modest.rb -A -S
 
-Configure AI client services:   
+Manually configure AI client services only (for i386 - normally done as part of previous step):   
 
-	modest.rb -A -C -a i386
+	modest.rb -A -M -C -a i386
 
-Create AI client:               
+Create AI client:
 
-	modest.rb -A -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193
+	modest.rb -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193
 
 Create AI client (use default values):               
 
-	modest.rb -A -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -D
+	modest.rb -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -D
 
-Update AI proxy:
+Manually update AI proxy (normally done as part of configuring the server)
 
-	modest.rb -A -W -n sol_11_1
+	modest.rb -A -M -W -n sol_11_1
 
 Delete AI client:
 
-	modest.rb -A -d sol11u01vm03
+	modest.rb -A -C -d sol11u01vm03
 
-Configure alternate repo:
+Configure alternate repo as part of server setup:
 
-	modest.rb -A -R
+	modest.rb -A -S -R
 
-Unconfigure alternate repo:
+Manually configure alternate repo only (normally done as part of configuring the server):
 
-	modest.rb -A -R -z sol_11_1_alt
+	modest.rb -A -M -R
+
+Manually unconfigure alternate repo only (normally done as part of unconfiguring the server):: 
+
+	modest.rb -A -M -R -z sol_11_1_alt
 
 Linux Kickstart Examples
 ========================
 
+Configure KS services (will search for CentOS and RedHat ISOs in /export/isos and set up services if the don't exist):		
+
+	modest.rb -K -S 
+
 Unconfigure KS service:		
 
-	modest.rb -A -z rh_5_9
-
-Configure KS services:		
-
-	modest.rb -K -S -l redhat
+	modest.rb -K -S -z centos_5_9
 
 Create KS client:		
 
-	modest.rb -K -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9
+	modest.rb -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9
 
-Configure KS client PXE:	
+Manually configure KS client PXE (normally done as part of client setup):	
 
-	modest.rb -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9
+	modest.rb -K -M -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9
 
-Enable KS alias:		
+Manually configure KS apache alias (normally done as part of server configuration):		
 
-	modest.rb -K -W -n centos_5_9
+	modest.rb -K -M -W -n centos_5_9
 
-Disable KS alias:		
+Manually unconfigure KS apache alias:		
 
-	modest.rb -K -W -z centos_5_9
+	modest.rb -K -M -W -z centos_5_9
 
-Delete KS client:		
+Unconfigure KS client:		
 
-	modest.rb -K -d centos59vm01
+	modest.rb -K -C -d centos59vm01
 
-Import PXE files:		
+Manually Import PXE files (normally dones as part of server configuration):		
 
-	modest.rb -K -P -n centos_5_9
+	modest.rb -K -M -P -n centos_5_9
 
-Unconfigure KS client PXE:	
+Manually unconfigure KS client PXE (normally dones as part of client unconfiguration):	
 
-	modest.rb -K -P -d centos59vm01
+	modest.rb -K -M -P -d centos59vm01
 
-Configure alternate repo:	
+Configure alternate repo as part of server setup:	
 
-	modest.rb -K -R -n centos_5_9
+	modest.rb -K -S -R -n centos_5_9
 
-Unconfigure alternate repo:	
+Manually configure alternate repo:
 
-	modest.rb -K -R -z centos_5_9
+	modest.rb -K -M -R -n centos_5_9
+
+Manually unconfigure alternate repo (normally done as part of server unconfiguration):	
+
+	modest.rb -K -M -R -z centos_5_9
 
 Session Examples
 ================
