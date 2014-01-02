@@ -155,3 +155,5 @@
 # Added code to unconfigure jumpstart client
 # 0.7.8: Fri  3 Jan 2014 05:23:24 EST
 # Fixed jumpstart sysidcfg
+# 0.7.9: Fri  3 Jan 2014 07:55:58 EST
+# Updated usage information

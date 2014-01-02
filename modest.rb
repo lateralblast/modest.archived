@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.7.8
+# Version:      0.7.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -128,10 +128,13 @@ def print_usage()
   puts ""
   puts "List AI services:\t\t"+$script+" -A -S -L"
   puts "List KS services:\t\t"+$script+" -K -S -L"
+  puts "List JS services:\t\t"+$script+" -J -S -L"
   puts "Configure all AI services:\t"+$script+" -A -S"
   puts "Configure KS services:\t\t"+$script+" -K -S"
+  puts "Configure JS services:\t\t"+$script+" -J -S"
   puts "Unconfigure AI service:\t\t"+$script+" -A -S -z sol_11_1"
   puts "Unconfigure KS service:\t\t"+$script+" -K -S -z centos_5_9"
+  puts "Unconfigure JS service:\t\t"+$script+" -J -S -z sol_10_11"
   puts
   puts "Maintenance related examples:"
   puts
@@ -145,17 +148,18 @@ def print_usage()
   puts "Enable KS alias:\t\t"+$script+" -K -M -W -n centos_5_9"
   puts "Disable KS alias:\t\t"+$script+" -K -M -W -z centos_5_9"
   puts "Import KS PXE files:\t\t"+$script+" -K -M -P -n centos_5_9"
-  puts "Delete $KS PXE files:\t\t"+$script+" -K -M -P -z centos_5_9"
+  puts "Delete KS PXE files:\t\t"+$script+" -K -M -P -z centos_5_9"
   puts "Unconfigure KS client PXE:\t"+$script+" -K -M -P -d centos59vm01"
   puts
   puts "Client related examples:"
   puts
   puts "List AI clients:\t\t"+$script+" -A -C -L"
   puts "List KS clients:\t\t"+$script+" -K -C -L"
+  puts "List JS clients:\t\t"+$script+" -J -C -L"
   puts "Create AI client:\t\t"+$script+" -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
   puts "Delete AI client:\t\t"+$script+" -A -C -d sol11u01vm03"
-  puts "Create JS client:\t\t"+$script+" -J -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -n sol_10_11"
-  puts "Delete JS client:\t\t"+$script+" -J -C -d sol11u01vm03"
+  puts "Create JS client:\t\t"+$script+" -J -C -c sol10u11vm01 -e 00:0C:29:FA:0C:7F -a i386 -i 192.168.1.193 -n sol_10_11"
+  puts "Delete JS client:\t\t"+$script+" -J -C -d sol10u11vm01"
   puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
   puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
   puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
