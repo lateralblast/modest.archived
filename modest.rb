@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.6.5
+# Version:      0.7.5
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -25,7 +25,7 @@ require 'builder'
 # Set up some global variables/defaults
 
 $script=$0
-$options="F:a:c:d:e:f:h:i:n:p:z:ACDJKLMPRSVWZtv"
+$options="F:a:c:d:e:f:h:i:m:n:p:z:ACDJKLMPRSVWZtv"
 $verbose_mode=0
 $test_mode=0
 $iso_base_dir="/export/isos"
@@ -45,7 +45,10 @@ $default_timezone="Australia/Victoria"
 $default_terminal="sun"
 $default_keymap="US-English"
 $default_environment="en_US.UTF-8"
+$default_system_locale="C"
 $default_nameserver="8.8.8.8"
+$default_name_service="none"
+$default_security="none"
 $default_netmask="255.255.255.0"
 $default_search="local"
 $default_files="files"
@@ -62,6 +65,12 @@ $default_admin_home="/export/home"
 $default_admin_shell="/export/home"
 $default_admin_uid="200"
 $tftp_dir="/etc/netboot"
+$default_cluster="SUNWCprog"
+$default_install="initial_install"
+$default_nfsv4_domain="dynamic"
+$default_auto_reg="disable"
+$q_struct={}
+$q_order=[]
 
 # Declare some package versions
 
@@ -95,7 +104,8 @@ def print_usage()
   puts "-M: Maintenance mode"
   puts "-a: Architecture"
   puts "-e: Client MAC Address"
-  puts "-i: Clinet IP Address"
+  puts "-i: Client IP Address"
+  puts "-m: Client model (used for Jumpstart)"
   puts "-S: Configure server"
   puts "-C: Configure client services"
   puts "-p: Puplisher server port number"
@@ -144,6 +154,8 @@ def print_usage()
   puts "List KS clients:\t\t"+$script+" -K -C -L"
   puts "Create AI client:\t\t"+$script+" -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
   puts "Delete AI client:\t\t"+$script+" -A -C -d sol11u01vm03"
+  puts "Create JS client:\t\t"+$script+" -J -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -n sol_10_11"
+  puts "Delete JS client:\t\t"+$script+" -J -C -d sol11u01vm03"
   puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
   puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
   puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
@@ -380,6 +392,9 @@ end
 if opt["a"]
   client_arch=opt["a"]
   client_arch=client_arch.downcase
+  if client_arch.match(/sun4u|sun4v/)
+    client_arch="sparc"
+  end
   if $verbose_mode == 1
      puts "Information:\tSetting architecture to "+client_arch
   end
@@ -408,6 +423,26 @@ if opt["D"]
   $use_defaults=1
   if $verbose_mode == 1
     puts "Information:\tSetting answers to defaults"
+  end
+end
+
+# Get/set system model
+
+if opt["m"]
+  client_model=opt["m"]
+  client_model=client_model.downcase
+else
+  if opt["J"] and !opt["L"]
+    if client_arch.match(/i386/)
+      puts "Warning:\tNo client model specified"
+      puts "Setting:\tClient model to vmware"
+      client_model="vmware"
+    else
+      puts "Warning:\tClient model not specified"
+      exit
+    end
+  else
+    client_model=""
   end
 end
 
@@ -495,9 +530,11 @@ if opt["A"] or opt["K"] or opt["J"]
         check_client_arch(client_arch)
       end
       check_client_mac(client_mac)
-      check_client_arch(client_arch)
+      if !opt["K"]
+        check_client_arch(client_arch)
+      end
       check_client_ip(client_ip)
-      eval"[configure_#{funct}_client(client_name,client_arch,client_mac,client_ip,service_name)]"
+      eval"[configure_#{funct}_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)]"
     end
   end
 end

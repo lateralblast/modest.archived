@@ -113,37 +113,35 @@ end
 
 # Configure client
 
-def configure_ks_client(client_name,client_arch,client_mac,client_ip,service_name)
+def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
   repo_version_dir=$repo_base_dir+"/"+service_name
-  (q_struct,q_order)=populate_ks_questions(service_name,client_name,client_ip)
-  process_questions(q_struct,q_order)
+  populate_ks_questions(service_name,client_name,client_ip)
+  process_questions()
   output_file=repo_version_dir+"/"+client_name+".cfg"
   if File.exists?(output_file)
     File.delete(output_file)
   end
-  output_ks_header(q_struct,q_order,output_file)
+  output_ks_header(output_file)
   pkg_list=populate_ks_pkg_list()
   output_ks_pkg_list(pkg_list,output_file)
-  post_list=populate_ks_post_list(q_struct,service_name)
+  post_list=populate_ks_post_list(service_name)
   output_ks_post_list(post_list,output_file)
-#  post_list=populate_ks_post_list()
-#  output_ks_post_list(post_list,output_file)
   if output_file
     FileUtils.chmod(0755,output_file)
   end
-  configure_ks_client_pxeboot(client_name,client_mac,service_name)
+  configure_ks_client_pxe_boot(client_name,client_mac,service_name)
   configure_ks_client_dhcp(client_name,client_mac,client_ip)
   return
 end
 
 # Populate post commands
 
-def populate_ks_post_list(q_struct,service_name)
+def populate_ks_post_list(service_name)
   post_list=[]
-  admin_group=q_struct["admingroup"].value
-  admin_user=q_struct["adminuser"].value
-  admin_crypt=q_struct["admincrypt"].value
-  admin_home=q_struct["adminhome"].value
+  admin_group=$q_struct["admingroup"].value
+  admin_user=$q_struct["adminuser"].value
+  admin_crypt=$q_struct["admincrypt"].value
+  admin_home=$q_struct["adminhome"].value
   post_list.push("groupadd #{admin_group}")
   post_list.push("groupadd #{admin_user}")
   post_list.push("useradd -p #{admin_crypt} -g #{admin_user} -G #{admin_group} -d #{admin_home} -m #{admin_user}")
@@ -192,17 +190,18 @@ end
 
 # Output the Kickstart file header
 
-def output_ks_header(q_struct,q_order,output_file)
+def output_ks_header(output_file)
   if $verbose_mode == 1
     puts "Creating:\tKickstart file "+output_file
   end
   file=File.open(output_file, 'a')
-  q_order.each do |key|
-    if q_struct[key].type == "output"
-      if q_struct[key].parameter == ""
-        output=q_struct[key].value+"\n"
+  $q_order.each do |key|
+    if $q_struct[key].type == "output"
+      if $q_struct[key].parameter == ""
+        output=$q_struct[key].value+"\n"
       else
-        output=q_struct[key].parameter+" "+q_struct[key].value+"\n"
+        output=$q_struct[key].parameter+" "+$q_struct[key].value+"\n"
+        puts output
       end
       file.write(output)
     end
@@ -255,7 +254,6 @@ def list_ks_clients()
       end
     end
   end
-  return
   return
 end
 

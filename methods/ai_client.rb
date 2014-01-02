@@ -83,15 +83,15 @@ end
 
 # Get the user home directory ZFS dataset name
 
-def get_account_home_zfs_dataset(q_struct)
-  account_home_zfs_dataset="/export/home/"+q_struct["account_login"].value
+def get_account_home_zfs_dataset()
+  account_home_zfs_dataset="/export/home/"+$q_struct["account_login"].value
   return account_home_zfs_dataset
 end
 
 # Get the user home directory mount point
 
-def get_account_home_mountpoint(q_struct)
-  account_home_mountpoint="/export/home/"+q_struct["account_login"].value
+def get_account_home_mountpoint()
+  account_home_mountpoint="/export/home/"+$q_struct["account_login"].value
   return account_home_mountpoint
 end
 
@@ -180,9 +180,9 @@ def configure_ai_client_services(client_arch,publisher_host,publisher_port,servi
   puts
   service_list=[]
   # Populate questions for AI manifest
-  (q_struct,q_order)=populate_ai_manifest_questions(publisher_host,publisher_port)
+  populate_ai_manifest_questions(publisher_host,publisher_port)
   # Process questions
-  q_struct=process_questions(q_struct,q_order)
+  process_questions()
   # Set name of AI manifest file to create and import
   if service_name.match(/i386|sparc/)
     service_list[0]=service_name
@@ -201,7 +201,7 @@ def configure_ai_client_services(client_arch,publisher_host,publisher_port,servi
   service_list.each do |service_name|
     output_file=$work_dir+"/"+service_name+"_ai_manifest.xml"
     # Create manifest
-    create_ai_manifest(q_struct,output_file)
+    create_ai_manifest(output_file)
     # Import AI manifest
     import_ai_manifest(output_file,service_name)
   end
@@ -250,12 +250,12 @@ end
 
 # Main code to actually add a client
 
-def configure_ai_client(client_name,client_arch,client_mac,client_ip,service_name)
+def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
   # Populate questions for AI profile
-  (q_struct,q_order)=populate_ai_client_profile_questions(client_ip,client_name)
-  q_struct=process_questions(q_struct,q_order)
+  populate_ai_client_profile_questions(client_ip,client_name)
+  process_questions()
   output_file=$work_dir+"/"+client_name+"_ai_profile.xml"
-  create_ai_client_profile(q_struct,output_file)
+  create_ai_client_profile(output_file)
   puts "Configuring:\tClient "+client_name+" with MAC address "+client_mac
   output_file=$work_dir+"/"+client_name+"_ai_profile.xml"
   service_name=get_service_name(client_arch)

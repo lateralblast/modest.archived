@@ -4,7 +4,7 @@
 
 # Question/config structure
 
-Ai=Struct.new(:question, :value, :valid, :eval)
+Ai=Struct.new(:question, :ask, :value, :valid, :eval)
 
 # Get the running repository version
 # If running in test mode use a default version so client creation

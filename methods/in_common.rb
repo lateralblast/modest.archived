@@ -1,6 +1,42 @@
 
 # Code common to all services
 
+# Add hosts file entry
+
+def add_hosts_file_entry(client_name,client_ip)
+  hosts_file="/etc/hosts"
+  backup_file=hosts_file+".pre."+client_name
+  message="Checking:\tHosts file for "+client_name
+  command="cat #{hosts_file} |grep '^#{client_name}'"
+  output=execute_command(message,command)
+  if !output.match(/#{client_name}/) and !output.match(/#{client_ip}/)
+    message="Archiving:\tHosts File "+hosts_file+" to "+backup_file
+    command="cp #{hosts_file} #{backup_file}"
+    output=execute_command(message,command)
+  else
+    if output.match(/#{client_name}/) or output.match(/#{client_ip}/)
+      puts "Warning:\tHosts file contains existing entry for "+client_ip+" or "+client_ip
+    end
+  end
+  return
+end
+
+# Remove hosts file entry
+
+def remove_hosts_file_entry(client_name,client_ip)
+  hosts_file="/etc/hosts"
+  restore_file=hosts_file+".pre."+client_name
+  message="Checking:\tHosts file for "+client_name
+  command="cat #{hosts_file} |grep '^#{client_name}'"
+  output=execute_command(message,command)
+  if File.exists(restore_file)
+    message="Restoring:\tHosts backup file "+restore_file+" to "+hosts_file
+    command="cp #{restore_file} #{hosts_file}"
+    output=execute_command(message,command)
+  end
+  return
+end
+
 # Wget a file
 
 def wget_file(file_url,file_name)

@@ -3,7 +3,7 @@
 
 # Question/config structure
 
-Ks=Struct.new(:type, :question, :parameter, :value, :valid, :eval)
+Ks=Struct.new(:type, :question, :ask, :parameter, :value, :valid, :eval)
 
 # Client Linux distribution
 

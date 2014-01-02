@@ -129,3 +129,23 @@
 # Cleaned up main routine and made code more modular
 # 0.6.5: Tue 31 Dec 2013 16:41:31 EST
 # Cleaned up code
+# 0.6.6: Wed  1 Jan 2014 05:50:33 EST
+# Added initial Jumpstart server code
+# 0.6.7: Wed  1 Jan 2014 10:52:42 EST
+# Added code to enable NFS and TFTP server for Jumpstart
+# 0.6.8: Wed  1 Jan 2014 12:10:26 EST
+# Added code to fix rm_install_client and check scripts
+# 0.6.9: Thu  2 Jan 2014 06:33:57 EST
+# Initial code for Jumpstart questions
+# 0.7.0: Thu  2 Jan 2014 11:50:42 EST
+# Initial code for Jumpstart clients
+# 0.7.1: Thu  2 Jan 2014 13:15:37 EST
+# Fixed model handling for Jumpstart
+# 0.7.2: Thu  2 Jan 2014 13:34:03 EST
+# Fixed Solaris update checking
+# 0.7.3: Thu  2 Jan 2014 14:32:16 EST
+# Fixed jumpstart file system list
+# 0.7.4: Thu  2 Jan 2014 20:48:05 EST
+# Fixed question processing
+# 0.7.5: Thu  2 Jan 2014 21:21:32 EST
+# Code cleanup and initial Jumpstart client configuration file support

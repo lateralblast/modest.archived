@@ -1,7 +1,7 @@
 
 # Output AI profile XML
 
-def create_ai_client_profile(q_struct,output_file)
+def create_ai_client_profile(output_file)
   xml_output=[]
   xml=Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.declare! :DOCTYPE, :service_bundle, :SYSTEM, "/usr/share/lib/xml/dtd/service_bundle.dtd.1"
@@ -9,59 +9,59 @@ def create_ai_client_profile(q_struct,output_file)
     xml.service(:version => "1", :name => "system/config-user") {
       xml.instance(:enabled => "true", :name => "default") {
         xml.property_group(:name => "root_account") {
-          xml.propval(:type => "astring", :value => q_struct["root_password"].value, :name => "password")
-          xml.propval(:type => "astring", :value => q_struct["root_type"].value, :name => "type")
-          xml.propval(:type => "astring", :value => q_struct["root_expire"].value, :name => "expire")
+          xml.propval(:type => "astring", :value => $q_struct["root_password"].value, :name => "password")
+          xml.propval(:type => "astring", :value => $q_struct["root_type"].value, :name => "type")
+          xml.propval(:type => "astring", :value => $q_struct["root_expire"].value, :name => "expire")
         }
         xml.property_group(:name => "user_account") {
-          xml.propval(:type => "astring", :value => q_struct["account_login"].value, :name => "login")
-          xml.propval(:type => "astring", :value => q_struct["account_password"].value, :name => "password")
-          xml.propval(:type => "astring", :value => q_struct["account_description"].value, :name => "description")
-          xml.propval(:type => "astring", :value => q_struct["account_shell"].value, :name => "shell")
-          xml.propval(:value => q_struct["account_uid"].value, :name => "uid")
-          xml.propval(:value => q_struct["account_gid"].value, :name => "gid")
-          xml.propval(:type => "astring", :value => q_struct["account_type"].value, :name => "type")
-          xml.propval(:type => "astring", :value => q_struct["account_roles"].value, :name => "roles")
-          xml.propval(:type => "astring", :value => q_struct["account_profiles"].value, :name => "profiles")
-          xml.propval(:type => "astring", :value => q_struct["account_sudoers"].value, :name => "sudoers")
-          xml.propval(:type => "astring", :value => q_struct["account_expire"].value, :name => "expire")
-          #xml.propval(:type => "astring", :value => q_struct["account_home_zfs_dataset"].value, :name => "home_zfs_dataset")
-          #xml.propval(:type => "astring", :value => q_struct["account_home_mountpoint"].value, :name => "home_mountpoint")
+          xml.propval(:type => "astring", :value => $q_struct["account_login"].value, :name => "login")
+          xml.propval(:type => "astring", :value => $q_struct["account_password"].value, :name => "password")
+          xml.propval(:type => "astring", :value => $q_struct["account_description"].value, :name => "description")
+          xml.propval(:type => "astring", :value => $q_struct["account_shell"].value, :name => "shell")
+          xml.propval(:value => $q_struct["account_uid"].value, :name => "uid")
+          xml.propval(:value => $q_struct["account_gid"].value, :name => "gid")
+          xml.propval(:type => "astring", :value => $q_struct["account_type"].value, :name => "type")
+          xml.propval(:type => "astring", :value => $q_struct["account_roles"].value, :name => "roles")
+          xml.propval(:type => "astring", :value => $q_struct["account_profiles"].value, :name => "profiles")
+          xml.propval(:type => "astring", :value => $q_struct["account_sudoers"].value, :name => "sudoers")
+          xml.propval(:type => "astring", :value => $q_struct["account_expire"].value, :name => "expire")
+          #xml.propval(:type => "astring", :value => $q_struct["account_home_zfs_dataset"].value, :name => "home_zfs_dataset")
+          #xml.propval(:type => "astring", :value => $q_struct["account_home_mountpoint"].value, :name => "home_mountpoint")
         }
       }
     }
     xml.service(:name => "system/identity", :version => "1") {
       xml.instance(:name => "node", :enabled => "true") {
         xml.property_group(:name => "config") {
-          xml.propval(:name => "nodename", :value => q_struct["system_identity"].value)
+          xml.propval(:name => "nodename", :value => $q_struct["system_identity"].value)
         }
       }
     }
     xml.service(:name => "system/console-login", :version => "1") {
       xml.instance(:name => "default", :enabled => "true") {
         xml.property_group(:name => "ttymon") {
-          xml.propval(:name => "terminal_type", :value => q_struct["system_console"].value)
+          xml.propval(:name => "terminal_type", :value => $q_struct["system_console"].value)
         }
       }
     }
     xml.service(:name => "system/keymap", :version => "1") {
       xml.instance(:name => "default", :enabled => "true") {
         xml.property_group(:name => "keymap") {
-          xml.propval(:name => "layout", :value => q_struct["system_keymap"].value)
+          xml.propval(:name => "layout", :value => $q_struct["system_keymap"].value)
         }
       }
     }
     xml.service(:name => "system/timezone", :version => "1") {
       xml.instance(:name => "default", :enabled => "true") {
         xml.property_group(:name => "timezone") {
-          xml.propval(:name => "localtime", :value => q_struct["system_timezone"].value)
+          xml.propval(:name => "localtime", :value => $q_struct["system_timezone"].value)
         }
       }
     }
     xml.service(:name => "system/environment", :version => "1") {
       xml.instance(:name => "default", :enabled => "true") {
         xml.property_group(:name => "environment") {
-          xml.propval(:name => "LC_ALL", :value => q_struct["system_environment"].value)
+          xml.propval(:name => "LC_ALL", :value => $q_struct["system_environment"].value)
         }
       }
     }
@@ -75,13 +75,13 @@ def create_ai_client_profile(q_struct,output_file)
     xml.service(:name => "network/install", :version => "1", :type => "service") {
       xml.instance(:name => "default", :enabled => "true") {
         xml.property_group(:name => "install_ipv4_interface", :type => "application") {
-          xml.propval(:type => "astring", :name => "name", :value => q_struct["ipv4_interface_name"].value)
+          xml.propval(:type => "astring", :name => "name", :value => $q_struct["ipv4_interface_name"].value)
           xml.propval(:type => "astring", :name => "address_type", :value => "static")
-          xml.propval(:type => "net_address_v4", :name => "static_address", :value => q_struct["ipv4_static_address"].value)
-          xml.propval(:type => "net_address_v4", :name => "default_route", :value => q_struct["ipv4_default_route"].value)
+          xml.propval(:type => "net_address_v4", :name => "static_address", :value => $q_struct["ipv4_static_address"].value)
+          xml.propval(:type => "net_address_v4", :name => "default_route", :value => $q_struct["ipv4_default_route"].value)
         }
         xml.property_group(:name => "install_ipv6_interface", :type => "application") {
-          xml.propval(:type => "astring", :name => "name", :value => q_struct["ipv6_interface_name"].value)
+          xml.propval(:type => "astring", :name => "name", :value => $q_struct["ipv6_interface_name"].value)
           xml.propval(:type => "astring", :name => "address_type", :value => "addrconf")
           xml.propval(:type => "astring", :name => "stateless", :value => "yes")
           xml.propval(:type => "astring", :name => "stateful", :value => "yes")
@@ -92,12 +92,12 @@ def create_ai_client_profile(q_struct,output_file)
       xml.property_group(:name => "config") {
         xml.property(:name => "nameserver") {
           xml.net_address_list {
-            xml.value_node(:value => q_struct["dns_nameserver"].value)
+            xml.value_node(:value => $q_struct["dns_nameserver"].value)
           }
         }
         xml.property(:name => "search") {
           xml.astring_list {
-            xml.value_node(:value => q_struct["dns_search"].value)
+            xml.value_node(:value => $q_struct["dns_search"].value)
           }
         }
       }
@@ -105,8 +105,8 @@ def create_ai_client_profile(q_struct,output_file)
     }
     xml.service(:name => "system/name-service/switch", :version => "1") {
       xml.property_group(:name => "config") {
-        xml.propval(:name => "default", :value => q_struct["dns_files"].value)
-        xml.propval(:name => "host", :value => q_struct["dns_hosts"].value)
+        xml.propval(:name => "default", :value => $q_struct["dns_files"].value)
+        xml.propval(:name => "host", :value => $q_struct["dns_hosts"].value)
       }
       xml.instance(:name => "default", :enabled => "true")
     }
@@ -121,7 +121,7 @@ end
 
 # Output AI manifest XML
 
-def create_ai_manifest(q_struct,output_file)
+def create_ai_manifest(output_file)
   xml_output=[]
   xml=Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.declare! :DOCTYPE, :auto_install, :SYSTEM, "file:///usr/share/install/ai.dtd.1"
@@ -146,12 +146,12 @@ def create_ai_manifest(q_struct,output_file)
         }
         xml.source {
           xml.publisher(:name => "solaris") {
-            xml.origin(:name => q_struct["publisher_url"].value)
+            xml.origin(:name => $q_struct["publisher_url"].value)
           }
         }
         xml.software_data(:action => "install") {
-          xml.name(q_struct["repo_url"].value)
-          xml.name(q_struct["server_install"].value)
+          xml.name($q_struct["repo_url"].value)
+          xml.name($q_struct["server_install"].value)
           xml.name("pkg:/runtime/ruby-18")
         }
       }
@@ -166,11 +166,11 @@ def create_ai_manifest(q_struct,output_file)
           }
           xml.source {
             xml.publisher(:name => "solaris") {
-              xml.origin(:name => q_struct["alt_publisher_url"].value)
+              xml.origin(:name => $q_struct["alt_publisher_url"].value)
             }
           }
           xml.software_data(:action => "install") {
-            xml.name(q_struct["puppet_install"].value)
+            xml.name($q_struct["puppet_install"].value)
           }
         }
       end
