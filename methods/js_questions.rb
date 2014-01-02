@@ -482,7 +482,7 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
     type      = "output",
     question  = "ZFS File System Layout",
     ask       = "yes",
-    parameter = "rpool",
+    parameter = "pool",
     value     = "get_js_zfs_layout()",
     valid     = "",
     eval      = "no"

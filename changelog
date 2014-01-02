@@ -149,3 +149,7 @@
 # Fixed question processing
 # 0.7.5: Thu  2 Jan 2014 21:21:32 EST
 # Code cleanup and initial Jumpstart client configuration file support
+# 0.7.6: Fri  3 Jan 2014 04:17:02 EST
+# Added code check rules and create rules.ok file for jumpstart client
+# 0.7.7: Fri  3 Jan 2014 04:54:18 EST
+# Added code to unconfigure jumpstart client

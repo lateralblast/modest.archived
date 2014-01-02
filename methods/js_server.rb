@@ -111,7 +111,7 @@ end
 
 def fix_js_rm_client(repo_version_dir,os_version)
   file_name="rm_install_client"
-  rm_script=repo_version_dir+"/Solaris_"+os_version+"/Tools/"+file_name
+  file=repo_version_dir+"/Solaris_"+os_version+"/Tools/"+file_name
   backup_file=rm_script+".modest"
   if !File.exists?(backup_file)
     message="Archiving:\tRemove install script "+rm_script+" to "+backup_file
@@ -149,7 +149,7 @@ end
 
 def fix_js_check(repo_version_dir,os_version)
   file_name="check"
-  rm_script=repo_version_dir+"/Solaris_"+os_version+"/Misc/jumpstart_sample/"+file_name
+  file=repo_version_dir+"/Solaris_"+os_version+"/Misc/jumpstart_sample/"+file_name
   backup_file=rm_script+".modest"
   if !File.exists?(backup_file)
     message="Archiving:\tCheck script "+rm_script+" to "+backup_file
