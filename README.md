@@ -6,7 +6,7 @@ Multi Os Deployment Engine Server Tool
 A Ruby script to configure server and client configuration for PXE/DHCP and BOOTP based install services, eg:
 
 - Solaris 11 base Automated Installer (AI) service
-- Solaris 10 and early Jumpstart services (to be added)
+- Solaris 10 and early Jumpstart services
 - Linux Kickstart services
 
 This script is a wrapper which sits on top of the exisitng tools.
@@ -17,9 +17,8 @@ By doing this the script reduces the time lost debugging installations,
 which in complex environments can be time consuming.
 It also reduces the time to deploy servers and increases the consistency of installations.
 
-When Jumpstart and Kickstart support is completed, this script will provide the ability
-to install Solaris 2.6-10, Solaris 11, and Linux all from one server and OS,
-consolidating and simplifying installation services. 
+This script will provide the ability to install Solaris 2.6-10, Solaris 11, 
+and Linux all from one server and OS, consolidating and simplifying installation services. 
 This can be hosted on a physical server or a VM. 
 In particular it can be used with a laptop to provide installation services via a cross-over cable.
 This is expecially useful for resolving issues with servers and installing firmware.
@@ -53,6 +52,11 @@ Linux Kickstart
 - Includes code for optionally installing additional packages
   - Automatically downloads Puppet packages
   - Add packages to post installation
+
+Solaris Jumpstart:
+
+- Automatically tries to determine boot and mirror disk ids based on model
+- Automatically tires to determine kernel architecture (e.g. sun4u / sun4v) based on model
 
 All:
 
@@ -150,6 +154,7 @@ Usage
 	-a: Architecture
 	-e: Client MAC Address
 	-i: Client IP Address
+	-m: Client model (used for Jumpstart)
 	-S: Configure server
 	-C: Configure client services
 	-p: Puplisher server port number
@@ -261,6 +266,37 @@ Manually configure alternate repo:
 Manually unconfigure alternate repo (normally done as part of server unconfiguration):	
 
 	modest.rb -K -M -R -z centos_5_9
+
+Solaris Jumpstart Examples
+==========================
+
+Unconfigure Jumpstart service sol_11_!:              
+
+	modest.rb -J -S -z sol_11_1
+
+Configure Jumpstart services (if not repos exist, it will search /export/isos for valid repo isos to build repo):
+         
+	modest.rb -J -S
+
+Manually configure Jumpstart client services only (for i386 - normally done as part of previous step):   
+
+	modest.rb -J -M -C -a i386
+
+Create Jumpstart client:
+
+	modest.rb -J -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193
+
+Create Jumpstart client (use default values):               
+
+	modest.rb -J -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -D
+
+Manually update Jumpstart proxy (normally done as part of configuring the server)
+
+	modest.rb -J -M -W -n sol_11_1
+
+Delete AI client:
+
+	modest.rb -A -C -d sol11u01vm03
 
 Session Examples
 ================
@@ -776,3 +812,29 @@ Example Kickstart config:
 	rpm -i *.rpm
 	cd /tmp
 	rm -rf /tmp/rpms
+
+Example Jumpstart sysidcfg file:
+
+	network_interface=e1000g0 { hostname=sol11u01vm03 default_route=192.168.1.254 ip_address=192.168.1.193 netmask=255.255.255.0 ipv6_protocol=no }
+	timezone Australia/Victoria
+	system_locale C
+	terminal sun-cmd
+	timeserver localhost
+	root_password=1l9UlhW5sssddd
+	name_service none
+	nfsv4_domain dynamic
+	security_policy none
+	auto_reg disable
+
+Example Jumpstart machine file:
+
+	install_type initial_install
+	cluster SUNWcall
+	partitioning explicit
+	pool rpool auto auto auto any
+	bootenv installbe bename sol_10_11_i386
+
+Example Jumpstart rules file:
+
+	karch i386 - machine.sol11u01vm03 -
+
