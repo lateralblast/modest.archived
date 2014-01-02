@@ -816,15 +816,15 @@ Example Kickstart config:
 Example Jumpstart sysidcfg file:
 
 	network_interface=e1000g0 { hostname=sol11u01vm03 default_route=192.168.1.254 ip_address=192.168.1.193 netmask=255.255.255.0 ipv6_protocol=no }
-	timezone Australia/Victoria
+	timezone=Australia/Victoria
 	system_locale C
-	terminal sun-cmd
-	timeserver localhost
+	terminal=sun-cmd
+	timeserver=localhost
 	root_password=1l9UlhW5sssddd
-	name_service none
-	nfsv4_domain dynamic
-	security_policy none
-	auto_reg disable
+	name_service=none
+	nfsv4_domain=dynamic
+	security_policy=none
+	auto_reg=disable
 
 Example Jumpstart machine file:
 

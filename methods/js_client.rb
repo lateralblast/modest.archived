@@ -14,7 +14,7 @@ def output_js_sysid(client_name,sysid_file)
       if $q_struct[key].parameter == ""
         output=$q_struct[key].value+"\n"
       else
-        output=$q_struct[key].parameter+" "+$q_struct[key].value+"\n"
+        output=$q_struct[key].parameter+"="+$q_struct[key].value+"\n"
       end
     end
     file.write(output)

@@ -122,9 +122,9 @@ end
 def get_js_network()
   os_version=$q_struct["os_version"].value
   if Integer(os_version) > 7
-    network="network_interface="+$q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" ipv6_protocol="+$q_struct["ipv6_protocol"].value+" }"
+    network=$q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" ipv6_protocol="+$q_struct["ipv6_protocol"].value+" }"
   else
-    network="network_interface="+$q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" }"
+    network=$q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" }"
   end
   return network
 end
