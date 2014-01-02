@@ -270,9 +270,9 @@ Manually unconfigure alternate repo (normally done as part of server unconfigura
 Solaris Jumpstart Examples
 ==========================
 
-Unconfigure Jumpstart service sol_11_!:              
+Unconfigure Jumpstart service sol_10_11:              
 
-	modest.rb -J -S -z sol_11_1
+	modest.rb -J -S -z sol_10_11
 
 Configure Jumpstart services (if not repos exist, it will search /export/isos for valid repo isos to build repo):
          
@@ -284,19 +284,19 @@ Manually configure Jumpstart client services only (for i386 - normally done as p
 
 Create Jumpstart client:
 
-	modest.rb -J -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193
+	modest.rb -J -C -c sol10u11vm01 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193
 
 Create Jumpstart client (use default values):               
 
-	modest.rb -J -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -D
+	modest.rb -J -C -c sol10u11vm01 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193 -D
 
 Manually update Jumpstart proxy (normally done as part of configuring the server)
 
-	modest.rb -J -M -W -n sol_11_1
+	modest.rb -J -M -W -n sol_10_11
 
 Delete AI client:
 
-	modest.rb -A -C -d sol11u01vm03
+	modest.rb -A -C -d sol10u11vm01
 
 Session Examples
 ================
