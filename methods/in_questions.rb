@@ -13,10 +13,12 @@ def process_questions()
           $q_struct[key].value=new_value.join
         end
         if $use_defaults == 0
-          print $q_struct[key].question+"? [ "+$q_struct[key].value+" ] "
-          answer=gets.chomp
+          question=$q_struct[key].question+"? [ "+$q_struct[key].value+" ] "
+          print question
+          answer=$stdin.gets.chomp
         else
           answer=$q_struct[key].value
+          evaluate_answer(key,answer)
           if $verbose_mode == 1
             puts "Setting:\t"+key+" to "+answer
           end

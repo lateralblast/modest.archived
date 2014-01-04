@@ -1,58 +1,28 @@
 
 # Kickstart client routines
 
-def unconfigure_ks_client(client_name,client_mac,service_name)
-  unconfigure_ks_pxe_client(client_name)
-  unconfigure_ks_dhcp_client(client_name)
-  return
-end
+# List ks clients
 
-# Unconfigure client PXE boot
-
-def unconfigure_ks_pxe_client(client_name)
-  client_mac=get_client_mac(client_name)
-  tftp_pxe_file=client_mac.gsub(/:/,"")
-  tftp_pxe_file=tftp_pxe_file.upcase
-  tftp_pxe_file="01"+tftp_pxe_file+".pxelinux"
-  tftp_pxe_file=$tftp_dir+"/"+tftp_pxe_file
-  if File.exists?(tftp_pxe_file)
-    message="Removing:\tPXE boot file "+tftp_pxe_file+" for "+client_name
-    command="rm #{tftp_pxe_file}"
-    output=execute_command(message,command)
+def list_ks_clients()
+  puts "Kickstart clients:"
+  service_list=Dir.entries($repo_base_dir)
+  service_list.each do |service_name|
+    if service_name.match(/centos|redhat/)
+      repo_version_dir=$repo_base_dir+"/"+service_name
+      client_list=Dir.entries(repo_version_dir)
+      client_list.each do |client_name|
+        if client_name.match(/\.cfg$/)
+          puts client_name+" service = "+service_name
+        end
+      end
+    end
   end
-  pxe_cfg_dir=$tftp_dir+"/pxelinux.cfg"
-  pxe_cfg_file=client_mac.gsub(/:/,"-")
-  pxe_cfg_file="01-"+pxe_cfg_file
-  pxe_cfg_file=pxe_cfg_file.downcase
-  pxe_cfg_file=pxe_cfg_dir+"/"+pxe_cfg_file
-  if File.exists?(pxe_cfg_file)
-    message="Removing:\tPXE boot config file "+pxe_cfg_file+" for "+client_name
-    command="rm #{pxe_cfg_file}"
-    output=execute_command(message,command)
-  end
-  unconfigure_ks_dhcp_client(client_name)
-  return
-end
-
-# Unconfigure client DHCPd
-
-def unconfigure_ks_dhcp_client(client_name)
-  dhcpd_file="/etc/inet/dhcpd4.conf"
-  message="Checking:\fIf DHCPd configuration contains "+client_name
-  command="cat #{dhcpd_file} | grep '#{client_name}'"
-  output=execute_command(message,command)
-  if output.match(/#{client_name}/)
-    restore_file=dhcpd_file+".no_"+client_name
-    message="Restoring:\tDHCPd config file "+restore_file+" to "+dhcpd_file
-    command="cp #{restore_file} #{dhcpd_file}"
-  end
-  restart_dhcpd()
   return
 end
 
 # Configure client PXE boot
 
-def configure_ks_client_pxe_boot(client_name,client_mac,service_name)
+def configure_ks_pxe_client(client_name,client_mac,service_name)
   tftp_pxe_file=client_mac.gsub(/:/,"")
   tftp_pxe_file=tftp_pxe_file.upcase
   tftp_pxe_file="01"+tftp_pxe_file+".pxelinux"
@@ -78,40 +48,58 @@ def configure_ks_client_pxe_boot(client_name,client_mac,service_name)
   file.write("  APPEND initrd=#{initrd_file} ks=#{ks_url}\n")
   file.close
   if $verbose_mode == 1
-    puts "Created:\tPXE menu filw "+pxe_cfg_file+":"
+    puts "Created:\tPXE menu file "+pxe_cfg_file+":"
     system("cat #{pxe_cfg_file}")
   end
   return
 end
 
-# Configure DHCP entry
+# Unconfigure client PXE boot
 
-def configure_ks_client_dhcp(client_name,client_mac,client_ip)
+def unconfigure_ks_pxe_client(client_name)
+  client_mac=get_client_mac(client_name)
+  if !client_mac
+    puts "Warning:\tNo MAC Address entry found for "+client_name
+    exit
+  end
   tftp_pxe_file=client_mac.gsub(/:/,"")
   tftp_pxe_file=tftp_pxe_file.upcase
   tftp_pxe_file="01"+tftp_pxe_file+".pxelinux"
-  dhcpd_file="/etc/inet/dhcpd4.conf"
-  message="Checking:\fIf DHCPd configuration contains "+client_name
-  command="cat #{dhcpd_file} | grep '#{client_name}'"
-  output=execute_command(message,command)
-  if !output.match(/#{client_name}/)
-    backup_file=dhcpd_file+".no_"+client_name
-    message="Archiving:\tDHCPd config file "+dhcpd_file+" to "+backup_file
-    command="cp #{dhcpd_file} #{backup_file}"
-    file=File.open(dhcpd_file,"a")
-    file.write("\n")
-    file.write("host #{client_name} {\n")
-    file.write("  fixed-address #{client_ip};\n")
-    file.write("  hardware ethernet #{client_mac};\n")
-    file.write("  filename \"#{tftp_pxe_file}\";\n")
-    file.write("}\n")
-    file.close
+  tftp_pxe_file=$tftp_dir+"/"+tftp_pxe_file
+  if File.exists?(tftp_pxe_file)
+    message="Removing:\tPXE boot file "+tftp_pxe_file+" for "+client_name
+    command="rm #{tftp_pxe_file}"
+    output=execute_command(message,command)
   end
-  restart_dhcpd()
+  pxe_cfg_dir=$tftp_dir+"/pxelinux.cfg"
+  pxe_cfg_file=client_mac.gsub(/:/,"-")
+  pxe_cfg_file="01-"+pxe_cfg_file
+  pxe_cfg_file=pxe_cfg_file.downcase
+  pxe_cfg_file=pxe_cfg_dir+"/"+pxe_cfg_file
+  if File.exists?(pxe_cfg_file)
+    message="Removing:\tPXE boot config file "+pxe_cfg_file+" for "+client_name
+    command="rm #{pxe_cfg_file}"
+    output=execute_command(message,command)
+  end
+  unconfigure_ks_dhcp_client(client_name)
   return
 end
 
-# Configure client
+# Configure DHCP entry
+
+def configure_ks_dhcp_client(client_name,client_mac,client_ip,service_name)
+  add_dhcp_client(client_name,client_mac,client_ip,service_name)
+  return
+end
+
+# Unconfigure DHCP client
+
+def unconfigure_ks_dhcp_client(client_name)
+  remove_dhcp_client(client_name)
+  return
+end
+
+# Configure Kickstart client
 
 def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
   repo_version_dir=$repo_base_dir+"/"+service_name
@@ -129,8 +117,16 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
   if output_file
     FileUtils.chmod(0755,output_file)
   end
-  configure_ks_client_pxe_boot(client_name,client_mac,service_name)
-  configure_ks_client_dhcp(client_name,client_mac,client_ip)
+  configure_ks_pxe_client(client_name,client_mac,service_name)
+  configure_ks_dhcp_client(client_name,client_mac,client_ip,service_name)
+  return
+end
+
+# Unconfigure Kickstart client
+
+def unconfigure_ks_client(client_name,client_mac,service_name)
+  unconfigure_ks_pxe_client(client_name)
+  unconfigure_ks_dhcp_client(client_name)
   return
 end
 
@@ -235,25 +231,6 @@ def output_ks_post_list(post_list,output_file)
     file.write(output)
   end
   file.close
-  return
-end
-
-# List ks clients
-
-def list_ks_clients()
-  puts "Kickstart clients:"
-  service_list=Dir.entries($repo_base_dir)
-  service_list.each do |service_name|
-    if service_name.match(/centos|redhat/)
-      repo_version_dir=$repo_base_dir+"/"+service_name
-      client_list=Dir.entries(repo_version_dir)
-      client_list.each do |client_name|
-        if client_name.match(/\.cfg$/)
-          puts client_name+" service = "+service_name
-        end
-      end
-    end
-  end
   return
 end
 

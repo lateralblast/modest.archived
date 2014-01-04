@@ -1,6 +1,108 @@
 
 # Code common to all services
 
+# Add hosts entry
+
+def add_hosts_entry(client_name,client_ip)
+  hosts_file="/etc/hosts"
+  message="Checking:\tHosts file for "+client_name
+  command="cat #{hosts_file} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
+  output=execute_command(message,command)
+  if !output.match(/#{client_name}/)
+    backup_file(hosts_file)
+    message="Adding:\tHost "+client_name+" to "+hosts_file
+    command="echo '#{client_name}\t#{client_ip}' >> #{hosts_file}"
+    output=execute_command(message,command)
+  end
+  return
+end
+
+# Remove hosts entry
+
+def remove_hosts_entry(client_name,client_ip)
+  file_name="/etc/hosts"
+  message="Checking:\tHosts file for "+client_name
+  command="cat #{file_name} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
+  output=execute_command(message,command)
+  copy=[]
+  if output.match(/#{client_name}/)
+    file=IO.readlines(file_name)
+    file.each do |line|
+      if !line.match(/^#{client_ip}/)
+        if !line.mtach(/#{client_name}/)
+          copy.push(line)
+        end
+      end
+    end
+  end
+  File.open(file_name,"w") {|file| file.puts copy}
+  return
+end
+
+# Add host to DHCP config
+
+def add_dhcp_client(client_name,client_mac,client_ip,service_name)
+  tftp_pxe_file=client_mac.gsub(/:/,"")
+  tftp_pxe_file=tftp_pxe_file.upcase
+  if service_name.match(/sol/)
+    suffix=".bios"
+  else
+    suffix=".pxelinux"
+  end
+  tftp_pxe_file="01"+tftp_pxe_file+suffix
+  dhcpd_file="/etc/inet/dhcpd4.conf"
+  message="Checking:\fIf DHCPd configuration contains "+client_name
+  command="cat #{dhcpd_file} | grep '#{client_name}'"
+  output=execute_command(message,command)
+  if !output.match(/#{client_name}/)
+    backup_file(dhcpd_file)
+    file=File.open(dhcpd_file,"a")
+    file.write("\n")
+    file.write("host #{client_name} {\n")
+    file.write("  fixed-address #{client_ip};\n")
+    file.write("  hardware ethernet #{client_mac};\n")
+    file.write("  filename \"#{tftp_pxe_file}\";\n")
+    file.write("}\n")
+    file.close
+  end
+  restart_dhcpd()
+  return
+end
+
+# Remove host from DHCP config
+
+def remove_dhcp_client(client_name)
+  file_name="/etc/inet/dhcpd4.conf"
+  found=0
+  copy=[]
+  file=IO.readlines(file_name)
+  file.each do |line|
+    if line.match(/^host #{client_name}/)
+      found=1
+    end
+    if found == 0
+      copy.push(line)
+    end
+    if found == 1 and line.match(/\}/)
+      found=0
+    end
+  end
+  File.open(file_name,"w") {|file| file.puts copy}
+  return
+end
+
+# Backup file
+
+def backup_file(file_name)
+  date_string=get_date_string()
+  backup_file=File.basename(file_name)+"."+date_string
+  backup_file=$backup_dir+backup_file
+  message="Archiving:\tFile "+file_name+" to "+backup_file
+  command="cp #{file_name} #{backup_file}"
+  output=execute_command(message,command)
+  return
+end
+
 # Add hosts file entry
 
 def add_hosts_file_entry(client_name,client_ip)
@@ -86,7 +188,7 @@ def check_dir_exists(dir_name)
   output=""
   if !File.directory?(dir_name)
     message="Creating:\t"+dir_name
-    command="mkdir #{dir_name}"
+    command="mkdir -p #{dir_name}"
     output=execute_command(message,command)
   end
   return output
@@ -192,29 +294,32 @@ end
 def restart_dhcpd()
   function="refresh"
   smf_service_name="svc:/network/dhcp/server:ipv4"
-  handle_smf_service(function,smf_service_name)
-  return
+  output=handle_smf_service(function,smf_service_name)
+  return output
 end
 
 # Disable SMF service
 
 def disable_smf_service(smf_service_name)
   function="disable"
-  handle_smf_service(function,smf_service_name)
+  output=handle_smf_service(function,smf_service_name)
+  return output
 end
 
 # Enable SMF service
 
 def enable_smf_service(smf_service_name)
   function="enable"
-  handle_smf_service(function,smf_service_name)
+  output=handle_smf_service(function,smf_service_name)
+  return output
 end
 
 # Refresh SMF service
 
 def refresh_smf_service(smf_service_name)
   function="refresh"
-  handle_smf_service(function,smf_service_name)
+  output=handle_smf_service(function,smf_service_name)
+  return output
 end
 
 # Check SMF service
@@ -223,6 +328,7 @@ def check_smf_service(smf_service_name)
   message="Checking:\tService "+smf_service_name
   command="svcs -a |grep '#{smf_service_name}"
   output=execute_command(message,command)
+  return output
 end
 
 # Calculate route
@@ -246,7 +352,7 @@ def check_iso_base_dir(search_string)
   puts "Checking:\t"+$iso_base_dir
   output=check_zfs_fs_exists($iso_base_dir)
   message="Getting:\t"+$iso_base_dir+" contents"
-  command="ls #{$iso_base_dir}/*.iso |grep '#{search_string}'"
+  command="ls #{$iso_base_dir}/*.iso |grep \"#{search_string}\""
   iso_list=execute_command(message,command)
   if !iso_list.grep(/full/)
     puts "Warning:\tNo full repository ISO images exist in "+$iso_base_dir
@@ -343,7 +449,7 @@ def add_apache_alias(service_base_name)
     end
     output=File.open(apache_config_file,"a")
     output.write("<Directory #{repo_version_dir}>\n")
-    output.write("Option Indexes\n")
+    output.write("Options Indexes\n")
     output.write("Allow from #{$default_apache_allow}\n")
     output.write("</Directory>\n")
     output.close
@@ -386,17 +492,21 @@ def mount_iso(iso_file)
   command="mount -F hsfs "+iso_file+" "+$iso_mount_dir
   output=execute_command(message,command)
   if iso_file.match(/sol/)
-    iso_repo_dir=$iso_mount_dir+"/repo"
+    if iso_file.match(/\-ga\-/)
+      iso_test_dir=$iso_mount_dir+"/boot"
+    else
+      iso_test_dir=$iso_mount_dir+"/repo"
+    end
   else
     if iso_file.match(/CentOS/)
-      iso_repo_dir=$iso_mount_dir+"/CentOS"
+      iso_test_dir=$iso_mount_dir+"/CentOS"
     else
       if iso_file.match(/rhel/)
-        iso_repo_dir=$iso_mount_dir+"/RHEL"
+        iso_test_dir=$iso_mount_dir+"/RHEL"
       end
     end
   end
-  if !File.directory?(iso_repo_dir)
+  if !File.directory?(iso_test_dir)
     puts "Warning:\tISO did not mount, or this is not a repository ISO"
     puts "Warning:\t"+iso_repo_dir+" does not exit"
     if $test_mode != 1

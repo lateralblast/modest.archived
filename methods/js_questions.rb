@@ -122,7 +122,7 @@ end
 def get_js_network()
   os_version=$q_struct["os_version"].value
   if Integer(os_version) > 7
-    network=$q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" ipv6_protocol="+$q_struct["ipv6_protocol"].value+" }"
+    network=$q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" protocol_ipv6="+$q_struct["protocol_ipv6"].value+" }"
   else
     network=$q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" }"
   end
@@ -233,6 +233,21 @@ def get_js_dump_size()
     dump_size=$q_struct["memory_size"].value
   end
   return dump_size
+end
+
+# Set password crypt
+
+def set_js_password_crypt(answer)
+  password_crypt=get_password_crypt(answer)
+  $q_struct["root_password"].value=password_crypt
+  return
+end
+
+# Get password crypt
+
+def get_js_password_crypt()
+  password_crypt=$q_struct["root_password"].value
+  return password_crypt
 end
 
 # Populate Jumpstart machine file
@@ -365,6 +380,19 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
   $q_struct[name]=config
   $q_order.push(name)
 
+  name="system_type"
+  config=Js.new(
+    type      = "output",
+    question  = "System Type",
+    ask       = "yes",
+    parameter = "system_type",
+    value     = "server",
+    valid     = "",
+    eval      = ""
+    )
+  $q_struct[name]=config
+  $q_order.push(name)
+
   name="flash_method"
   config=Js.new(
     type      = "",
@@ -425,7 +453,7 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
     question  = "Install Cluser",
     ask       = "yes",
     parameter = "cluster",
-    value     = "SUNWcall",
+    value     = "SUNWCall",
     valid     = "",
     eval      = "no"
     )
@@ -467,7 +495,7 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
         question  = "Root Pool Name",
         ask       = "yes",
         parameter = "",
-        value     = "rpool",
+        value     = $default_zpool,
         valid     = "",
         eval      = "no"
         )
@@ -720,7 +748,7 @@ def populate_js_sysid_questions(client_name,client_ip,client_arch,client_model,o
 
   if Integer(os_version) > 7
 
-    name="ipv6_protocol"
+    name="protocol_ipv6"
     config=Js.new(
       type      = "",
       question  = "IPv6",
@@ -774,6 +802,20 @@ def populate_js_sysid_questions(client_name,client_ip,client_arch,client_model,o
   $q_struct[name]=config
   $q_order.push(name)
 
+
+  name="keyboard"
+  config=Js.new(
+    type      = "output",
+    question  = "Keyboard Type",
+    ask       = "yes",
+    parameter = "keyboard",
+    value     = "US-English",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name]=config
+  $q_order.push(name)
+
   name="terminal"
   config=Js.new(
     type      = "output",
@@ -783,6 +825,32 @@ def populate_js_sysid_questions(client_name,client_ip,client_arch,client_model,o
     value     = "sun-cmd",
     valid     = "",
     eval      = "no"
+    )
+  $q_struct[name]=config
+  $q_order.push(name)
+
+  name="password"
+  config=Js.new(
+    type      = "",
+    question  = "Root password",
+    ask       = "yes",
+    parameter = "",
+    value     = $default_root_password,
+    valid     = "",
+    eval      = "set_js_password_crypt(answer)"
+    )
+  $q_struct[name]=config
+  $q_order.push(name)
+
+  name="root_password"
+  config=Js.new(
+    type      = "output",
+    question  = "Root password (encrypted)",
+    ask       = "yes",
+    parameter = "root_password",
+    value     = "get_password_crypt(q_struct)",
+    valid     = "",
+    eval      = ""
     )
   $q_struct[name]=config
   $q_order.push(name)
@@ -821,8 +889,8 @@ def populate_js_sysid_questions(client_name,client_ip,client_arch,client_model,o
         type      = "output",
         question  = "NFSv4 Domain",
         ask       = "yes",
-        parameter = "nfsv4_domain",
-        value     = $default_nfsv4_domain,
+        parameter = "nfs4_domain",
+        value     = $default_nfs4_domain,
         valid     = "",
         eval      = "no"
         )

@@ -1,30 +1,35 @@
 
 # Jupstart server code
 
-# Configure NFS services
+# Configure NFS service
 
-def configure_js_nfs_services(repo_version_dir)
-  exports_file+"/etc/dfs/dfstab"
-  message="Checking:\tNFS exports file "+exports_file+" for "+repo_version_dir
-  command="cat #{exports_file} | grep #{repo_version_dir}"
+def configure_js_nfs_service(service_name,publisher_host)
+  repo_version_dir=$repo_base_dir+"/"+service_name
+  network_address=publisher_host.split(/\./)[0..2].join(".")+".0"
+  meesage="Enabling:\tNFS share on "+repo_version_dir
+  command="zfs set sharenfs=on #{$default_zpool}#{repo_version_dir}"
   output=execute_command(message,command)
-  if !output.match(/#{repo_version_dir}/)
-    backup_file=exports_file+".prejs"
-    message="Archiving:\tNFS exports file "+exports
-    command="cp #{exports_file} #{backup_file}"
-    output=execute_command(message,command)
-    message="Adding:\tNFS export "+repo_version_dir+" to "+exports_file
-    command"echo 'share -F nfs -o ro,anon=0 #{repo_version_dir}' >> #{exports_file}"
-  end
+  meesage="Setting:\tNFS access rights on "+repo_version_dir
+  command="zfs set share=name=#{service_name},path=#{repo_version_dir},prot=nfs,anon=0,sec=sys,ro=@#{network_address}/24 #{$default_zpool}#{repo_version_dir}"
+  output=execute_command(message,command)
   return
+end
+
+# Unconfigure NFS services
+
+def unconfigure_js_nfs_service(service_name)
+  repo_version_dir=$repo_base_dir+"/"+service_name
+  message="Disabling:\tNFS share on "+repo_version_dir
+  command="zfs set sharenfs=off #{$default_zpool}#{repo_version_dir}"
+  output=execute_command(message,command)
 end
 
 # Configure tftpboot services
 
-def configure_js_tftp_services()
+def configure_js_tftp_service(client_arch,service_name,repo_version_dir,os_version)
   pkg_name="system/boot/network"
   message="Checking:\tBoot server package is installed"
-  command="pkginfo #{pkg_name} |grep Name |awk '{print $2}'"
+  command="pkg info #{pkg_name} |grep Name |awk '{print $2}'"
   output=execute_command(message,command)
   if !output.match(/#{pkg_name}/)
     message="Installing:\tBoot server package"
@@ -51,6 +56,20 @@ def configure_js_tftp_services()
     output=execute_command(message,command)
   end
   enable_smf_service(smf_service_name)
+  boot_dir=netboot_dir+"/"+service_name+"/boot"
+  if !File.directory?(boot_dir)
+    check_dir_exists(boot_dir)
+    source_dir=repo_version_dir+"/boot"
+    message="Copying:\tBoot files from "+source_dir+" to "+boot_dir
+    command="cp -r #{source_dir}/* #{boot_dir}"
+    output=execute_command(message,command)
+  end
+  return
+end
+
+# Unconfigure jumpstart tftpboot services
+
+def unconfigure_js_tftp_service()
   return
 end
 
@@ -64,7 +83,7 @@ def copy_js_sparc_boot_images(repo_version_dir,os_version,os_update)
     boot_list.push("sun4v")
   end
   boot_list.each do |boot_arch|
-    boot_file=repo_version_dir+"/Solaris_"+os_version+"/Boot/platform/"+boot_arch+"/inetboot"
+    boot_file=repo_version_dir+"/Solaris_"+os_version+"/Tools/Boot/platform/"+boot_arch+"/inetboot"
     tftp_file=tftp_dir+"/"+boot_arch+".inetboot.sol_"+os_version+"_"+os_update
     if !File.exists?(boot_file)
       message="Copying:\tBoot image "+boot_file+" to "+tftp_file
@@ -75,25 +94,35 @@ def copy_js_sparc_boot_images(repo_version_dir,os_version,os_update)
   return
 end
 
+# Unconfigure jumpstart repo
+
+def unconfigure_js_repo(service_name)
+  repo_version_dir=$repo_base_dir+"/"+service_name
+  destroy_zfs_fs(repo_version_dir)
+  return
+end
+
 # Configure Jumpstart repo
 
-def configure_js_repo(iso_file,repo_version_dir,os_version)
+def configure_js_repo(iso_file,repo_version_dir,os_version,os_update)
   check_zfs_fs_exists(repo_version_dir)
-  check_dir=$repo_version_dir+"/boot"
+  check_dir=repo_version_dir+"/boot"
   if $verbose_mode == 1
-    puts "Checking:\tDirectory "+check_dir+" exits"
+    puts "Checking:\tDirectory "+check_dir+" exists"
   end
   if !File.directory?(check_dir)
     mount_iso(iso_file)
     check_dir=$iso_mount_dir+"/boot"
     if $verbose_mode == 1
-      puts "Checking:\tDirectory "+check_dir+" exits"
+      puts "Checking:\tDirectory "+check_dir+" exists"
     end
     if File.directory?(check_dir)
-      iso_update=get_js_iso_update($iso_mount_dir)
-      if iso_update != os_update
-        puts "Warning:\tISO update version does not ISO name"
-        return
+      iso_update=get_js_iso_update($iso_mount_dir,os_version)
+      puts iso_update
+      puts os_update
+      if !iso_update.match(/#{os_update}/)
+        puts "Warning:\tISO update version does not match ISO name"
+        exit
       end
       message="Copying:\tISO file "+iso_file+" contents to "+repo_version_dir
       command="cd /cdrom/Solaris_#{os_version}/Tools ; ./setup_install_server #{repo_version_dir}"
@@ -111,13 +140,14 @@ end
 
 def fix_js_rm_client(repo_version_dir,os_version)
   file_name="rm_install_client"
-  file=repo_version_dir+"/Solaris_"+os_version+"/Tools/"+file_name
+  rm_script=repo_version_dir+"/Solaris_"+os_version+"/Tools/"+file_name
   backup_file=rm_script+".modest"
   if !File.exists?(backup_file)
     message="Archiving:\tRemove install script "+rm_script+" to "+backup_file
     command="cp #{rm_script} #{backup_file}"
     output=execute_command(message,command)
-    text=File.read(file)
+    text=File.read(rm_script)
+    copy=[]
     text.each do |line|
       if line.match(/ANS/) and line.match(/sed/) and !line.match(/\{/)
         line=line.gsub(/#/,' #')
@@ -127,7 +157,7 @@ def fix_js_rm_client(repo_version_dir,os_version)
       end
       copy.push(line)
     end
-    File.open(file,"w") {|file| file.puts copy}
+    File.open(rm_script,"w") {|file| file.puts copy}
   end
   return
 end
@@ -149,17 +179,26 @@ end
 
 def fix_js_check(repo_version_dir,os_version)
   file_name="check"
-  file=repo_version_dir+"/Solaris_"+os_version+"/Misc/jumpstart_sample/"+file_name
-  backup_file=rm_script+".modest"
+  check_script=repo_version_dir+"/Solaris_"+os_version+"/Misc/jumpstart_sample/"+file_name
+  backup_file=check_script+".modest"
   if !File.exists?(backup_file)
-    message="Archiving:\tCheck script "+rm_script+" to "+backup_file
-    command="cp #{rm_script} #{backup_file}"
+    message="Archiving:\tCheck script "+check_script+" to "+backup_file
+    command="cp #{check_script} #{backup_file}"
     output=execute_command(message,command)
-    text=File.read(file)
+    text=File.read(check_script)
     copy=text
-    copy[0]="#!/usr/has/bin/sh\n"
-    File.open(file,"w") {|file| file.puts copy}
+    copy[0]="#!/usr/sbin/sh\n"
+    File.open(check_script,"w") {|file| file.puts copy}
   end
+  return
+end
+
+# Unconfigure jumpstart server
+
+def unconfigure_js_server(service_name)
+  unconfigure_js_nfs_service(service_name)
+  unconfigure_js_repo(service_name)
+  unconfigure_js_tftp_service()
   return
 end
 
@@ -167,7 +206,7 @@ end
 
 def configure_js_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
   iso_list=[]
-  search_string="-ga-"
+  search_string="\\-ga\\-"
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)
       iso_list[0]=iso_file
@@ -183,15 +222,22 @@ def configure_js_server(client_arch,publisher_host,publisher_port,service_name,i
     iso_info=iso_info.split(/-/)
     os_version=iso_info[1]
     os_update=iso_info[2]
-    os_arch=iso_info[3]
-    if !solaris_arch.match(/sparc/)
-      solaris_arch="i386"
+    os_update=os_update.gsub(/u/,"")
+    os_arch=iso_info[4]
+    if !os_arch.match(/sparc/)
+      if os_arch.match(/x86/)
+        os_arch="i386"
+      else
+        puts "Warning:\tCould not determine architecture from ISO name"
+        exit
+      end
     end
-    release_dir="sol_"+os_version+"_"+os_update+"_"+os_arch
-    repo_version_dir=$repo_base_dir+"/"+release_dir
-    add_apache_alias(release_dir)
-    configure_js_repo(iso_file,repo_version_dir,os_version)
-    configure_js_tftp_services()
+    service_name="sol_"+os_version+"_"+os_update+"_"+os_arch
+    repo_version_dir=$repo_base_dir+"/"+service_name
+    add_apache_alias(service_name)
+    configure_js_repo(iso_file,repo_version_dir,os_version,os_update)
+    configure_js_tftp_service(client_arch,service_name,repo_version_dir,os_version)
+    configure_js_nfs_service(service_name,publisher_host)
     if os_arch.match(/sparc/)
       copy_js_sparc_boot_images(repo_version_dir,os_version,os_update)
     end

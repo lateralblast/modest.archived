@@ -1,44 +1,23 @@
 
 # Clienbt code for AI
 
-# Delete an AI client
+# List AI services
 
-def unconfigure_ai_client(client_name,client_mac,service_name)
-  if !client_mac.match(/[A-z|0-9]/) or !service_name.match(/[A-z|0-9]/)
-    repo_list=%x[installadm list -p |grep -v '^-' |grep -v '^Service']
-    temp_client_name=""
-    temp_client_mac=""
-    temp_service_name=""
-    repo_list.each do |line|
-      line=line.chomp
-      if line.match(/[A-z|0-9]/)
-        if line.match(/^[A-z|0-9]/)
-          line=line.gsub(/\s+/,"")
-          temp_service_name=line
-        else
-          line=line.gsub(/\s+/,"")
-          if line.match(/mac=/)
-            (temp_client_name,temp_client_mac)=line.split(/mac=/)
-            if temp_client_name.match(/^#{client_name}/)
-              if !service_name.match(/[A-z|0-9]/)
-                service_name=temp_service_name
-              end
-              if !client_mac.match(/[A-z|0-9]/)
-                client_mac=temp_client_mac
-              end
-            end
-          end
-        end
-      end
+def list_ai_clients()
+  puts "Current AI clients:"
+  client_info=%x[installadm list -p |grep -v '^--' |grep -v '^Service']
+  client_info=client_info.split(/\n/)
+  service_name=""
+  client_name=""
+  client_info.each do |line|
+    if line.match(/^[A-z]/)
+      service_name=line
+    else
+      client_name=line
+      client_name=client_name.gsub(/^\s+/,"")
+      client_name=client_name.gsub(/\s+/," ")
+      puts client_name+" service = "+service_name
     end
-  end
-  if client_name.match(/[A-z]/) and service_name.match(/[A-z]/) and client_mac.match(/[A-z]/)
-    message="Deleting:\tClient profile "+client_name+" from "+service_name
-    command="installadm delete-profile -p #{client_name} -n #{service_name}"
-    execute_command(message,command)
-    message="Deleting:\tClient "+client_name+" with MAC address "+client_mac
-    command="installadm delete-client "+client_mac
-    execute_command(message,command)
   end
   return
 end
@@ -264,23 +243,44 @@ def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_mode
   return
 end
 
-# List AI services
+# Unconfigure  AI client
 
-def list_ai_clients()
-  puts "Current AI clients:"
-  client_info=%x[installadm list -p |grep -v '^--' |grep -v '^Service']
-  client_info=client_info.split(/\n/)
-  service_name=""
-  client_name=""
-  client_info.each do |line|
-    if line.match(/^[A-z]/)
-      service_name=line
-    else
-      client_name=line
-      client_name=client_name.gsub(/^\s+/,"")
-      client_name=client_name.gsub(/\s+/," ")
-      puts client_name+" service = "+service_name
+def unconfigure_ai_client(client_name,client_mac,service_name)
+  if !client_mac.match(/[A-z|0-9]/) or !service_name.match(/[A-z|0-9]/)
+    repo_list=%x[installadm list -p |grep -v '^-' |grep -v '^Service']
+    temp_client_name=""
+    temp_client_mac=""
+    temp_service_name=""
+    repo_list.each do |line|
+      line=line.chomp
+      if line.match(/[A-z|0-9]/)
+        if line.match(/^[A-z|0-9]/)
+          line=line.gsub(/\s+/,"")
+          temp_service_name=line
+        else
+          line=line.gsub(/\s+/,"")
+          if line.match(/mac=/)
+            (temp_client_name,temp_client_mac)=line.split(/mac=/)
+            if temp_client_name.match(/^#{client_name}/)
+              if !service_name.match(/[A-z|0-9]/)
+                service_name=temp_service_name
+              end
+              if !client_mac.match(/[A-z|0-9]/)
+                client_mac=temp_client_mac
+              end
+            end
+          end
+        end
+      end
     end
+  end
+  if client_name.match(/[A-z]/) and service_name.match(/[A-z]/) and client_mac.match(/[A-z]/)
+    message="Deleting:\tClient profile "+client_name+" from "+service_name
+    command="installadm delete-profile -p #{client_name} -n #{service_name}"
+    execute_command(message,command)
+    message="Deleting:\tClient "+client_name+" with MAC address "+client_mac
+    command="installadm delete-client "+client_mac
+    execute_command(message,command)
   end
   return
 end

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.7.9
+# Version:      0.8.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -25,7 +25,7 @@ require 'builder'
 # Set up some global variables/defaults
 
 $script=$0
-$options="F:a:c:d:e:f:h:i:m:n:p:z:ACDJKLMPRSVWZtv"
+$options="F:a:c:d:e:f:h:i:m:n:p:z:ACDJKLMPRSVWXZtv"
 $verbose_mode=0
 $test_mode=0
 $iso_base_dir="/export/isos"
@@ -67,10 +67,12 @@ $default_admin_uid="200"
 $tftp_dir="/etc/netboot"
 $default_cluster="SUNWCprog"
 $default_install="initial_install"
-$default_nfsv4_domain="dynamic"
+$default_nfs4_domain="dynamic"
 $default_auto_reg="disable"
 $q_struct={}
 $q_order=[]
+$text_install=1
+$backup_dir
 
 # Declare some package versions
 
@@ -123,6 +125,7 @@ def print_usage()
   puts "-R: Use alternate package repository (additional packages like puppet)"
   puts "-Z: Destroy ZFS filesystem as part of uninstallation"
   puts "-D: Use default values for questions"
+  puts "-X: X Windows based install (default is text based)"
   puts ""
   puts "Server related examples:"
   puts ""
@@ -158,7 +161,7 @@ def print_usage()
   puts "List JS clients:\t\t"+$script+" -J -C -L"
   puts "Create AI client:\t\t"+$script+" -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
   puts "Delete AI client:\t\t"+$script+" -A -C -d sol11u01vm03"
-  puts "Create JS client:\t\t"+$script+" -J -C -c sol10u11vm01 -e 00:0C:29:FA:0C:7F -a i386 -i 192.168.1.193 -n sol_10_11"
+  puts "Create JS client:\t\t"+$script+" -J -C -c sol10u11vm01 -e 00:0C:29:FA:0C:7F -a i386 -i 192.168.1.195 -n sol_10_11"
   puts "Delete JS client:\t\t"+$script+" -J -C -d sol10u11vm01"
   puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
   puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
@@ -233,6 +236,8 @@ def check_local_config()
   if $verbose_mode == 1
     puts "Information:\tSetting apache allow range to "+$default_apache_allow
   end
+  $backup_dir=$work_dir+"/backup"
+  check_dir_exists($backup_dir)
   return
 end
 
@@ -319,18 +324,17 @@ else
   client_mac=""
 end
 
-# Routines for Jumpstart (Solaris 10 and earlier)
+# Get/set X based installer
 
-if opt["J"]
-  if opt["d"]
-    client_name=opt["d"]
-    delete_js_client(client_name)
-  else
-    if opt["S"]
-      if opt["n"]
-        service_name=opt["n"]
-      end
-    end
+if opt["X"]
+  $text_install=0
+  if $verbose_mode == 1
+    puts "Information:\tSetting install type to X based"
+  end
+else
+  $text_install=1
+  if $verbose_mode == 1
+    puts "Information:\tSetting install type to text based"
   end
 end
 
@@ -436,17 +440,19 @@ if opt["m"]
   client_model=opt["m"]
   client_model=client_model.downcase
 else
-  if opt["J"] and !opt["L"]
-    if client_arch.match(/i386/)
-      puts "Warning:\tNo client model specified"
-      puts "Setting:\tClient model to vmware"
-      client_model="vmware"
+  if !opt["S"]
+    if opt["J"] and !opt["L"] and !opt["d"]
+      if client_arch.match(/i386|x86|x86_64|x64/)
+        puts "Warning:\tNo client model specified"
+        puts "Setting:\tClient model to vmware"
+        client_model="vmware"
+      else
+        puts "Warning:\tClient model not specified"
+        exit
+      end
     else
-      puts "Warning:\tClient model not specified"
-      exit
+      client_model=""
     end
-  else
-    client_model=""
   end
 end
 
@@ -493,13 +499,21 @@ if opt["A"] or opt["K"] or opt["J"]
       end
       exit
     end
+    # Handle NFS services
+    if opt["N"]
+      if opt["n"]
+        eval"[configure_#{funct}_nfs_service(service_name,publisher_host)]"
+      else
+        eval"[unconfigure_#{funct}_nfs_service(service_name)]"
+      end
+      exit
+    end
     # Handle web services
     if opt["W"]
-      eval"[add_#{funct}_service(service_name)]"
       if opt["n"]
         eval"[add_#{funct}_apache_entry(service_name)]"
       else
-        eval"[remove_#{funct}_apache_entry -service_name)]"
+        eval"[remove_#{funct}_apache_entry(service_name)]"
       end
       exit
     end

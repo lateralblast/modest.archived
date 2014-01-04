@@ -157,3 +157,17 @@
 # Fixed jumpstart sysidcfg
 # 0.7.9: Fri  3 Jan 2014 07:55:58 EST
 # Updated usage information
+# 0.8.0: Fri  3 Jan 2014 13:34:58 EST
+# Added PXE and DHCP config creating for jumpstart
+# 0.8.1: Fri  3 Jan 2014 14:37:07 EST
+# Fixed default answer code
+# 0.8.2: Fri  3 Jan 2014 15:28:15 EST
+# Added code for creating rules.ok file
+# 0.8.3: Fri  3 Jan 2014 17:31:16 EST
+# Cleaned up jumpstart server configuration code
+# 0.8.4: Sat  4 Jan 2014 11:57:25 EST
+# Fix bugs with Jumpstart client code
+# 0.8.5: Sat  4 Jan 2014 13:27:58 EST
+# Cleaned up PXE and DHCP code
+# 0.8.6: Sat  4 Jan 2014 14:16:04 EST
+# Bug fixes, and initial Jumpstart support complete (need to add alternate package support)
