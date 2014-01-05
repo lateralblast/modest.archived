@@ -171,3 +171,11 @@
 # Cleaned up PXE and DHCP code
 # 0.8.6: Sat  4 Jan 2014 14:16:04 EST
 # Bug fixes, and initial Jumpstart support complete (need to add alternate package support)
+# 0.8.7: Sun  5 Jan 2014 12:01:37 EST
+# Fixed directory check for RHEL ISOs
+# 0.8.8: Sun  5 Jan 2014 13:32:45 EST
+# Added handling for lzma rpms
+# 0.8.9: Sun  5 Jan 2014 14:53:56 EST
+# Added x86_64 and i386 support to Kickstart
+# 0.9.0: Sun  5 Jan 2014 17:40:55 EST
+# Added service check to client creation

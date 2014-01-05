@@ -1,15 +1,49 @@
 
 # Server code for Kickstart
 
+# List available ISOs
+
+def list_ks_isos()
+  search_string="CentOS|rhel"
+  iso_list=check_iso_base_dir(search_string)
+  iso_list.each do |iso_file|
+    iso_file=iso_file.chomp
+    iso_info=File.basename(iso_file)
+    iso_info=iso_info.split(/-/)
+    linux_distro=iso_info[0]
+    linux_distro=linux_distro.downcase
+    if linux_distro.match(/centos/)
+      iso_version=iso_info[1]
+      iso_arch=iso_info[2]
+    else
+      iso_version=iso_info[2]
+      iso_arch=iso_info[3]
+    end
+    puts "ISO file:\t"+iso_file
+    puts "Distribution:\t"+linux_distro
+    puts "Version:\t"+iso_version
+    puts "Architecture:\t"+iso_arch
+    iso_version=iso_version.gsub(/\./,"_")
+    service_name=linux_distro+"_"+iso_version+"_"+iso_arch
+    repo_version_dir=$repo_base_dir+"/"+service_name
+    if File.directory?(repo_version_dir)
+      puts "Service Name:\t"+service_name+" (exists)"
+    else
+      puts "Service Name:\t"+service_name
+    end
+  end
+  return
+end
+
 # Unconfigure alternate packages
 
-def unconfigure_alt_pkg_ks(service_name)
+def unconfigure_ks_alt_repo(service_name)
   return
 end
 
 # Configure alternate packages
 
-def configure_alt_pkg_ks(service_name)
+def configure_ks_alt_repo(service_name,client_arch)
   rpm_list=build_ks_alt_rpm_list(service_name)
   alt_dir=$repo_base_dir+"/"+service_name+"/alt"
   check_dir_exists(alt_dir)
@@ -73,7 +107,7 @@ def configure_ks_pxe_boot(service_name)
       rpm_file=rpm_dir+"/"+rpm_file
       check_dir_exists(pxe_boot_dir)
       message="Copying:\tPXE boot files from "+rpm_file+" to "+pxe_boot_dir
-      command="cd #{pxe_boot_dir} ; rpm2cpio #{rpm_file} | cpio -iud"
+      command="cd #{pxe_boot_dir} ; #{$rpm2cpio_bin} #{rpm_file} | cpio -iud"
       output=execute_command(message,command)
     else
       puts "Warning:\tSource directory "+rpm_dir+" does not exist"
@@ -109,7 +143,7 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
       search_string="rhel"
     end
   else
-    search_string="[CentOS|rhel]"
+    search_string="CentOS|rhel"
   end
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)
@@ -120,23 +154,31 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
   else
     iso_list=check_iso_base_dir(search_string)
   end
-  iso_list.each do |iso_file|
-    iso_file=iso_file.chomp
-    iso_linux_info=File.basename(iso_file)
-    iso_linux_info=iso_linux_info.split(/-/)
-    linux_distro=iso_linux_info[0]
-    linux_distro=linux_distro.downcase
-    if linux_distro.match(/centos/)
-      iso_linux_version=iso_linux_info[1]
-    else
-      iso_linux_version=iso_linux_info[2]
+  if iso_list[0]
+    iso_list.each do |iso_file|
+      iso_file=iso_file.chomp
+      iso_linux_info=File.basename(iso_file)
+      iso_linux_info=iso_linux_info.split(/-/)
+      linux_distro=iso_linux_info[0]
+      linux_distro=linux_distro.downcase
+      if linux_distro.match(/centos/)
+        iso_linux_version=iso_linux_info[1]
+        iso_arch=iso_linux_info[2]
+      else
+        iso_linux_version=iso_linux_info[2]
+        iso_arch=iso_linux_info[3]
+      end
+      iso_linux_version=iso_linux_version.gsub(/\./,"_")
+      service_name=linux_distro+"_"+iso_linux_version+"_"+iso_arch
+      repo_version_dir=$repo_base_dir+"/"+service_name
+      add_apache_alias(service_name)
+      configure_ks_repo(iso_file,repo_version_dir)
+      configure_ks_pxe_boot(service_name)
     end
-    iso_linux_version=iso_linux_version.gsub(/\./,"_")
-    release_dir=linux_distro+"_"+iso_linux_version
-    repo_version_dir=$repo_base_dir+"/"+release_dir
-    add_apache_alias(release_dir)
+  else
+    add_apache_alias(service_name)
     configure_ks_repo(iso_file,repo_version_dir)
-    configure_ks_pxe_boot(release_dir)
+    configure_ks_pxe_boot(service_name)
   end
   return
 end
@@ -147,7 +189,7 @@ def list_ks_services()
   puts "Kickstart services:"
   service_list=Dir.entries($repo_base_dir)
   service_list.each do |service_name|
-    if service_name.match(/centos|redhat/)
+    if service_name.match(/centos|rhel/)
       puts service_name
     end
   end

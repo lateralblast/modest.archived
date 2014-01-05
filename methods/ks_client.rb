@@ -103,6 +103,12 @@ end
 
 def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
   repo_version_dir=$repo_base_dir+"/"+service_name
+  if !File.directory?(repo_version_dir)
+    puts "Warning:\tService "+service_name+" does not exist"
+    puts
+    list_ks_services()
+    exit
+  end
   populate_ks_questions(service_name,client_name,client_ip)
   process_questions()
   output_file=repo_version_dir+"/"+client_name+".cfg"

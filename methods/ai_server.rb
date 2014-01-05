@@ -1,6 +1,32 @@
 
 # AI server code
 
+# List available ISOs
+
+def list_ai_isos()
+  search_string="repo"
+  iso_list=check_iso_base_dir(search_string)
+  iso_list.each do |iso_file|
+    iso_file=iso_file.chomp
+    iso_info=File.basename(iso_file)
+    iso_info=iso_info.split(/-/)
+    iso_version=iso_info[1]
+    iso_arch=iso_info[2]
+    puts "ISO file:\t"+iso_file
+    puts "Distribution:\tSolaris"
+    puts "Version:\t"+iso_version.gsub(/_/,".")
+    puts "Architecture:\tSPARC and i386"
+    service_name="sol_"+iso_version+"_"+iso_arch
+    repo_version_dir=$repo_base_dir+"/"+service_name
+    if File.directory?(repo_version_dir)
+      puts "Service Name:\t"+service_name+" (exists)"
+    else
+      puts "Service Name:\t"+service_name
+    end
+  end
+  return
+end
+
 # Delecte a service
 # This will also delete all the clients under it
 
@@ -9,7 +35,7 @@ def unconfigure_ai_server(service_name)
   smf_service_name="svc:/application/pkg/server:"+service_base_name
   smf_service_test=%x[svcs -a |grep '#{smf_service_name}']
   if smf_service_test.match(/pkg/)
-    unconfigure_pkg_repo(service_name)
+    unconfigure_ai_pkg_repo(service_name)
   end
   if !service_name.match(/i386|sparc/)
     ["i386","sparc"].each do |sys_arch|
@@ -155,7 +181,7 @@ end
 
 # Get a list of the installed AI services
 
-def get_install_services()
+def get_ai_install_services()
   message="Getting:\tList of AI services"
   command="installadm list"
   output=execute_command(message,command)
@@ -224,9 +250,9 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
   # Check that we have a DHCPd config file to write to
   check_dhcpd4_conf()
   # Check that we have a local repoistory
-  publisher_url=get_publisher_url(publisher_host,publisher_port)
+  publisher_url=get_ai_publisher_url(publisher_host,publisher_port)
   # Get a list of installed services
-  services_list=get_install_services()
+  services_list=get_ai_install_services()
   # If we don't have a local repository start setting one up
   if publisher_url.match(/oracle/) or services_list.grep(/No services configured/)
     # Check if we have a file based repository we can use
@@ -240,14 +266,14 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
       if !service_name.match(/[A-z|0-9]/)
         service_base_name=iso_repo_version
       else
-        service_base_name=get_service_base_name(service_name)
+        service_base_name=get_ai_ervice_base_name(service_name)
       end
       ai_version_dir=check_ai_base_dir()
       read_only="true"
-      configure_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
+      configure_ai_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
       if $use_alt_repo == 1
         alt_service_name=service_base_name+"_"+$alt_repo_name
-        configure_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
+        configure_ai_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
       end
       configure_ai_services(iso_repo_version,publisher_url,client_arch)
     else
@@ -290,10 +316,10 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
           ai_version_dir=check_ai_base_dir()
           #repo_version=get_repo_version()
           read_only="true"
-          configure_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
+          configure_ai_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
           if $use_alt_repo == 1
             alt_service_name=check_alt_service_name(service_name)
-            configure_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
+            configure_ai_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
           end
           configure_ai_services(iso_repo_version,publisher_url,client_arch)
         end

@@ -168,11 +168,11 @@ def configure_ai_client_services(client_arch,publisher_host,publisher_port,servi
   end
   if !service_name.match(/[A-z|0-9]/)
     if client_arch.match(/i386|sparc/)
-      service_name=get_service_name(client_arch)
+      service_name=get_ai_service_name(client_arch)
       service_list[0]=service_name
     else
       ["i386","sparc"].each do |sys_arch|
-        service_name=get_service_name(sys_arch)
+        service_name=get_ai_service_name(sys_arch)
         service_list.push(service_name)
       end
     end
@@ -237,7 +237,7 @@ def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_mode
   create_ai_client_profile(output_file)
   puts "Configuring:\tClient "+client_name+" with MAC address "+client_mac
   output_file=$work_dir+"/"+client_name+"_ai_profile.xml"
-  service_name=get_service_name(client_arch)
+  service_name=get_ai_service_name(client_arch)
   import_ai_client_profile(output_file,client_name,client_mac,service_name)
   create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
   return

@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 
 # Common routines for server and client configuration
 
@@ -10,7 +9,7 @@ Ai=Struct.new(:question, :ask, :value, :valid, :eval)
 # If running in test mode use a default version so client creation
 # code can be tested
 
-def get_repo_version(publisher_url,publisher_host,publisher_port)
+def get_ai_repo_version(publisher_url,publisher_host,publisher_port)
   publisher_url=get_publisher_url(publisher_host,publisher_port)
   if $test_mode == 1
     repo_version="0.175.1"
@@ -26,7 +25,7 @@ end
 
 # Get the repository URL
 
-def get_repo_url(publisher_url,publisher_host,publisher_port)
+def get_ai_repo_url(publisher_url,publisher_host,publisher_port)
   repo_version=get_repo_version(publisher_url,publisher_host,publisher_port)
   repo_url="pkg:/entire@0.5.11-"+repo_version
   return repo_url
@@ -35,14 +34,14 @@ end
 # Get the publisher URL
 # If running in test mode use the default Oracle one
 
-def get_publisher_url(publisher_host,publisher_port)
+def get_ai_publisher_url(publisher_host,publisher_port)
   publisher_url="http://"+publisher_host+":"+publisher_port
   return publisher_url
 end
 
 # Get alternate publisher url
 
-def get_alt_publisher_url(publisher_host,publisher_port)
+def get_ai_alt_publisher_url(publisher_host,publisher_port)
   publisher_port=publisher_port.to_i+1
   publisher_port=publisher_port.to_s
   publisher_url="http://"+publisher_host+":"+publisher_port
@@ -51,7 +50,7 @@ end
 
 # Get service name
 
-def get_service_name(client_arch)
+def get_ai_service_name(client_arch)
   message="Determining:\tService name for "+client_arch
   command="installadm list |grep -v default |grep '#{client_arch}' |awk '{print $1}'"
   service_name=execute_command(message,command)
@@ -61,7 +60,7 @@ end
 
 # Get service base name
 
-def get_service_base_name(service_name)
+def get_ai_service_base_name(service_name)
   service_base_name=service_name
   if service_base_name.match(/i386|sparc/)
     service_base_name=service_base_name.gsub(/i386/,"")
@@ -73,7 +72,7 @@ end
 
 # Configure a package repository
 
-def configure_pkg_repo(publisher_host,publisher_port,service_name,repo_version_dir,read_only)
+def configure_ai_pkg_repo(publisher_host,publisher_port,service_name,repo_version_dir,read_only)
   smf_service_name="pkg/server:#{service_name}"
   message="Checking:\tIf service "+smf_service_name+" exists"
   command="svcs -a |grep '#{smf_service_name}"
@@ -101,7 +100,7 @@ end
 
 # Delete a package repository
 
-def unconfigure_pkg_repo(service_name)
+def unconfigure_ai_pkg_repo(service_name)
   smf_name="pkg/server:#{service_name}"
   message="Checking:\tIf repository service "+service_name+" exists"
   command="svcs -a |grep '#{smf_name}'"

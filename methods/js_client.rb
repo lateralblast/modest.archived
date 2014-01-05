@@ -225,7 +225,7 @@ def configure_js_client(client_name,client_arch,client_mac,client_ip,client_mode
   end
   repo_version_dir=$repo_base_dir+"/"+service_name
   if !File.directory?(repo_version_dir)
-    puts "Service "+service_name+" does not exist"
+    puts "Warning:\tService "+service_name+" does not exist"
     puts
     list_js_services()
     return

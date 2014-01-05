@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.8.6
+# Version:      0.9.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -25,7 +25,7 @@ require 'builder'
 # Set up some global variables/defaults
 
 $script=$0
-$options="F:a:c:d:e:f:h:i:m:n:p:z:ACDJKLMPRSVWXZtv"
+$options="F:a:c:d:e:f:h:i:m:n:p:z:ACDIJKLMPRSVWXZtv"
 $verbose_mode=0
 $test_mode=0
 $iso_base_dir="/export/isos"
@@ -73,6 +73,8 @@ $q_struct={}
 $q_order=[]
 $text_install=1
 $backup_dir
+$rpm2cpio_url="http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
+$rpm2cpio_bin
 
 # Declare some package versions
 
@@ -127,6 +129,12 @@ def print_usage()
   puts "-D: Use default values for questions"
   puts "-X: X Windows based install (default is text based)"
   puts ""
+  puts "Information related examples:"
+  puts ""
+  puts "List Linux ISOs:\t\t"+$script+" -K -S -I"
+  puts "List Solaris 10 ISOs:\t\t"+$script+" -J -S -I"
+  puts "List Solaris 11 ISOs:\t\t"+$script+" -A -S -I"
+  puts
   puts "Server related examples:"
   puts ""
   puts "List AI services:\t\t"+$script+" -A -S -L"
@@ -146,12 +154,12 @@ def print_usage()
   puts "Disable AI proxy:\t\t"+$script+" -A -M -W -z sol_11_1"
   puts "Configure AI alternate repo:\t"+$script+" -A -M -R"
   puts "Unconfigure AI alternate repo:\t"+$script+" -A -M -R -z sol_11_1_alt"
-  puts "Configure KS alternate repo:\t"+$script+" -K -M -R -n centos_5_9"
-  puts "Unconfigure KS alternate repo:\t"+$script+" -K -M -R -z centos_5_9"
-  puts "Enable KS alias:\t\t"+$script+" -K -M -W -n centos_5_9"
-  puts "Disable KS alias:\t\t"+$script+" -K -M -W -z centos_5_9"
-  puts "Import KS PXE files:\t\t"+$script+" -K -M -P -n centos_5_9"
-  puts "Delete KS PXE files:\t\t"+$script+" -K -M -P -z centos_5_9"
+  puts "Configure KS alternate repo:\t"+$script+" -K -M -R -n centos_5_9_x86_64"
+  puts "Unconfigure KS alternate repo:\t"+$script+" -K -M -R -z centos_5_9_x86_64"
+  puts "Enable KS alias:\t\t"+$script+" -K -M -W -n centos_5_9_x86_64"
+  puts "Disable KS alias:\t\t"+$script+" -K -M -W -z centos_5_9_x86_64"
+  puts "Import KS PXE files:\t\t"+$script+" -K -M -P -n centos_5_9_x86_64"
+  puts "Delete KS PXE files:\t\t"+$script+" -K -M -P -z centos_5_9_x86_64"
   puts "Unconfigure KS client PXE:\t"+$script+" -K -M -P -d centos59vm01"
   puts
   puts "Client related examples:"
@@ -163,9 +171,9 @@ def print_usage()
   puts "Delete AI client:\t\t"+$script+" -A -C -d sol11u01vm03"
   puts "Create JS client:\t\t"+$script+" -J -C -c sol10u11vm01 -e 00:0C:29:FA:0C:7F -a i386 -i 192.168.1.195 -n sol_10_11"
   puts "Delete JS client:\t\t"+$script+" -J -C -d sol10u11vm01"
-  puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
+  puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
   puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
-  puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9"
+  puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
   puts
   exit
 end
@@ -238,6 +246,15 @@ def check_local_config()
   end
   $backup_dir=$work_dir+"/backup"
   check_dir_exists($backup_dir)
+  bin_dir=$work_dir+"/bin"
+  check_dir_exists(bin_dir)
+  $rpm2cpio_bin=bin_dir+"rpm2cpio"
+  if !File.exists?($rpm2cpio_bin)
+    message="Fetching:\tTool rpm2cpio"
+    command="wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
+    output=execute_command(message,command)
+    system("chmod +x #{$rpm2cpio_bin}")
+  end
   return
 end
 
@@ -476,6 +493,11 @@ if opt["A"] or opt["K"] or opt["J"]
       eval"[list_#{funct}_services()]"
       exit
     end
+    # List available ISOs
+    if opt["I"]
+      eval"[list_#{funct}_isos()]"
+      exit
+    end
     # Unconfigure server services
     if opt["z"]
       eval"[unconfigure_#{funct}_server(service_name)]"
@@ -524,9 +546,9 @@ if opt["A"] or opt["K"] or opt["J"]
     # Handle alternate packages (non OS install related)
     if opt["R"]
       if opt["z"]
-        eval"[unconfigure_#{funct}_alt_repo()]"
+        eval"[unconfigure_#{funct}_alt_repo(service_name)]"
       else
-        eval"[configure_#{funct}_alt_repo()]"
+        eval"[configure_#{funct}_alt_repo(publisher_host,publisher_port,service_name,client_arch)]"
       end
       exit
     end
