@@ -225,23 +225,23 @@ Configure KS services (will search for CentOS and RedHat ISOs in /export/isos an
 
 Unconfigure KS service:		
 
-	modest.rb -K -S -z centos_5_9
+	modest.rb -K -S -z centos_5_9_x86_64
 
 Create KS client:		
 
-	modest.rb -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9
+	modest.rb -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64
 
 Manually configure KS client PXE (normally done as part of client setup):	
 
-	modest.rb -K -M -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9
+	modest.rb -K -M -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64
 
 Manually configure KS apache alias (normally done as part of server configuration):		
 
-	modest.rb -K -M -W -n centos_5_9
+	modest.rb -K -M -W -n centos_5_9_x86_64
 
 Manually unconfigure KS apache alias:		
 
-	modest.rb -K -M -W -z centos_5_9
+	modest.rb -K -M -W -z centos_5_9_x86_64
 
 Unconfigure KS client:		
 
@@ -249,7 +249,7 @@ Unconfigure KS client:
 
 Manually Import PXE files (normally dones as part of server configuration):		
 
-	modest.rb -K -M -P -n centos_5_9
+	modest.rb -K -M -P -n centos_5_9_x86_64
 
 Manually unconfigure KS client PXE (normally dones as part of client unconfiguration):	
 
@@ -257,15 +257,15 @@ Manually unconfigure KS client PXE (normally dones as part of client unconfigura
 
 Configure alternate repo as part of server setup:	
 
-	modest.rb -K -S -R -n centos_5_9
+	modest.rb -K -S -R -n centos_5_9_x86_64
 
 Manually configure alternate repo:
 
-	modest.rb -K -M -R -n centos_5_9
+	modest.rb -K -M -R -n centos_5_9_x86_64
 
 Manually unconfigure alternate repo (normally done as part of server unconfiguration):	
 
-	modest.rb -K -M -R -z centos_5_9
+	modest.rb -K -M -R -z centos_5_9_x86_64
 
 Solaris Jumpstart Examples
 ==========================
@@ -761,7 +761,7 @@ Example Kickstart config:
 	text
 	install
 	cdrom
-	url --url=http://192.168.1.191/centos_5_9
+	url --url=http://192.168.1.191/centos_5_9_x86_64
 	lang en_US.UTF-8
 	langsupport --default=en_US.UTF-8 en_US.UTF-8
 	keyboard us
@@ -796,19 +796,19 @@ Example Kickstart config:
 	echo "sysadmin	ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 	mkdir /tmp/rpms
 	cd /tmp/rpms
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-1.8.7.374-2.el5.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-augeas-0.4.1-2.el5.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-rgen-0.6.5-1.el5.noarch.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-shadow-1.4.1-7.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-libs-1.8.7.374-2.el5.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/rubygem-json-1.5.5-2.el5.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/augeas-libs-0.10.0-4.el5.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/rubygems-1.3.7-1.el5.noarch.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-rdoc-1.8.7.374-2.el5.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/ruby-irb-1.8.7.374-2.el5.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/facter-1.7.4-1.el5.x86_64.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/hiera-1.3.0-1.el5.noarch.rpm
-	wget http://192.168.1.191/export/repo/centos_5_9/alt/puppet-3.4.1-1.el5.noarch.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/ruby-1.8.7.374-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/ruby-augeas-0.4.1-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/ruby-rgen-0.6.5-1.el5.noarch.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/ruby-shadow-1.4.1-7.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/ruby-libs-1.8.7.374-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/rubygem-json-1.5.5-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/augeas-libs-0.10.0-4.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/rubygems-1.3.7-1.el5.noarch.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/ruby-rdoc-1.8.7.374-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/ruby-irb-1.8.7.374-2.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/facter-1.7.4-1.el5.x86_64.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/hiera-1.3.0-1.el5.noarch.rpm
+	wget http://192.168.1.191/export/repo/centos_5_9_x86_64/alt/puppet-3.4.1-1.el5.noarch.rpm
 	rpm -i *.rpm
 	cd /tmp
 	rm -rf /tmp/rpms
