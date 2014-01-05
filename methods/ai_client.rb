@@ -5,17 +5,17 @@
 
 def list_ai_clients()
   puts "Current AI clients:"
-  client_info=%x[installadm list -p |grep -v '^--' |grep -v '^Service']
-  client_info=client_info.split(/\n/)
-  service_name=""
-  client_name=""
+  client_info  = %x[installadm list -p |grep -v '^--' |grep -v '^Service']
+  client_info  = client_info.split(/\n/)
+  service_name = ""
+  client_name  = ""
   client_info.each do |line|
     if line.match(/^[A-z]/)
       service_name=line
     else
-      client_name=line
-      client_name=client_name.gsub(/^\s+/,"")
-      client_name=client_name.gsub(/\s+/," ")
+      client_name = line
+      client_name = client_name.gsub(/^\s+/,"")
+      client_name = client_name.gsub(/\s+/," ")
       puts client_name+" service = "+service_name
     end
   end
@@ -25,20 +25,20 @@ end
 # Get a list of valid shells
 
 def get_valid_shells()
-  vaild_shells=%x[ls /usr/bin |grep 'sh$' |awk '{print "/usr/bin/" $1 }']
-  vaild_shells=vaild_shells.split("\n").join(",")
+  vaild_shells = %x[ls /usr/bin |grep 'sh$' |awk '{print "/usr/bin/" $1 }']
+  vaild_shells = vaild_shells.split("\n").join(",")
   return vaild_shells
 end
 
 # Make sure user ID is greater than 100
 
 def check_valid_uid(answer)
-  correct=1
+  correct = 1
   if answer.match(/[A-z]/)
-    correct=0
+    correct = 0
   else
     if Integer(answer) < 100
-      correct=0
+      correct = 0
       puts "UID must be greater than 100"
     end
   end
@@ -48,12 +48,12 @@ end
 # Make sure user group is greater than 10
 
 def check_valid_gid(answer)
-  correct=1
+  correct = 1
   if answer.match(/[A-z]/)
-    correct=0
+    correct = 0
   else
     if Integer(answer) < 10
-      correct=0
+      correct = 0
       puts "GID must be greater than 10"
     end
   end
@@ -63,14 +63,14 @@ end
 # Get the user home directory ZFS dataset name
 
 def get_account_home_zfs_dataset()
-  account_home_zfs_dataset="/export/home/"+$q_struct["account_login"].value
+  account_home_zfs_dataset = "/export/home/"+$q_struct["account_login"].value
   return account_home_zfs_dataset
 end
 
 # Get the user home directory mount point
 
 def get_account_home_mountpoint()
-  account_home_mountpoint="/export/home/"+$q_struct["account_login"].value
+  account_home_mountpoint = "/export/home/"+$q_struct["account_login"].value
   return account_home_mountpoint
 end
 
@@ -80,11 +80,11 @@ end
 # Check the structs for settings and more information
 
 def import_ai_manifest(output_file,service_name)
-  date=get_date_string()
-  client_arch_list=[]
-  service_base_name=get_service_base_name(service_name)
+  date              = get_date_string()
+  client_arch_list  = []
+  service_base_name = get_service_base_name(service_name)
   if !service_name.match(/i386|sparc/) and !client_arch.match(/i386|sparc/)
-    client_arch_list=["i386","SPARC"]
+    client_arch_list = ["i386","SPARC"]
   else
     if service_name.match(/i386/)
       client_arch_list.push("i386")
@@ -95,21 +95,21 @@ def import_ai_manifest(output_file,service_name)
     end
   end
   client_arch_list.each do |sys_arch|
-    lc_sys_arch=sys_arch.downcase
-    backup_file=$work_dir+"/"+service_base_name+"_"+lc_sys_arch+"_orig_default.xml."+date
-    message="Archiving:\tService configuration for "+service_base_name+"_"+lc_sys_arch+" to "+backup_file
-    command="installadm export -n #{service_base_name}_#{lc_sys_arch} -m orig_default > #{backup_file}"
-    output=execute_command(message,command)
-    message="Validating:\tService configuration "+output_file
-    command="AIM_MANIFEST=#{output_file} ; export AIM_MANIFEST ; aimanifest validate"
-    output=execute_command(message,command)
+    lc_sys_arch = sys_arch.downcase
+    backup_file = $work_dir+"/"+service_base_name+"_"+lc_sys_arch+"_orig_default.xml."+date
+    message     = "Archiving:\tService configuration for "+service_base_name+"_"+lc_sys_arch+" to "+backup_file
+    command     = "installadm export -n #{service_base_name}_#{lc_sys_arch} -m orig_default > #{backup_file}"
+    output      = execute_command(message,command)
+    message     = "Validating:\tService configuration "+output_file
+    command     = "AIM_MANIFEST=#{output_file} ; export AIM_MANIFEST ; aimanifest validate"
+    output      = execute_command(message,command)
     if output.match(/[A-z|0-9]/)
       puts "AI manifest file "+output_file+" does not contain a valid XML manifest"
       puts output
     else
-      message="Importing:\t"+output_file+" to service "+service_name
-      command="installadm update-manifest -n #{service_base_name}_#{lc_sys_arch} -m orig_default -f #{output_file}"
-      output=execute_command(message,command)
+      message = "Importing:\t"+output_file+" to service "+service_name
+      command = "installadm update-manifest -n #{service_base_name}_#{lc_sys_arch} -m orig_default -f #{output_file}"
+      output  = execute_command(message,command)
     end
   end
   return
@@ -118,20 +118,20 @@ end
 # Import a profile and associate it with a client
 
 def import_ai_client_profile(output_file,client_name,client_mac,service_name)
-  message="Creating:\tProfile for client "+client_name+" with MAC address "+client_mac
-  command="installadm create-profile -n #{service_name} -f #{output_file} -p #{client_name} -c mac='#{client_mac}'"
-  output=execute_command(message,command)
+  message = "Creating:\tProfile for client "+client_name+" with MAC address "+client_mac
+  command = "installadm create-profile -n #{service_name} -f #{output_file} -p #{client_name} -c mac='#{client_mac}'"
+  execute_command(message,command)
   return
 end
 
 # Code to change timeout and default menu entry in grub
 
 def update_ai_client_grub_cfg(client_mac)
-  copy=[]
-  netboot_mac=client_mac.gsub(/:/,"")
-  netboot_mac="01"+netboot_mac
-  netboot_mac=netboot_mac.upcase
-  grub_file="/etc/netboot/grub.cfg."+netboot_mac
+  copy        = []
+  netboot_mac = client_mac.gsub(/:/,"")
+  netboot_mac = "01"+netboot_mac
+  netboot_mac = netboot_mac.upcase
+  grub_file   = "/etc/netboot/grub.cfg."+netboot_mac
   if $verbose_mode == 1
     puts "Updating:\tGrub config file "+grub_file
   end
@@ -157,32 +157,32 @@ def configure_ai_client_services(client_arch,publisher_host,publisher_port,servi
   puts "You will be presented with a set of questions followed by the default output"
   puts "If you are happy with the default output simply hit enter"
   puts
-  service_list=[]
+  service_list = []
   # Populate questions for AI manifest
   populate_ai_manifest_questions(publisher_host,publisher_port)
   # Process questions
   process_questions()
   # Set name of AI manifest file to create and import
   if service_name.match(/i386|sparc/)
-    service_list[0]=service_name
+    service_list[0] = service_name
   end
   if !service_name.match(/[A-z|0-9]/)
     if client_arch.match(/i386|sparc/)
-      service_name=get_ai_service_name(client_arch)
-      service_list[0]=service_name
+      service_name    = get_ai_service_name(client_arch)
+      service_list[0] = service_name
     else
       ["i386","sparc"].each do |sys_arch|
-        service_name=get_ai_service_name(sys_arch)
+        service_name = get_ai_service_name(sys_arch)
         service_list.push(service_name)
       end
     end
   end
-  service_list.each do |service_name|
-    output_file=$work_dir+"/"+service_name+"_ai_manifest.xml"
+  service_list.each do |temp_name|
+    output_file = $work_dir+"/"+temp_name+"_ai_manifest.xml"
     # Create manifest
     create_ai_manifest(output_file)
     # Import AI manifest
-    import_ai_manifest(output_file,service_name)
+    import_ai_manifest(output_file,temp_name)
   end
   return
 end
@@ -190,16 +190,12 @@ end
 # Fix entry for client so it is given a fixed IP rather than one from the range
 
 def update_ai_client_dhcpd_entry(client_name,client_mac,client_ip)
-  copy=[]
-  client_mac=client_mac.gsub(/:/,"")
-  client_mac=client_mac.upcase
-  file="/etc/inet/dhcpd4.conf"
-  date_string=get_date_string()
-  backup_file=$work_dir+"/dhcpd4.conf."+date_string
-  message="Archiving:\tFile "+file+" to "+backup_file
-  command="cp #{file} #{backup_file}"
-  output=execute_command(message,command)
-  text=File.read(file)
+  copy        = []
+  client_mac  = client_mac.gsub(/:/,"")
+  client_mac  = client_mac.upcase
+  dhcp_file    = "/etc/inet/dhcpd4.conf"
+  backup_file(dhcp_file)
+  text        = File.read(dhcp_file)
   text.each do |line|
     if line.match(/^host #{client_mac}/)
       copy.push("host #{client_name} {")
@@ -208,20 +204,20 @@ def update_ai_client_dhcpd_entry(client_name,client_mac,client_ip)
       copy.push(line)
     end
   end
-  File.open(file,"w") {|file| file.puts copy}
+  File.open(dhcp_file,"w") {|file| file.puts copy}
   return
 end
 
 # Routine to actually add a client
 
 def create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
-  message="Creating:\tClient entry for #{client_name} with architecture #{client_arch} and MAC address #{client_mac}"
-  command="installadm create-client -n #{service_name} -e #{client_mac}"
-  output=execute_command(message,command)
+  message = "Creating:\tClient entry for #{client_name} with architecture #{client_arch} and MAC address #{client_mac}"
+  command = "installadm create-client -n #{service_name} -e #{client_mac}"
+   execute_command(message,command)
   if client_arch.match(/i386/) or client_arch.mach(/i386/)
     update_ai_client_dhcpd_entry(client_name,client_mac,client_ip)
     update_ai_client_grub_cfg(client_mac)
-    smf_service="svc:/network/dhcp/server:ipv4"
+    smf_service = "svc:/network/dhcp/server:ipv4"
     refresh_smf_service(smf_service)
   end
   return
@@ -233,11 +229,11 @@ def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_mode
   # Populate questions for AI profile
   populate_ai_client_profile_questions(client_ip,client_name)
   process_questions()
-  output_file=$work_dir+"/"+client_name+"_ai_profile.xml"
+  output_file = $work_dir+"/"+client_name+"_ai_profile.xml"
   create_ai_client_profile(output_file)
   puts "Configuring:\tClient "+client_name+" with MAC address "+client_mac
-  output_file=$work_dir+"/"+client_name+"_ai_profile.xml"
-  service_name=get_ai_service_name(client_arch)
+  output_file  = $work_dir+"/"+client_name+"_ai_profile.xml"
+  service_name = get_ai_service_name(client_arch)
   import_ai_client_profile(output_file,client_name,client_mac,service_name)
   create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
   return
@@ -247,10 +243,10 @@ end
 
 def unconfigure_ai_client(client_name,client_mac,service_name)
   if !client_mac.match(/[A-z|0-9]/) or !service_name.match(/[A-z|0-9]/)
-    repo_list=%x[installadm list -p |grep -v '^-' |grep -v '^Service']
-    temp_client_name=""
-    temp_client_mac=""
-    temp_service_name=""
+    repo_list         = %x[installadm list -p |grep -v '^-' |grep -v '^Service']
+    temp_client_name  = ""
+    temp_client_mac   = ""
+    temp_service_name = ""
     repo_list.each do |line|
       line=line.chomp
       if line.match(/[A-z|0-9]/)
@@ -275,11 +271,11 @@ def unconfigure_ai_client(client_name,client_mac,service_name)
     end
   end
   if client_name.match(/[A-z]/) and service_name.match(/[A-z]/) and client_mac.match(/[A-z]/)
-    message="Deleting:\tClient profile "+client_name+" from "+service_name
-    command="installadm delete-profile -p #{client_name} -n #{service_name}"
+    message = "Deleting:\tClient profile "+client_name+" from "+service_name
+    command = "installadm delete-profile -p #{client_name} -n #{service_name}"
     execute_command(message,command)
-    message="Deleting:\tClient "+client_name+" with MAC address "+client_mac
-    command="installadm delete-client "+client_mac
+    message = "Deleting:\tClient "+client_name+" with MAC address "+client_mac
+    command = "installadm delete-client "+client_mac
     execute_command(message,command)
   end
   return

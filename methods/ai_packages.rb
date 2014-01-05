@@ -61,8 +61,8 @@ def create_ai_mog_file(p_struct,pkg_name,spool_dir)
     else
       depend_list[0]=pkg_depend
     end
-    depend_list.each do |pkg_depend|
-      text.push(pkg_depend)
+    depend_list.each do |temp_depend|
+      text.push(temp_depend)
     end
   end
   File.open(mog_file,"w") {|file| file.puts text}
@@ -181,7 +181,7 @@ end
 def unconfigure_ai_alt_repo(service_name)
   p_struct=populate_pkg_info()
   p_struct.each do |pkg_name, value|
-    p_struct.each do |temp_pkg_name, value|
+    p_struct.each do |temp_pkg_name, temp_value|
       pkg_depend=p_struct[temp_pkg_name].depend
       if pkg_depend.match(/#{pkg_name}/)
         uninstall_pkg(temp_pkg_name)

@@ -1,7 +1,7 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.9.0
+# Version:      0.9.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -24,57 +24,57 @@ require 'builder'
 
 # Set up some global variables/defaults
 
-$script=$0
-$options="F:a:c:d:e:f:h:i:m:n:p:z:ACDIJKLMPRSVWXZtv"
-$verbose_mode=0
-$test_mode=0
-$iso_base_dir="/export/isos"
-$repo_base_dir="/export/repo"
-$iso_mount_dir="/cdrom"
-$ai_base_dir="/export/auto_install"
-$work_dir=""
-$tmp_dir=""
-$alt_repo_name="alt"
-$alt_prefix_name="solaris"
-$home_dir=ENV["HOME"]
-$default_zpool="rpool"
-$default_ai_port="10081"
-$default_host=""
-$default_net="net0"
-$default_timezone="Australia/Victoria"
-$default_terminal="sun"
-$default_keymap="US-English"
-$default_environment="en_US.UTF-8"
-$default_system_locale="C"
-$default_nameserver="8.8.8.8"
-$default_name_service="none"
-$default_security="none"
-$default_netmask="255.255.255.0"
-$default_search="local"
-$default_files="files"
-$default_hosts="files dns"
-$default_root_password="XXXX"
-$default_admin_password="YYYY"
-$use_alt_repo=0
-$destroy_fs=0
-$use_defaults=0
-$default_apache_allow=""
-$default_admin_user="sysadmin"
-$default_admin_group="wheel"
-$default_admin_home="/export/home"
-$default_admin_shell="/export/home"
-$default_admin_uid="200"
-$tftp_dir="/etc/netboot"
-$default_cluster="SUNWCprog"
-$default_install="initial_install"
-$default_nfs4_domain="dynamic"
-$default_auto_reg="disable"
-$q_struct={}
-$q_order=[]
-$text_install=1
-$backup_dir
-$rpm2cpio_url="http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
-$rpm2cpio_bin
+$script                 = $0
+$options                = "F:a:c:d:e:f:h:i:m:n:p:z:ACDIJKLMPRSVWXZtv"
+$verbose_mode           = 0
+$test_mode              = 0
+$iso_base_dir           = "/export/isos"
+$repo_base_dir          = "/export/repo"
+$iso_mount_dir          = "/cdrom"
+$ai_base_dir            = "/export/auto_install"
+$work_dir               = ""
+$tmp_dir                = ""
+$alt_repo_name          = "alt"
+$alt_prefix_name        = "solaris"
+$home_dir               = ENV["HOME"]
+$default_zpool          = "rpool"
+$default_ai_port        = "10081"
+$default_host           = ""
+$default_net            = "net0"
+$default_timezone       = "Australia/Victoria"
+$default_terminal       = "sun"
+$default_keymap         = "US-English"
+$default_environment    = "en_US.UTF-8"
+$default_system_locale  = "C"
+$default_nameserver     = "8.8.8.8"
+$default_name_service   = "none"
+$default_security       = "none"
+$default_netmask        = "255.255.255.0"
+$default_search         = "local"
+$default_files          = "files"
+$default_hosts          = "files dns"
+$default_root_password  = "XXXX"
+$default_admin_password = "YYYY"
+$use_alt_repo           = 0
+$destroy_fs             = 0
+$use_defaults           = 0
+$default_apache_allow   = ""
+$default_admin_user     = "sysadmin"
+$default_admin_group    = "wheel"
+$default_admin_home     = "/export/home"
+$default_admin_shell    = "/export/home"
+$default_admin_uid      = "200"
+$tftp_dir               = "/etc/netboot"
+$default_cluster        = "SUNWCprog"
+$default_install        = "initial_install"
+$default_nfs4_domain    = "dynamic"
+$default_auto_reg       = "disable"
+$q_struct               = {}
+$q_order                = []
+$text_install           = 1
+$backup_dir             = ""
+$rpm2cpio_url           = "http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
+$rpm2cpio_bin           = ""
 
 # Declare some package versions
 
@@ -182,16 +182,16 @@ end
 
 def get_version()
   file_array=IO.readlines $0
-  version=file_array.grep(/^# Version/)[0].split(":")[1].gsub(/^\s+/,'').chomp
-  packager=file_array.grep(/^# Packager/)[0].split(":")[1].gsub(/^\s+/,'').chomp
-  name=file_array.grep(/^# Name/)[0].split(":")[1].gsub(/^\s+/,'').chomp
-  return version
+  version  = file_array.grep(/^# Version/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  packager = file_array.grep(/^# Packager/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  name     = file_array.grep(/^# Name/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  return version,packager,name
 end
 
 # Print script version information
 
 def print_version()
-  version=get_version()
+  (version,packager,name)=get_version()
   puts name+" v. "+version+" "+packager
   exit
 end
@@ -207,9 +207,9 @@ def check_local_config()
     id=%x[/usr/bin/id -u]
     id=Integer(id)
     if id == 0
-      $work_dir="/opt/"+dir_name
+      $work_dir = "/opt/"+dir_name
     else
-      $work_dir=$home_dir+"/."+dir_name
+      $work_dir = $home_dir+"/."+dir_name
     end
   end
   if $verbose_mode == 1
@@ -217,7 +217,7 @@ def check_local_config()
   end
   check_dir_exists($work_dir)
   if !$tmp_dir.match(/[A-z]/)
-    $tmp_dir=$work_dir+"/tmp"
+    $tmp_dir = $work_dir+"/tmp"
   end
   if $verbose_mode == 1
     puts "Information:\tSetting temporary directory to "+$work_dir
@@ -225,18 +225,18 @@ def check_local_config()
   check_dir_exists($tmp_dir)
   os_name=%x["uname"]
   if !os_name.match(/SunOS/)
-    $test_mode=1
+    $test_mode = 1
   else
     os_ver=%x[uname -r]
     if os_ver.match(/5\.11/)
-      $default_net="net0"
+      $default_net = "net0"
     end
   end
   if !$default_host.match(/[0-9]/)
-    message="Determining:\tDefault host IP"
-    command="ipadm show-addr #{$default_net}/v4 |grep net |awk '{print $4}' |cut -f1 -d'/'"
-    $default_host=execute_command(message,command)
-    $default_host=$default_host.chomp
+    message       = "Determining:\tDefault host IP"
+    command       = "ipadm show-addr #{$default_net}/v4 |grep net |awk '{print $4}' |cut -f1 -d'/'"
+    $default_host = execute_command(message,command)
+    $default_host = $default_host.chomp
   end
   if !$default_apache_allow.match(/[0-9]/)
     $default_apache_allow=$default_host.split(/\./)[0..2].join(".")
@@ -244,15 +244,15 @@ def check_local_config()
   if $verbose_mode == 1
     puts "Information:\tSetting apache allow range to "+$default_apache_allow
   end
-  $backup_dir=$work_dir+"/backup"
+  $backup_dir = $work_dir+"/backup"
   check_dir_exists($backup_dir)
-  bin_dir=$work_dir+"/bin"
+  bin_dir     = $work_dir+"/bin"
   check_dir_exists(bin_dir)
   $rpm2cpio_bin=bin_dir+"rpm2cpio"
   if !File.exists?($rpm2cpio_bin)
-    message="Fetching:\tTool rpm2cpio"
-    command="wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
-    output=execute_command(message,command)
+    message = "Fetching:\tTool rpm2cpio"
+    command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
+    execute_command(message,command)
     system("chmod +x #{$rpm2cpio_bin}")
   end
   return
@@ -287,14 +287,14 @@ end
 # Enable test mode
 
 if opt["v"]
-  $verbose_mode=1
+  $verbose_mode = 1
   puts "Information:\tRunning in verbose mode"
 end
 
 # Enable verbose mode
 
 if opt["t"]
-  $test_mode=1
+  $test_mode = 1
   puts "Information:\tRunning in test mode"
 end
 
@@ -307,16 +307,16 @@ if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C
   exit
 else
   if opt["c"]
-    client_name=opt["c"]
+    client_name  = opt["c"]
   end
   if opt["d"]
-    client_name=opt["d"]
+    client_name  = opt["d"]
   end
   if opt["z"]
-    service_name=opt["z"]
+    service_name = opt["z"]
   end
   if opt["n"]
-    service_name=opt["n"]
+    service_name = opt["n"]
   end
   if opt["c"] or opt["d"]
     if $verbose_mode == 1
@@ -338,7 +338,7 @@ if opt["e"]
      puts "Information:\tClient ethernet MAC address is "+client_mac
   end
 else
-  client_mac=""
+  client_mac = ""
 end
 
 # Get/set X based installer
@@ -358,9 +358,9 @@ end
 # Get/set publisher port
 
 if opt["p"]
-  publisher_port=opt["p"]
+  publisher_port = opt["p"]
 else
-  publisher_port=$default_ai_port
+  publisher_port = $default_ai_port
 end
 if $verbose_mode == 1
    puts "Information:\tSetting publisher port to "+publisher_port
@@ -385,7 +385,7 @@ if opt["i"]
      puts "Information:\tClient IP address is "+client_ip
   end
 else
-  client_ip=""
+  client_ip = ""
 end
 
 # Get/set service name
@@ -397,7 +397,7 @@ if opt["n"]
   end
 else
   if !opt["z"]
-    service_name=""
+    service_name = ""
   end
 end
 
@@ -409,22 +409,22 @@ if opt["f"]
      puts "Information:\tUsing ISO "+iso_file
   end
 else
-  iso_file=""
+  iso_file = ""
 end
 
 # Get architecture if given
 
 if opt["a"]
-  client_arch=opt["a"]
-  client_arch=client_arch.downcase
+  client_arch = opt["a"]
+  client_arch = client_arch.downcase
   if client_arch.match(/sun4u|sun4v/)
-    client_arch="sparc"
+  client_arch = "sparc"
   end
   if $verbose_mode == 1
      puts "Information:\tSetting architecture to "+client_arch
   end
 else
-  client_arch=""
+  client_arch = ""
 end
 
 # If given -Z destroy ZFS filesystems as part of unconfigure
@@ -439,13 +439,13 @@ end
 # If given -R use alternate repos
 
 if opt["R"]
-  $use_alt_repo=1
+  $use_alt_repo = 1
 end
 
 # If given -D choose defaults for questions
 
 if opt["D"]
-  $use_defaults=1
+  $use_defaults = 1
   if $verbose_mode == 1
     puts "Information:\tSetting answers to defaults"
   end
@@ -454,21 +454,21 @@ end
 # Get/set system model
 
 if opt["m"]
-  client_model=opt["m"]
-  client_model=client_model.downcase
+  client_model = opt["m"]
+  client_model = client_model.downcase
 else
   if !opt["S"]
     if opt["J"] and !opt["L"] and !opt["d"]
       if client_arch.match(/i386|x86|x86_64|x64/)
         puts "Warning:\tNo client model specified"
         puts "Setting:\tClient model to vmware"
-        client_model="vmware"
+        client_model = "vmware"
       else
         puts "Warning:\tClient model not specified"
         exit
       end
     else
-      client_model=""
+      client_model = ""
     end
   end
 end

@@ -4,14 +4,14 @@
 # Construct ks language line
 
 def get_ks_language()
-  result="--default="+$q_struct["install_language"].value+" "+$q_struct["install_language"].value
+  result = "--default="+$q_struct["install_language"].value+" "+$q_struct["install_language"].value
   return result
 end
 
 # Construct ks xconfig line
 
 def get_ks_xconfig()
-  result="--card "+$q_struct["videocard"].value+" --videoram "+$q_struct["videoram"].value+" --hsync "+$q_struct["hsync"].value+" --vsync "+$q_struct["vsync"].value+" --resolution "+$q_struct["resolution"].value+" --depth "+$q_struct["depth"].value
+  result = "--card "+$q_struct["videocard"].value+" --videoram "+$q_struct["videoram"].value+" --hsync "+$q_struct["hsync"].value+" --vsync "+$q_struct["vsync"].value+" --resolution "+$q_struct["resolution"].value+" --depth "+$q_struct["depth"].value
   return result
 end
 
@@ -19,12 +19,12 @@ end
 
 def get_ks_network()
   if $q_struct["bootproto"].value == "dhcp"
-    result="--device "+$q_struct["nic"].value+" --bootproto "+$q_struct["bootproto"].value
+    result = "--device "+$q_struct["nic"].value+" --bootproto "+$q_struct["bootproto"].value
   else
-    client_ip=$q_struct["ip"].value
-    client_name=$q_struct["hostname"].value
-    gateway=get_ipv4_default_route(client_ip)
-    result="--device "+$q_struct["nic"].value+" --bootproto "+$q_struct["bootproto"].value+" --ip "+client_ip+" --netmask "+$default_netmask+" --gateway "+gateway+" --nameserver "+$default_nameserver+" --hostname "+client_name
+    client_ip = $q_struct["ip"].value
+    client_name = $q_struct["hostname"].value
+    gateway = get_ipv4_default_route(client_ip)
+    result = "--device "+$q_struct["nic"].value+" --bootproto "+$q_struct["bootproto"].value+" --ip "+client_ip+" --netmask "+$default_netmask+" --gateway "+gateway+" --nameserver "+$default_nameserver+" --hostname "+client_name
   end
   return result
 end
@@ -33,10 +33,10 @@ end
 
 def set_ks_network()
   if $q_struct["bootproto"].value == "dhcp"
-    $q_struct["ip"].ask="no"
-    $q_struct["ip"].type=""
-    $q_struct["hostname"].ask="no"
-    $q_struct["hostname"].type=""
+    $q_struct["ip"].ask = "no"
+    $q_struct["ip"].type = ""
+    $q_struct["hostname"].ask = "no"
+    $q_struct["hostname"].type = ""
   end
   return
 end
@@ -44,89 +44,89 @@ end
 # Construct ks password line
 
 def get_ks_password()
-  result="--iscrypted "+$q_struct["crypt"].value.to_s
+  result = "--iscrypted "+$q_struct["crypt"].value.to_s
   return result
 end
 
 # Construct admin ks password line
 
 def get_ks_admin_password()
-  result="--name="+$q_struct["adminuser"].value+" --groups="+$q_struct["admingroup"].value+" --homedir="+$q_struct["adminhome"].value+" --password="+$q_struct["admincrypt"].value.to_s+" --iscrypted --shell="+$q_struct["adminshell"].value+" --uid="+$q_struct["adminuid"].value
+  result = "--name = "+$q_struct["adminuser"].value+" --groups="+$q_struct["admingroup"].value+" --homedir="+$q_struct["adminhome"].value+" --password="+$q_struct["admincrypt"].value.to_s+" --iscrypted --shell="+$q_struct["adminshell"].value+" --uid="+$q_struct["adminuid"].value
   return result
 end
 
 # Construct ks bootloader line
 
 def get_ks_bootloader()
-  result="--location="+$q_struct["bootstrap"].value
+  result = "--location="+$q_struct["bootstrap"].value
   return result
 end
 
 # Construct ks clear  partition line
 
 def get_ks_clearpart()
-  result="--all --drives="+$q_struct["bootdevice"].value+" --initlabel"
+  result = "--all --drives="+$q_struct["bootdevice"].value+" --initlabel"
   return result
 end
 
 # Construct ks boot partition line
 
 def get_ks_bootpart()
-  result=$q_struct["bootmount"].value+" --fstype "+$q_struct["bootfs"].value+" --size="+$q_struct["bootsize"].value+" --ondisk="+$q_struct["bootdevice"].value
+  result = $q_struct["bootmount"].value+" --fstype "+$q_struct["bootfs"].value+" --size = "+$q_struct["bootsize"].value+" --ondisk="+$q_struct["bootdevice"].value
   return result
 end
 
 # Construct ks volume partition line
 
 def get_ks_volpart()
-  result=$q_struct["volname"].value+" --size="+$q_struct["volsize"].value+" --grow --ondisk="+$q_struct["bootdevice"].value
+  result = $q_struct["volname"].value+" --size = "+$q_struct["volsize"].value+" --grow --ondisk="+$q_struct["bootdevice"].value
   return result
 end
 
 # Construct ks volume group line
 
 def get_ks_volgroup()
-  result=$q_struct["volgroupname"].value+" --pesize="+$q_struct["pesize"].value+" "+$q_struct["volname"].value
+  result = $q_struct["volgroupname"].value+" --pesize = "+$q_struct["pesize"].value+" "+$q_struct["volname"].value
   return result
 end
 
 # Construct ks log swap line
 
 def get_ks_logswap()
-  result="swap --fstype swap --name="+$q_struct["swapvol"].value+" --vgname="+$q_struct["volgroupname"].value+" --size="+$q_struct["swapmin"].value+" --grow --maxsize="+$q_struct["swapmax"].value
+  result = "swap --fstype swap --name = "+$q_struct["swapvol"].value+" --vgname = "+$q_struct["volgroupname"].value+" --size = "+$q_struct["swapmin"].value+" --grow --maxsize = "+$q_struct["swapmax"].value
   return result
 end
 
 # Construct ks log root line
 
 def get_ks_logroot()
-  result="/ --fstype "+$q_struct["rootfs"].value+" --name="+$q_struct["rootvol"].value+" --vgname="+$q_struct["volgroupname"].value+" --size="+$q_struct["rootsize"].value+" --grow"
+  result = "/ --fstype "+$q_struct["rootfs"].value+" --name = "+$q_struct["rootvol"].value+" --vgname = "+$q_struct["volgroupname"].value+" --size = "+$q_struct["rootsize"].value+" --grow"
   return result
 end
 
 # Get install url
 
 def get_ks_install_url(service_name)
-  install_url="--url=http://"+$default_host+"/"+service_name
+  install_url = "--url=http://"+$default_host+"/"+service_name
   return install_url
 end
 
 # Get kickstart header
 
 def get_ks_header(client_name)
-  version=get_version()
-  header="# kickstart file for "+client_name+" - modest "+version
+  version = get_version()
+  header  = "# kickstart file for "+client_name+" - modest "+version
   return header
 end
 
 # Populate ks questions
 
 def populate_ks_questions(service_name,client_name,client_ip)
-  $q_struct={}
-  $q_order=[]
+  $q_struct = {}
+  $q_order  = []
 
-  name="ks_header"
-  config=Ks.new(
+  name = "ks_header"
+  config = Ks.new(
     type      = "output",
     question  = "Kickstart file header comment",
     ask       = "yes",
@@ -135,11 +135,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="console"
-  config=Ks.new(
+  name = "console"
+  config = Ks.new(
     type      = "output",
     question  = "Console type",
     ask       = "yes",
@@ -148,11 +148,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="install_type"
-  config=Ks.new(
+  name = "install_type"
+  config = Ks.new(
     type      = "output",
     question  = "Install type",
     ask       = "yes",
@@ -161,11 +161,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="install_method"
-  config=Ks.new(
+  name = "install_method"
+  config = Ks.new(
     type      = "output",
     question  = "Install Medium",
     ask       = "yes",
@@ -174,11 +174,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="url"
-  config=Ks.new(
+  name = "url"
+  config = Ks.new(
     type      = "output",
     question  = "Install Medium",
     ask       = "yes",
@@ -187,11 +187,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="install_language"
-  config=Ks.new(
+  name = "install_language"
+  config = Ks.new(
     type      = "output",
     question  = "Install Language",
     ask       = "yes",
@@ -200,11 +200,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="support_language"
-  config=Ks.new(
+  name = "support_language"
+  config = Ks.new(
     type      = "output",
     question  = "Support Language",
     ask       = "yes",
@@ -213,11 +213,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_language()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="keyboard"
-  config=Ks.new(
+  name = "keyboard"
+  config = Ks.new(
     type      = "output",
     question  = "Keyboard",
     ask       = "yes",
@@ -226,11 +226,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="videocard"
-  config=Ks.new(
+  name = "videocard"
+  config = Ks.new(
     type      = "",
     question  = "Video Card",
     ask       = "yes",
@@ -239,11 +239,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="videoram"
-  config=Ks.new(
+  name = "videoram"
+  config = Ks.new(
     type      = "",
     question  = "Video RAM",
     ask       = "yes",
@@ -252,11 +252,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="hsync"
-  config=Ks.new(
+  name = "hsync"
+  config = Ks.new(
     type      = "",
     question  = "Horizontal Sync",
     ask       = "yes",
@@ -265,10 +265,10 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
 
-  name="vsync"
-  config=Ks.new(
+  name = "vsync"
+  config = Ks.new(
     type      = "",
     question  = "Vertical Sync",
     ask       = "yes",
@@ -277,11 +277,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="resolution"
-  config=Ks.new(
+  name = "resolution"
+  config = Ks.new(
     type      = "",
     question  = "Resolution",
     ask       = "yes",
@@ -290,11 +290,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="depth"
-  config=Ks.new(
+  name = "depth"
+  config = Ks.new(
     type      = "",
     question  = "Bit Depth",
     ask       = "yes",
@@ -303,11 +303,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="xconfig"
-  config=Ks.new(
+  name = "xconfig"
+  config = Ks.new(
     type      = "",
     question  = "Xconfig",
     ask       = "yes",
@@ -316,11 +316,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_xconfig()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="nic"
-  config=Ks.new(
+  name = "nic"
+  config = Ks.new(
     type      = "",
     question  = "Primary Network Interface",
     ask       = "yes",
@@ -329,11 +329,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="bootproto"
-  config=Ks.new(
+  name = "bootproto"
+  config = Ks.new(
     type      = "",
     question  = "Boot Protocol",
     ask       = "yes",
@@ -342,11 +342,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "static,dhcp",
     eval      = "set_ks_network()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="hostname"
-  config=Ks.new(
+  name = "hostname"
+  config = Ks.new(
     type      = "",
     question  = "Hostname",
     ask       = "yes",
@@ -355,11 +355,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="ip"
-  config=Ks.new(
+  name = "ip"
+  config = Ks.new(
     type      = "",
     question  = "IP",
     ask       = "yes",
@@ -368,11 +368,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="network"
-  config=Ks.new(
+  name = "network"
+  config = Ks.new(
     type      = "output",
     question  = "Network Configuration",
     ask       = "yes",
@@ -381,11 +381,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_network()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="password"
-  config=Ks.new(
+  name = "password"
+  config = Ks.new(
     type      = "",
     question  = "Root Password",
     ask       = "yes",
@@ -394,11 +394,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="crypt"
-  config=Ks.new(
+  name = "crypt"
+  config = Ks.new(
     type      = "",
     question  = "Root Password Crypt",
     ask       = "yes",
@@ -407,11 +407,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_password_crypt(answer)"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="rootpw"
-  config=Ks.new(
+  name = "rootpw"
+  config = Ks.new(
     type      = "output",
     question  = "Root Password Configuration",
     parameter = "rootpw",
@@ -419,11 +419,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_password()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="adminuser"
-  config=Ks.new(
+  name = "adminuser"
+  config = Ks.new(
     type      = "",
     question  = "Admin Username",
     ask       = "yes",
@@ -432,11 +432,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="adminuid"
-  config=Ks.new(
+  name = "adminuid"
+  config = Ks.new(
     type      = "",
     question  = "Admin User ID",
     ask       = "yes",
@@ -445,11 +445,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="adminshell"
-  config=Ks.new(
+  name = "adminshell"
+  config = Ks.new(
     type      = "",
     question  = "Admin User Shell",
     parameter = "",
@@ -457,11 +457,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="adminhome"
-  config=Ks.new(
+  name = "adminhome"
+  config = Ks.new(
     type      = "",
     question  = "Admin User Home Directory",
     ask       = "yes",
@@ -470,11 +470,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="admingroup"
-  config=Ks.new(
+  name = "admingroup"
+  config = Ks.new(
     type      = "",
     question  = "Admin User Group",
     ask       = "yes",
@@ -483,11 +483,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="adminpassword"
-  config=Ks.new(
+  name = "adminpassword"
+  config = Ks.new(
     type      = "",
     question  = "Admin User Password",
     ask       = "yes",
@@ -496,11 +496,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="admincrypt"
-  config=Ks.new(
+  name = "admincrypt"
+  config = Ks.new(
     type      = "",
     question  = "Admin User Password Crypt",
     ask       = "yes",
@@ -509,11 +509,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_password_crypt(answer)"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="selinux"
-  config=Ks.new(
+  name = "selinux"
+  config = Ks.new(
     type      = "output",
     question  = "SELinux Configuration",
     ask       = "yes",
@@ -522,11 +522,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="authconfig"
-  config=Ks.new(
+  name = "authconfig"
+  config = Ks.new(
     type      = "output",
     question  = "SELinux Configuration",
     parameter = "authconfig",
@@ -534,11 +534,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="timezone"
-  config=Ks.new(
+  name = "timezone"
+  config = Ks.new(
     type      = "output",
     question  = "Timezone",
     ask       = "yes",
@@ -547,11 +547,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="bootstrap"
-  config=Ks.new(
+  name = "bootstrap"
+  config = Ks.new(
     type      = "",
     question  = "Bootstrap",
     ask       = "yes",
@@ -560,11 +560,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="bootloader"
-  config=Ks.new(
+  name = "bootloader"
+  config = Ks.new(
     type      = "output",
     question  = "Bootloader",
     ask       = "yes",
@@ -573,11 +573,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_bootloader()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="bootdevice"
-  config=Ks.new(
+  name = "bootdevice"
+  config = Ks.new(
     type      = "",
     question  = "Boot Device",
     ask       = "yes",
@@ -586,11 +586,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="clearpart"
-  config=Ks.new(
+  name = "clearpart"
+  config = Ks.new(
     type      = "output",
     question  = "Clear Parition",
     ask       = "yes",
@@ -599,11 +599,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_clearpart()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="bootmount"
-  config=Ks.new(
+  name = "bootmount"
+  config = Ks.new(
     type      = "",
     question  = "Boot Mount Point",
     ask       = "yes",
@@ -612,11 +612,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="bootfs"
-  config=Ks.new(
+  name = "bootfs"
+  config = Ks.new(
     type      = "",
     question  = "Boot Filesystem",
     parameter = "",
@@ -624,11 +624,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="bootsize"
-  config=Ks.new(
+  name = "bootsize"
+  config = Ks.new(
     type      = "",
     question  = "Boot Size",
     ask       = "yes",
@@ -637,11 +637,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="bootpart"
-  config=Ks.new(
+  name = "bootpart"
+  config = Ks.new(
     type      = "output",
     question  = "Clear Parition",
     ask       = "yes",
@@ -650,11 +650,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_bootpart()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="volname"
-  config=Ks.new(
+  name = "volname"
+  config = Ks.new(
     type      = "",
     question  = "Physical Volume Name",
     parameter = "",
@@ -662,11 +662,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="volsize"
-  config=Ks.new(
+  name = "volsize"
+  config = Ks.new(
     type      = "",
     question  = "Physical Volume Size",
     ask       = "yes",
@@ -675,11 +675,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="volpart"
-  config=Ks.new(
+  name = "volpart"
+  config = Ks.new(
     type      = "output",
     question  = "Physical Volume Configuration",
     ask       = "yes",
@@ -688,11 +688,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_volpart()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="volgroupname"
-  config=Ks.new(
+  name = "volgroupname"
+  config = Ks.new(
     type      = "",
     question  = "Volume Group Name",
     ask       = "yes",
@@ -701,11 +701,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="pesize"
-  config=Ks.new(
+  name = "pesize"
+  config = Ks.new(
     type      = "",
     question  = "Physical Extent Size",
     ask       = "yes",
@@ -714,11 +714,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="volgroup"
-  config=Ks.new(
+  name = "volgroup"
+  config = Ks.new(
     type      = "output",
     question  = "Volume Group Configuration",
     ask       = "yes",
@@ -727,11 +727,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_volgroup()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="swapmin"
-  config=Ks.new(
+  name = "swapmin"
+  config = Ks.new(
     type      = "",
     question  = "Minimum Swap Size",
     ask       = "yes",
@@ -740,11 +740,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="swapmax"
-  config=Ks.new(
+  name = "swapmax"
+  config = Ks.new(
     type      = "",
     question  = "Maximum Swap Size",
     ask       = "yes",
@@ -753,11 +753,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="swapvol"
-  config=Ks.new(
+  name = "swapvol"
+  config = Ks.new(
     type      = "",
     question  = "Swap Volume Name",
     parameter = "",
@@ -765,11 +765,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="logswap"
-  config=Ks.new(
+  name = "logswap"
+  config = Ks.new(
     type      = "output",
     question  = "Swap Logical Volume Configuration",
     ask       = "yes",
@@ -778,11 +778,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_logswap()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="rootfs"
-  config=Ks.new(
+  name = "rootfs"
+  config = Ks.new(
     type      = "",
     question  = "Root Filesystem",
     ask       = "yes",
@@ -791,11 +791,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="rootvol"
-  config=Ks.new(
+  name = "rootvol"
+  config = Ks.new(
     type      = "",
     question  = "Root Volume Name",
     ask       = "yes",
@@ -804,11 +804,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="rootsize"
-  config=Ks.new(
+  name = "rootsize"
+  config = Ks.new(
     type      = "",
     question  = "Root Size",
     ask       = "yes",
@@ -817,11 +817,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="logroot"
-  config=Ks.new(
+  name = "logroot"
+  config = Ks.new(
     type      = "output",
     question  = "Root Logical Volume Configuration",
     ask       = "yes",
@@ -830,11 +830,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "get_ks_logroot()"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
-  name="finish"
-  config=Ks.new(
+  name = "finish"
+  config = Ks.new(
     type      = "output",
     question  = "Finish Command",
     ask       = "yes",
@@ -843,7 +843,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     valid     = "",
     eval      = "no"
     )
-  $q_struct[name]=config
+  $q_struct[name] = config
   $q_order.push(name)
 
   return

@@ -5,14 +5,14 @@
 
 def add_hosts_entry(client_name,client_ip)
   hosts_file="/etc/hosts"
-  message="Checking:\tHosts file for "+client_name
-  command="cat #{hosts_file} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
-  output=execute_command(message,command)
+  message = "Checking:\tHosts file for "+client_name
+  command = "cat #{hosts_file} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
+  output  = execute_command(message,command)
   if !output.match(/#{client_name}/)
     backup_file(hosts_file)
-    message="Adding:\tHost "+client_name+" to "+hosts_file
-    command="echo '#{client_name}\t#{client_ip}' >> #{hosts_file}"
-    output=execute_command(message,command)
+    message = "Adding:\tHost "+client_name+" to "+hosts_file
+    command = "echo '#{client_name}\t#{client_ip}' >> #{hosts_file}"
+    output  = execute_command(message,command)
   end
   return
 end
@@ -21,13 +21,13 @@ end
 
 def remove_hosts_entry(client_name,client_ip)
   file_name="/etc/hosts"
-  message="Checking:\tHosts file for "+client_name
-  command="cat #{file_name} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
-  output=execute_command(message,command)
+  message = "Checking:\tHosts file for "+client_name
+  command = "cat #{file_name} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
+  output  = execute_command(message,command)
   copy=[]
   if output.match(/#{client_name}/)
-    file=IO.readlines(file_name)
-    file.each do |line|
+    file_info=IO.readlines(file_name)
+    file_info.each do |line|
       if !line.match(/^#{client_ip}/)
         if !line.mtach(/#{client_name}/)
           copy.push(line)
@@ -42,18 +42,18 @@ end
 # Add host to DHCP config
 
 def add_dhcp_client(client_name,client_mac,client_ip,service_name)
-  tftp_pxe_file=client_mac.gsub(/:/,"")
-  tftp_pxe_file=tftp_pxe_file.upcase
+  tftp_pxe_file = client_mac.gsub(/:/,"")
+  tftp_pxe_file = tftp_pxe_file.upcase
   if service_name.match(/sol/)
-    suffix=".bios"
+    suffix = ".bios"
   else
-    suffix=".pxelinux"
+    suffix = ".pxelinux"
   end
-  tftp_pxe_file="01"+tftp_pxe_file+suffix
-  dhcpd_file="/etc/inet/dhcpd4.conf"
-  message="Checking:\fIf DHCPd configuration contains "+client_name
-  command="cat #{dhcpd_file} | grep '#{client_name}'"
-  output=execute_command(message,command)
+  tftp_pxe_file = "01"+tftp_pxe_file+suffix
+  dhcpd_file = "/etc/inet/dhcpd4.conf"
+  message    = "Checking:\fIf DHCPd configuration contains "+client_name
+  command    = "cat #{dhcpd_file} | grep '#{client_name}'"
+  output     = execute_command(message,command)
   if !output.match(/#{client_name}/)
     backup_file(dhcpd_file)
     file=File.open(dhcpd_file,"a")
@@ -72,11 +72,11 @@ end
 # Remove host from DHCP config
 
 def remove_dhcp_client(client_name)
-  file_name="/etc/inet/dhcpd4.conf"
-  found=0
-  copy=[]
-  file=IO.readlines(file_name)
-  file.each do |line|
+  file_name = "/etc/inet/dhcpd4.conf"
+  found     = 0
+  copy      = []
+  file_info = IO.readlines(file_name)
+  file_info.each do |line|
     if line.match(/^host #{client_name}/)
       found=1
     end
@@ -94,36 +94,36 @@ end
 # Backup file
 
 def backup_file(file_name)
-  date_string=get_date_string()
-  backup_file=File.basename(file_name)+"."+date_string
-  backup_file=$backup_dir+backup_file
-  message="Archiving:\tFile "+file_name+" to "+backup_file
-  command="cp #{file_name} #{backup_file}"
-  output=execute_command(message,command)
+  date_string = get_date_string()
+  backup_file = File.basename(file_name)+"."+date_string
+  backup_file = $backup_dir+backup_file
+  message     = "Archiving:\tFile "+file_name+" to "+backup_file
+  command     = "cp #{file_name} #{backup_file}"
+  execute_command(message,command)
   return
 end
 
 # Wget a file
 
 def wget_file(file_url,file_name)
-  file_dir=File.dirname(file_name)
+  file_dir = File.dirname(file_name)
   check_dir_exists(file_dir)
-  message="Fetching:\tURL "+file_url+" to "+file_name
-  command="wget #{file_url} -O #{file_name}"
-  output=execute_command(message,command)
+  message  = "Fetching:\tURL "+file_url+" to "+file_name
+  command  = "wget #{file_url} -O #{file_name}"
+  execute_command(message,command)
   return
 end
 # Find client MAC
 
 def get_client_mac(client_name)
-  ethers_file="/etc/ethers"
-  output=""
-  found=0
+  ethers_file = "/etc/ethers"
+  output      = ""
+  found       = 0
   if File.exists?(ethers_file)
-    message="Checking:\tFile "+ethers_file+" for "+client_name+" MAC address"
-    command="cat #{ethers_file} |grep '#{client_name} '|awk '{print $2}'"
-    client_mac=execute_command(message,command)
-    client_mac=client_mac.chomp
+    message    = "Checking:\tFile "+ethers_file+" for "+client_name+" MAC address"
+    command    = "cat #{ethers_file} |grep '#{client_name} '|awk '{print $2}'"
+    client_mac = execute_command(message,command)
+    client_mac = client_mac.chomp
   end
   if !output.match(/[0-9]/)
     dhcpd_file="/etc/inet/dhcpd4.conf"
@@ -149,11 +149,11 @@ end
 # If not create it
 
 def check_dir_exists(dir_name)
-  output=""
+  output  = ""
   if !File.directory?(dir_name)
-    message="Creating:\t"+dir_name
-    command="mkdir -p #{dir_name}"
-    output=execute_command(message,command)
+  message = "Creating:\t"+dir_name
+  command = "mkdir -p #{dir_name}"
+  output  = execute_command(message,command)
   end
   return output
 end
@@ -164,9 +164,9 @@ end
 def check_zfs_fs_exists(dir_name)
   output=""
   if !File.directory?(dir_name)
-    message="Warning:\t"+dir_name+" does not exist"
-    command="zfs create #{$default_zpool}#{dir_name}"
-    output=execute_command(message,command)
+    message = "Warning:\t"+dir_name+" does not exist"
+    command = "zfs create #{$default_zpool}#{dir_name}"
+    output  = execute_command(message,command)
   end
   return output
 end
@@ -177,9 +177,9 @@ def destroy_zfs_fs(dir_name)
   output=""
   if $destroy_fs == 1
     if File.directory?(dir_name)
-      message="Warning:\tDestroying "+dir_name
-      command="zfs destroy #{$default_zpool}#{dir_name}"
-      output=execute_command(message,command)
+      message = "Warning:\tDestroying "+dir_name
+      command = "zfs destroy #{$default_zpool}#{dir_name}"
+      output  = execute_command(message,command)
     end
   end
   return output
@@ -190,7 +190,7 @@ end
 # Does not execute cerver/client import/create operations in test mode
 
 def execute_command(message,command)
-  output=""
+  output = ""
   if $verbose_mode == 1
     if message.match(/[A-z|0-9]/)
       puts message
@@ -199,7 +199,7 @@ def execute_command(message,command)
   end
   if $test_mode == 1
     if !command.match(/create|update|import|delete|svccfg|rsync|cp|touch|svcadm/)
-      output=%x[#{command}]
+      output = %x[#{command}]
     end
   else
     output=%x[#{command}]
@@ -209,7 +209,7 @@ def execute_command(message,command)
       if !output.match(/\n/)
         puts "Output:\t\t"+output
       else
-        multi_line_output=output.split(/\n/)
+        multi_line_output = output.split(/\n/)
         multi_line_output.each do |line|
           puts "Output:\t\t"+line
         end
@@ -222,12 +222,12 @@ end
 # Convert current date to a string that can be used in file names
 
 def get_date_string()
-  time=Time.new
-  time=time.to_a
-  date=Time.utc(*time)
-  date_string=date.to_s.gsub(/\s+/,"_")
-  date_string=date_string.gsub(/:/,"_")
-  date_string=date_string.gsub(/-/,"_")
+  time        = Time.new
+  time        = time.to_a
+  date        = Time.utc(*time)
+  date_string = date.to_s.gsub(/\s+/,"_")
+  date_string = date_string.gsub(/:/,"_")
+  date_string = date_string.gsub(/-/,"_")
   if $verbose_mode == 1
     puts "Information:\tSetting date string to "+date_string
   end
@@ -237,70 +237,70 @@ end
 # Create an encrypted password field entry for a give password
 
 def get_password_crypt(password)
-  possible=[('a'..'z'),('A'..'Z'),(0..9),'.','/'].inject([]) {|s,r| s+Array(r)}
-  salt=Array.new(8){possible[rand(possible.size)]}
-  password=password.crypt("$1$#{salt}")
+  possible = [('a'..'z'),('A'..'Z'),(0..9),'.','/'].inject([]) {|s,r| s+Array(r)}
+  salt     = Array.new(8){possible[rand(possible.size)]}
+  password = password.crypt("$1$#{salt}")
   return password
 end
 
 # Handle SMF service
 
 def handle_smf_service(function,smf_service_name)
-  uc_function=function.capitalize
-  message=uc_function+":\tService "+smf_service_name
-  command="svcadm #{function} #{smf_service_name} ; sleep 5"
-  output=execute_command(message,command)
+  uc_function = function.capitalize
+  message     = uc_function+":\tService "+smf_service_name
+  command     = "svcadm #{function} #{smf_service_name} ; sleep 5"
+  output      = execute_command(message,command)
   return output
 end
 
 # Restart DHCPd
 
 def restart_dhcpd()
-  function="refresh"
-  smf_service_name="svc:/network/dhcp/server:ipv4"
-  output=handle_smf_service(function,smf_service_name)
+  function         = "refresh"
+  smf_service_name = "svc:/network/dhcp/server:ipv4"
+  output           = handle_smf_service(function,smf_service_name)
   return output
 end
 
 # Disable SMF service
 
 def disable_smf_service(smf_service_name)
-  function="disable"
-  output=handle_smf_service(function,smf_service_name)
+  function = "disable"
+  output   = handle_smf_service(function,smf_service_name)
   return output
 end
 
 # Enable SMF service
 
 def enable_smf_service(smf_service_name)
-  function="enable"
-  output=handle_smf_service(function,smf_service_name)
+  function = "enable"
+  output   = handle_smf_service(function,smf_service_name)
   return output
 end
 
 # Refresh SMF service
 
 def refresh_smf_service(smf_service_name)
-  function="refresh"
-  output=handle_smf_service(function,smf_service_name)
+  function = "refresh"
+  output   = handle_smf_service(function,smf_service_name)
   return output
 end
 
 # Check SMF service
 
 def check_smf_service(smf_service_name)
-  message="Checking:\tService "+smf_service_name
-  command="svcs -a |grep '#{smf_service_name}"
-  output=execute_command(message,command)
+  message = "Checking:\tService "+smf_service_name
+  command = "svcs -a |grep '#{smf_service_name}"
+  output  = execute_command(message,command)
   return output
 end
 
 # Calculate route
 
 def get_ipv4_default_route(client_ip)
-  octets=client_ip.split(/\./)
-  octets[3]="254"
-  ipv4_default_route=octets.join(".")
+  octets             = client_ip.split(/\./)
+  octets[3]          = "254"
+  ipv4_default_route = octets.join(".")
   return ipv4_default_route
 end
 
@@ -312,12 +312,12 @@ end
 # If none exist it will exit
 
 def check_iso_base_dir(search_string)
-  iso_list=[]
+  iso_list = []
   puts "Checking:\t"+$iso_base_dir
-  output=check_zfs_fs_exists($iso_base_dir)
-  message="Getting:\t"+$iso_base_dir+" contents"
-  command="ls #{$iso_base_dir}/*.iso |egrep \"#{search_string}\""
-  iso_list=execute_command(message,command)
+  check_zfs_fs_exists($iso_base_dir)
+  message  = "Getting:\t"+$iso_base_dir+" contents"
+  command  = "ls #{$iso_base_dir}/*.iso |egrep \"#{search_string}\""
+  iso_list = execute_command(message,command)
   if !iso_list.grep(/full/)
     puts "Warning:\tNo full repository ISO images exist in "+$iso_base_dir
     if $test_mode != 1
@@ -361,16 +361,16 @@ end
 # Add apache proxy
 
 def add_apache_proxy(publisher_host,publisher_port,service_base_name)
-  apache_config_file="/etc/apache2/2.2/httpd.conf"
+  apache_config_file = "/etc/apache2/2.2/httpd.conf"
   apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
   if !apache_check.match(/#{service_base_name}/)
-    message="Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
-    command="cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
+    message = "Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
+    command = "cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
     execute_command(message,command)
-    message="Adding:\t\tProxy entry to "+apache_config_file
-    command="echo 'ProxyPass /"+service_base_name+" http://"+publisher_host+":"+publisher_port+" nocanon max=200' >>"+apache_config_file
+    message = "Adding:\t\tProxy entry to "+apache_config_file
+    command = "echo 'ProxyPass /"+service_base_name+" http://"+publisher_host+":"+publisher_port+" nocanon max=200' >>"+apache_config_file
     execute_command(message,command)
-    smf_service_name="apache22"
+    smf_service_name = "apache22"
     enable_smf_service(smf_service_name)
     refresh_smf_service(smf_service_name)
   end
@@ -401,12 +401,12 @@ end
 def add_apache_alias(service_base_name)
   repo_version_dir=$repo_base_dir+"/"+service_base_name
   apache_config_file="/etc/apache2/2.2/httpd.conf"
-  message="Checking:\tApache confing file "+apache_config_file+" for "+service_base_name
-  command="cat #{apache_config_file} |grep '#{service_base_name}'"
-  apache_check=execute_command(message,command)
+  message      = "Checking:\tApache confing file "+apache_config_file+" for "+service_base_name
+  command      = "cat #{apache_config_file} |grep '#{service_base_name}'"
+  apache_check = execute_command(message,command)
   if !apache_check.match(/#{service_base_name}/)
-    message="Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
-    command="cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
+    message = "Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
+    command = "cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
     execute_command(message,command)
     if $verbose_mode == 1
       puts "Adding:\t\tDirectory entry to "+apache_config_file
@@ -417,10 +417,10 @@ def add_apache_alias(service_base_name)
     output.write("Allow from #{$default_apache_allow}\n")
     output.write("</Directory>\n")
     output.close
-    message="Adding:\t\tAlias entry to "+apache_config_file
-    command="echo 'Alias /#{service_base_name} #{repo_version_dir}' >> #{apache_config_file}"
+    message = "Adding:\t\tAlias entry to "+apache_config_file
+    command = "echo 'Alias /#{service_base_name} #{repo_version_dir}' >> #{apache_config_file}"
     execute_command(message,command)
-    smf_service_name="apache22"
+    smf_service_name = "apache22"
     enable_smf_service(smf_service_name)
     refresh_smf_service(smf_service_name)
   end
@@ -443,30 +443,30 @@ end
 
 def mount_iso(iso_file)
   puts "Processing:\t"+iso_file
-  output=check_dir_exists($iso_mount_dir)
-  message="Checking:\tExisting mounts"
-  command="df |awk '{print $1}' |grep '^#{$iso_mount_dir}$'"
+  output  = check_dir_exists($iso_mount_dir)
+  message = "Checking:\tExisting mounts"
+  command = "df |awk '{print $1}' |grep '^#{$iso_mount_dir}$'"
   output=execute_command(message,command)
   if output.match(/[A-z]/)
-    message="Unmounting:\t"+$iso_mount_dir
-    command="umount "+$iso_mount_dir
-    output=execute_command(message,command)
+    message = "Unmounting:\t"+$iso_mount_dir
+    command = "umount "+$iso_mount_dir
+    output  = execute_command(message,command)
   end
-  message="Mounting:\tISO "+iso_file+" on "+$iso_mount_dir
-  command="mount -F hsfs "+iso_file+" "+$iso_mount_dir
-  output=execute_command(message,command)
+  message = "Mounting:\tISO "+iso_file+" on "+$iso_mount_dir
+  command = "mount -F hsfs "+iso_file+" "+$iso_mount_dir
+  output  = execute_command(message,command)
   if iso_file.match(/sol/)
     if iso_file.match(/\-ga\-/)
-      iso_test_dir=$iso_mount_dir+"/boot"
+      iso_test_dir = $iso_mount_dir+"/boot"
     else
-      iso_test_dir=$iso_mount_dir+"/repo"
+      iso_test_dir = $iso_mount_dir+"/repo"
     end
   else
     if iso_file.match(/CentOS/)
-      iso_test_dir=$iso_mount_dir+"/CentOS"
+      iso_test_dir = $iso_mount_dir+"/CentOS"
     else
       if iso_file.match(/rhel/)
-        iso_test_dir=$iso_mount_dir+"/Packages"
+        iso_test_dir = $iso_mount_dir+"/Packages"
       end
     end
   end
@@ -485,12 +485,12 @@ end
 def copy_iso(iso_file,repo_version_dir)
   puts "Checking:\tIf we can copy data from full repo ISO"
   if iso_file.match(/sol/)
-    iso_repo_dir=$iso_mount_dir+"/repo"
-    test_dir=repo_version_dir+"/publisher"
+    iso_repo_dir = $iso_mount_dir+"/repo"
+    test_dir     = repo_version_dir+"/publisher"
   else
     if iso_file.match(/CentOS|rhel/)
-      iso_repo_dir=$iso_mount_dir
-      test_dir=repo_version_dir+"/isolinux"
+      iso_repo_dir = $iso_mount_dir
+      test_dir     = repo_version_dir+"/isolinux"
     end
   end
   if !File.directory?(repo_version_dir)
@@ -501,17 +501,17 @@ def copy_iso(iso_file,repo_version_dir)
   end
   if !File.directory?(test_dir)
     if iso_file.match(/sol/)
-      message="Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
-      command="rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
-      output=execute_command(message,command)
-      message="Rebuilding:\tRepository in "+repo_version_dir
-      command="pkgrepo -s #{repo_version_dir} rebuild"
-      output=execute_command(message,command)
+      message = "Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
+      command = "rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
+      output  = execute_command(message,command)
+      message = "Rebuilding:\tRepository in "+repo_version_dir
+      command = "pkgrepo -s #{repo_version_dir} rebuild"
+      output  = execute_command(message,command)
     else
       check_dir_exists(test_dir)
-      message="Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
-      command="rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
-      output=execute_command(message,command)
+      message = "Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
+      command = "rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
+      output  = execute_command(message,command)
     end
   end
   return
@@ -520,8 +520,8 @@ end
 # Unmount ISO
 
 def umount_iso()
-  message="Unmounting:\tISO mounted on $iso_mount_dir"
-  command="umount #{$iso_mount_dir}"
+  message = "Unmounting:\tISO mounted on $iso_mount_dir"
+  command = "umount #{$iso_mount_dir}"
   execute_command(message,command)
   return
 end
