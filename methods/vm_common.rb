@@ -1,10 +1,10 @@
 
-# Code for creating client VMs for testing (e.g. Virtual Box)
+# Code for creating client VMs for testing (e.g. VirtualBox)
 
-# Get Virtual Box VM directory
+# Get VirtualBox VM directory
 
 def get_vbox_vm_dir(client_name)
-  message          = "Getting:\tVirtual Box VM directory"
+  message          = "Getting:\tVirtualBox VM directory"
   command          = "VBoxManage list systemproperties |grep 'Default machine folder' |cut -f2 -d':' |sed 's/^[         ]*//g'"
   vbox_vm_base_dir = execute_command(message,command)
   vbox_vm_base_dir = vbox_vm_base_dir.chomp
@@ -37,7 +37,7 @@ def register_vbox_vm(client_name,os_type)
   return
 end
 
-# Get Virtual Box disk
+# Get VirtualBox disk
 
 def get_vbox_controller()
   if $vbox_disk_type =~/ide/
@@ -55,7 +55,7 @@ end
 # Add controller to VM
 
 def add_controller_to_vbox_vm(client_name,vbox_controller)
-  message = "Adding:\t\tController to Virtual Box VM"
+  message = "Adding:\t\tController to VirtualBox VM"
   command = "VBoxManage storagectl \"#{client_name}\" --name \"#{$vbox_disk_type}\" --add \"#{$vbox_disk_type}\" --controller \"#{vbox_controller}\""
   execute_command(message,command)
   return
@@ -70,7 +70,7 @@ def create_vbox_hdd(client_name,vbox_disk_name)
   return
 end
 
-# Add hard disk to Virtual Box VM
+# Add hard disk to VirtualBox VM
 
 def add_hdd_to_vbox_vm(client_name,vbox_disk_name)
   message = "Attaching:\tStorage to VM "+client_name
@@ -160,7 +160,7 @@ def list_ai_vbox_vms()
   return
 end
 
-# List Virtual Box VMs
+# List VirtualBox VMs
 
 def list_vbox_vms(search_string)
   message = "Available VMs:"
@@ -170,7 +170,7 @@ def list_vbox_vms(search_string)
   return
 end
 
-# Check Virtual Box VM exists
+# Check VirtualBox VM exists
 
 def check_vbox_vm_exists(client_name)
   message="Checking:\tVM "+client_name+" exists"
@@ -182,7 +182,7 @@ def check_vbox_vm_exists(client_name)
   end
 end
 
-# Get Virtual Box bridged network interface
+# Get VirtualBox bridged network interface
 
 def get_bridged_vbox_nic()
   message  = "Checking:\tBridged interfaces"
@@ -204,16 +204,24 @@ def get_bridged_vbox_nic()
   return nic_name
 end
 
-# Add bridged network to Virtual Box VM
+# Add bridged network to VirtualBox VM
 
-def add_bridge_network_to_vbox_vm(client_name,nic_name)
+def add_bridged_network_to_vbox_vm(client_name,nic_name)
   message = "Adding:\tBridged network "+nic_name+" to "+client_name
   command = "VBoxManage modifyvm #{client_name} --nic1 bridged --bridgeadapter1 #{nic_name}"
   execute_command(message,command)
   return
 end
 
-# Configure a Virtual Box VM
+# Set boot priority to network
+
+def set_vbox_vm_boot_priority(client_name)
+  message = "Setting:\tBoot priority for "+client_name+" to network"
+  command = "VBoxManage modifyvm #{client_name} --boot1 net"
+  return
+end
+
+# Configure a VirtualBox VM
 
 def configure_vbox_vm(client_name,os_type)
   vbox_vm_dir      = get_vbox_vm_dir(client_name)
@@ -229,7 +237,8 @@ def configure_vbox_vm(client_name,os_type)
   vbox_socket_name = add_socket_to_vbox_vm(client_name)
   add_serial_to_vbox_vm(client_name)
   vbox_nic_name=get_bridged_vbox_nic()
-  add_bridge_network_to_vbox_vm(client_name,vbox_nic_name)
+  add_bridged_network_to_vbox_vm(client_name,vbox_nic_name)
+  set_vbox_vm_boot_priority(client_name)
   return
 end
 
@@ -237,17 +246,21 @@ end
 
 def unconfigure_vbox_vm
   check_vbox_vm_exists(client_name)
-  message = "Deleting:\tVirtual Box VM "+client_naem
+  message = "Deleting:\tVirtualBox VM "+client_naem
   command = "VBoxManage unregistervm #{client_name} --delete"
   execute_command(message,command)
   return
 end
 
-# Boot Virtual Box VM in headless mode
+# Boot VirtualBox VM in headless mode
 
 def boot_vbox_vm(client_name)
   message = "Starting:\tVM "+client_name
-  command = "VBoxManage startvm #{client_name} --type headless"
+  if $text_install == 1
+    command = "VBoxManage startvm #{client_name} --type headless"
+  else
+    command = "VBoxManage startvm #{client_name}"
+  end
   execute_command(message,command)
   if $use_serial == 1
     if $verbose_mode == 1
@@ -266,16 +279,16 @@ def boot_vbox_vm(client_name)
   return
 end
 
-# Stop Virtual Box VM
+# Stop VirtualBox VM
 
 def stop_vbox_vm(client_name)
   message = "Stopping:\tVM "+client_name
-  command = "VBoxManage stopvm #{client_name}"
+  command = "VBoxManage controlvm #{client_name} poweroff"
   execute_command(message,command)
   return
 end
 
-# Get Virtual Box VM MAC address
+# Get VirtualBox VM MAC address
 
 def get_vbox_vm_mac(client_name)
   message  = "Getting:\tMAC address for "+client_name

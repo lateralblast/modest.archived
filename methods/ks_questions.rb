@@ -115,7 +115,8 @@ end
 
 def get_ks_header(client_name)
   version = get_version()
-  header  = "# kickstart file for "+client_name+" - modest "+version
+  version = version.join(" ")
+  header  = "# kickstart file for "+client_name+" "+version
   return header
 end
 

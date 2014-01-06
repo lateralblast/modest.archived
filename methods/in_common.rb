@@ -330,9 +330,9 @@ end
 # Check client architecture
 
 def check_client_arch(client_arch)
-  if !client_arch.match(/i386|sparc/)
+  if !client_arch.match(/i386|sparc|x86_64/)
     puts "Warning:\tInvalid architecture specified"
-    puts "Warning:\tUse -a i386 or -a sparc"
+    puts "Warning:\tUse -a i386, -a x86_64 or -a sparc"
     exit
   end
   return

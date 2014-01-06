@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.9.2
+# Version:      0.9.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -26,7 +26,7 @@ require 'socket'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "F:a:b:c:d:e:f:h:i:m:n:p:s:z:ACDEIJKLMOPRSTVWXZtv"
+$options                = "F:a:b:c:d:e:f:h:i:m:n:p:s:z:ACDEHIJKLMOPRSTUVWXZtv"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -118,7 +118,7 @@ def print_usage()
   puts "-m: Client model (used for Jumpstart)"
   puts "-S: Configure server"
   puts "-C: Configure client services"
-  puts "-O: Configure Virtual Box VM"
+  puts "-O: Configure VirtualBox VM"
   puts "-p: Puplisher server port number"
   puts "-h: Puplisher server Hostname/IP"
   puts "-t: Run it test mode (in client mode create files but don't import them)"
@@ -134,64 +134,89 @@ def print_usage()
   puts "-R: Use alternate package repository (additional packages like puppet)"
   puts "-Z: Destroy ZFS filesystem as part of uninstallation"
   puts "-D: Use default values for questions"
-  puts "-T: Use serial for clients"
+  puts "-T: Use text mode install"
+  puts "-U: Use serial connectivity (emulated)"
   puts "-X: X Windows based install (default is text based)"
-  puts ""
-  puts "Information related examples:"
-  puts ""
-  puts "List Linux ISOs:\t\t"+$script+" -K -S -I"
-  puts "List Solaris 10 ISOs:\t\t"+$script+" -J -S -I"
-  puts "List Solaris 11 ISOs:\t\t"+$script+" -A -S -I"
+  puts "-H: Provide detailed examples"
   puts
-  puts "Creating Virtual Box VM for testing examples:"
+  exit
+  return
+end
+
+def print_examples(examples)
   puts
-  puts "Create KS (Linux) VM:\t\t"+$script+" -K -O -c centos59vm01"
-  puts "Create JS (Solaris 10) VM:\t"+$script+" -J -O -c sol10u11vm01"
-  puts "Create AI (Solaris 11) VM:\t"+$script+" -A -O -c sol11u01vm03"
-  puts "Delete KS (Linux) VM:\t\t"+$script+" -K -O -d centos59vm01"
-  puts "Delete JS (Solaris 10) VM:\t"+$script+" -J -O -d sol10u11vm01"
-  puts "Delete AI (Solaris 11) VM:\t"+$script+" -A -O -d sol11u01vm03"
-  puts
-  puts "Server related examples:"
-  puts ""
-  puts "List AI services:\t\t"+$script+" -A -S -L"
-  puts "List KS services:\t\t"+$script+" -K -S -L"
-  puts "List JS services:\t\t"+$script+" -J -S -L"
-  puts "Configure all AI services:\t"+$script+" -A -S"
-  puts "Configure KS services:\t\t"+$script+" -K -S"
-  puts "Configure JS services:\t\t"+$script+" -J -S"
-  puts "Unconfigure AI service:\t\t"+$script+" -A -S -z sol_11_1"
-  puts "Unconfigure KS service:\t\t"+$script+" -K -S -z centos_5_9"
-  puts "Unconfigure JS service:\t\t"+$script+" -J -S -z sol_10_11"
-  puts
-  puts "Maintenance related examples:"
-  puts
-  puts "Configure AI client services:\t"+$script+" -A -M -C -a i386"
-  puts "Enable AI proxy:\t\t"+$script+" -A -M -W -n sol_11_1"
-  puts "Disable AI proxy:\t\t"+$script+" -A -M -W -z sol_11_1"
-  puts "Configure AI alternate repo:\t"+$script+" -A -M -R"
-  puts "Unconfigure AI alternate repo:\t"+$script+" -A -M -R -z sol_11_1_alt"
-  puts "Configure KS alternate repo:\t"+$script+" -K -M -R -n centos_5_9_x86_64"
-  puts "Unconfigure KS alternate repo:\t"+$script+" -K -M -R -z centos_5_9_x86_64"
-  puts "Enable KS alias:\t\t"+$script+" -K -M -W -n centos_5_9_x86_64"
-  puts "Disable KS alias:\t\t"+$script+" -K -M -W -z centos_5_9_x86_64"
-  puts "Import KS PXE files:\t\t"+$script+" -K -M -P -n centos_5_9_x86_64"
-  puts "Delete KS PXE files:\t\t"+$script+" -K -M -P -z centos_5_9_x86_64"
-  puts "Unconfigure KS client PXE:\t"+$script+" -K -M -P -d centos59vm01"
-  puts
-  puts "Client related examples:"
-  puts
-  puts "List AI clients:\t\t"+$script+" -A -C -L"
-  puts "List KS clients:\t\t"+$script+" -K -C -L"
-  puts "List JS clients:\t\t"+$script+" -J -C -L"
-  puts "Create AI client:\t\t"+$script+" -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
-  puts "Delete AI client:\t\t"+$script+" -A -C -d sol11u01vm03"
-  puts "Create JS client:\t\t"+$script+" -J -C -c sol10u11vm01 -e 00:0C:29:FA:0C:7F -a i386 -i 192.168.1.195 -n sol_10_11"
-  puts "Delete JS client:\t\t"+$script+" -J -C -d sol10u11vm01"
-  puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
-  puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
-  puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
-  puts
+  if examples.match(/iso/)
+    puts "Information related examples:"
+    puts
+    puts "List Linux ISOs:\t\t"+$script+" -K -S -I"
+    puts "List Solaris 10 ISOs:\t\t"+$script+" -J -S -I"
+    puts "List Solaris 11 ISOs:\t\t"+$script+" -A -S -I"
+    puts
+  end
+  if examples.match(/vbox/)
+    puts "Creating VirtualBox VM examples:"
+    puts
+    puts "Create KS (Linux) VM:\t\t"+$script+" -K -O -c centos59vm01 -a x86_64"
+    puts "Create JS (Solaris 10) VM:\t"+$script+" -J -O -c sol10u11vm01 -a i386"
+    puts "Create AI (Solaris 11) VM:\t"+$script+" -A -O -c sol11u01vm03 -a i386"
+    puts "Delete KS (Linux) VM:\t\t"+$script+" -K -O -d centos59vm01"
+    puts "Delete JS (Solaris 10) VM:\t"+$script+" -J -O -d sol10u11vm01"
+    puts "Delete AI (Solaris 11) VM:\t"+$script+" -A -O -d sol11u01vm03"
+    puts
+  end
+  if examples.match(/vbox/)
+    puts "Managing VirtualBox VM examples:"
+    puts
+    puts "Boot Linux VM:\t\t"+$script+" -O -b centos59vm01"
+    puts "Halt Linux VM:\t\t"+$script+" -O -s centos59vm01"
+    puts
+  end
+  if examples.match(/server/)
+    puts "Server related examples:"
+    puts
+    puts "List AI services:\t\t"+$script+" -A -S -L"
+    puts "List KS services:\t\t"+$script+" -K -S -L"
+    puts "List JS services:\t\t"+$script+" -J -S -L"
+    puts "Configure all AI services:\t"+$script+" -A -S"
+    puts "Configure KS services:\t\t"+$script+" -K -S"
+    puts "Configure JS services:\t\t"+$script+" -J -S"
+    puts "Unconfigure AI service:\t\t"+$script+" -A -S -z sol_11_1"
+    puts "Unconfigure KS service:\t\t"+$script+" -K -S -z centos_5_9"
+    puts "Unconfigure JS service:\t\t"+$script+" -J -S -z sol_10_11"
+    puts
+  end
+  if examples.match(/maint/)
+    puts "Maintenance related examples:"
+    puts
+    puts "Configure AI client services:\t"+$script+" -A -M -C -a i386"
+    puts "Enable AI proxy:\t\t"+$script+" -A -M -W -n sol_11_1"
+    puts "Disable AI proxy:\t\t"+$script+" -A -M -W -z sol_11_1"
+    puts "Configure AI alternate repo:\t"+$script+" -A -M -R"
+    puts "Unconfigure AI alternate repo:\t"+$script+" -A -M -R -z sol_11_1_alt"
+    puts "Configure KS alternate repo:\t"+$script+" -K -M -R -n centos_5_9_x86_64"
+    puts "Unconfigure KS alternate repo:\t"+$script+" -K -M -R -z centos_5_9_x86_64"
+    puts "Enable KS alias:\t\t"+$script+" -K -M -W -n centos_5_9_x86_64"
+    puts "Disable KS alias:\t\t"+$script+" -K -M -W -z centos_5_9_x86_64"
+    puts "Import KS PXE files:\t\t"+$script+" -K -M -P -n centos_5_9_x86_64"
+    puts "Delete KS PXE files:\t\t"+$script+" -K -M -P -z centos_5_9_x86_64"
+    puts "Unconfigure KS client PXE:\t"+$script+" -K -M -P -d centos59vm01"
+    puts
+  end
+  if examples.match(/client/)
+    puts "Client related examples:"
+    puts
+    puts "List AI clients:\t\t"+$script+" -A -C -L"
+    puts "List KS clients:\t\t"+$script+" -K -C -L"
+    puts "List JS clients:\t\t"+$script+" -J -C -L"
+    puts "Create AI client:\t\t"+$script+" -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
+    puts "Delete AI client:\t\t"+$script+" -A -C -d sol11u01vm03"
+    puts "Create JS client:\t\t"+$script+" -J -C -c sol10u11vm01 -e 00:0C:29:FA:0C:7F -a i386 -i 192.168.1.195 -n sol_10_11"
+    puts "Delete JS client:\t\t"+$script+" -J -C -d sol10u11vm01"
+    puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -a x86_64 -i 192.168.1.194 -n centos_5_9_x86_64"
+    puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
+    puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
+    puts
+  end
   exit
 end
 
@@ -293,6 +318,35 @@ rescue
   print_usage()
 end
 
+# Print examples
+
+if opt["H"]
+  if opt["M"]
+    examples="maint"
+    print_examples(examples)
+  end
+  if opt["S"]
+    examples="server"
+    print_examples(examples)
+  end
+  if opt["O"]
+    examples="vbox"
+    print_examples(examples)
+  end
+  if opt["C"]
+    examples="client"
+    print_examples(examples)
+  end
+  if opt["V"]
+    examples="vbox"
+    print_examples(examples)
+  end
+  if opt["I"]
+    examples="iso"
+    print_examples(examples)
+  end
+end
+
 # Print version
 
 if opt["V"]
@@ -324,7 +378,7 @@ end
 
 check_local_config()
 
-if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"]
+if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"]
   puts "Warning:\tClient name not given"
   exit
 else
@@ -340,7 +394,13 @@ else
   if opt["n"]
     service_name = opt["n"]
   end
-  if opt["c"] or opt["d"]
+  if opt["b"]
+    client_name  = opt["b"]
+  end
+  if opt["s"]
+    client_name  = opt["s"]
+  end
+  if opt["c"] or opt["d"] or opt["b"] or opt["s"]
     if $verbose_mode == 1
       puts "Information:\tSetting client name to "+client_name
     end
@@ -473,10 +533,17 @@ if opt["D"]
   end
 end
 
-# If give a -T use serial connectivity
+# If give a -T use text base install
 
 if opt["T"]
   $text_install = 1
+end
+
+# If given -U use serial based install
+
+if opt["U"]
+  $text_install = 1
+  $use_serial   = 1
   if $verbose_mode == 1
     puts "Information:\tUse serial connectivity"
   end
@@ -491,7 +558,7 @@ else
   if !opt["S"]
     if opt["J"] and !opt["L"] and !opt["d"]
       if client_arch.match(/i386|x86|x86_64|x64/)
-        puts "Warning:\tNo client model specified"
+        puts "Warning:\tNo client architecture specified"
         puts "Setting:\tClient model to vmware"
         client_model = "vmware"
       else
@@ -535,6 +602,7 @@ if opt["A"] or opt["K"] or opt["J"]
   end
   if opt["O"]
     if opt["c"]
+      check_client_arch(client_arch)
       eval"[configure_#{funct}_vbox_vm(client_name,client_arch)]"
     end
     if opt["d"]

@@ -183,3 +183,5 @@
 # Fixed ruby warning messages
 # 0.9.2: Mon  6 Jan 2014 16:26:19 EST
 # Added code to create and manage Virtual Box VMs
+# 0.9.3: Tue  7 Jan 2014 09:57:26 EST
+# Improved help and VirtualBox handling
