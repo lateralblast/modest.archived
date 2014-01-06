@@ -198,11 +198,11 @@ def execute_command(message,command)
     puts "Executing:\t"+command
   end
   if $test_mode == 1
-    if !command.match(/create|update|import|delete|svccfg|rsync|cp|touch|svcadm/)
+    if !command.match(/create|update|import|delete|svccfg|rsync|cp|touch|svcadm|VBoxManage/)
       output = %x[#{command}]
     end
   else
-    output=%x[#{command}]
+    output = %x[#{command}]
   end
   if $verbose_mode == 1
     if output.length > 1

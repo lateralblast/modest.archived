@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.9.1
+# Version:      0.9.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -21,11 +21,12 @@
 require 'rubygems'
 require 'getopt/std'
 require 'builder'
+require 'socket'
 
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "F:a:c:d:e:f:h:i:m:n:p:z:ACDIJKLMPRSVWXZtv"
+$options                = "F:a:b:c:d:e:f:h:i:m:n:p:s:z:ACDEIJKLMOPRSTVWXZtv"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -40,6 +41,7 @@ $home_dir               = ENV["HOME"]
 $default_zpool          = "rpool"
 $default_ai_port        = "10081"
 $default_host           = ""
+$default_nic            = ""
 $default_net            = "net0"
 $default_timezone       = "Australia/Victoria"
 $default_terminal       = "sun"
@@ -75,12 +77,16 @@ $text_install           = 1
 $backup_dir             = ""
 $rpm2cpio_url           = "http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
 $rpm2cpio_bin           = ""
+$vbox_disk_type         = "ide"
+$vm_disk_size           = "10000"
+$vm_memory_size         = "1024"
+$use_serial             = 0
 
 # Declare some package versions
 
-$facter_version="1.7.4"
-$hiera_version="1.3.0"
-$puppet_version="3.4.1"
+$facter_version = "1.7.4"
+$hiera_version  = "1.3.0"
+$puppet_version = "3.4.1"
 
 # Load methods
 
@@ -112,6 +118,7 @@ def print_usage()
   puts "-m: Client model (used for Jumpstart)"
   puts "-S: Configure server"
   puts "-C: Configure client services"
+  puts "-O: Configure Virtual Box VM"
   puts "-p: Puplisher server port number"
   puts "-h: Puplisher server Hostname/IP"
   puts "-t: Run it test mode (in client mode create files but don't import them)"
@@ -127,6 +134,7 @@ def print_usage()
   puts "-R: Use alternate package repository (additional packages like puppet)"
   puts "-Z: Destroy ZFS filesystem as part of uninstallation"
   puts "-D: Use default values for questions"
+  puts "-T: Use serial for clients"
   puts "-X: X Windows based install (default is text based)"
   puts ""
   puts "Information related examples:"
@@ -134,6 +142,15 @@ def print_usage()
   puts "List Linux ISOs:\t\t"+$script+" -K -S -I"
   puts "List Solaris 10 ISOs:\t\t"+$script+" -J -S -I"
   puts "List Solaris 11 ISOs:\t\t"+$script+" -A -S -I"
+  puts
+  puts "Creating Virtual Box VM for testing examples:"
+  puts
+  puts "Create KS (Linux) VM:\t\t"+$script+" -K -O -c centos59vm01"
+  puts "Create JS (Solaris 10) VM:\t"+$script+" -J -O -c sol10u11vm01"
+  puts "Create AI (Solaris 11) VM:\t"+$script+" -A -O -c sol11u01vm03"
+  puts "Delete KS (Linux) VM:\t\t"+$script+" -K -O -d centos59vm01"
+  puts "Delete JS (Solaris 10) VM:\t"+$script+" -J -O -d sol10u11vm01"
+  puts "Delete AI (Solaris 11) VM:\t"+$script+" -A -O -d sol11u01vm03"
   puts
   puts "Server related examples:"
   puts ""
@@ -223,18 +240,21 @@ def check_local_config()
     puts "Information:\tSetting temporary directory to "+$work_dir
   end
   check_dir_exists($tmp_dir)
-  os_name=%x["uname"]
-  if !os_name.match(/SunOS/)
-    $test_mode = 1
-  else
-    os_ver=%x[uname -r]
-    if os_ver.match(/5\.11/)
-      $default_net = "net0"
-    end
+  os_ver=%x[uname -r]
+  if os_ver.match(/5\.11/)
+    $default_net = "net0"
   end
+  os_name=%x[uname]
+  os_name=os_name.chomp
   if !$default_host.match(/[0-9]/)
-    message       = "Determining:\tDefault host IP"
-    command       = "ipadm show-addr #{$default_net}/v4 |grep net |awk '{print $4}' |cut -f1 -d'/'"
+    message = "Determining:\tDefault host IP"
+    if os_name.match(/SunOS/)
+      command = "ipadm show-addr #{$default_net}/v4 |grep net |awk '{print $4}' |cut -f1 -d'/'"
+    end
+    if os_name.match(/Darwin/)
+      $default_net="en0"
+      command = "ifconfig #{$default_net} |grep inet |awk '{print $2}'"
+    end
     $default_host = execute_command(message,command)
     $default_host = $default_host.chomp
   end
@@ -249,11 +269,13 @@ def check_local_config()
   bin_dir     = $work_dir+"/bin"
   check_dir_exists(bin_dir)
   $rpm2cpio_bin=bin_dir+"rpm2cpio"
-  if !File.exists?($rpm2cpio_bin)
-    message = "Fetching:\tTool rpm2cpio"
-    command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
-    execute_command(message,command)
-    system("chmod +x #{$rpm2cpio_bin}")
+  if os_name.match(/SunOS/)
+    if !File.exist?($rpm2cpio_bin)
+      message = "Fetching:\tTool rpm2cpio"
+      command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
+      execute_command(message,command)
+      system("chmod +x #{$rpm2cpio_bin}")
+    end
   end
   return
 end
@@ -451,6 +473,15 @@ if opt["D"]
   end
 end
 
+# If give a -T use serial connectivity
+
+if opt["T"]
+  $text_install = 1
+  if $verbose_mode == 1
+    puts "Information:\tUse serial connectivity"
+  end
+end
+
 # Get/set system model
 
 if opt["m"]
@@ -473,6 +504,22 @@ else
   end
 end
 
+if opt["O"] and !opt["A"] and !opt["K"] and !opt["J"]
+  if opt ["E"]
+    get_vbox_vm_mac(client_name)
+  end
+  if opt["b"]
+    client_name=opt["b"]
+    boot_vbox_vm(client_name)
+    exit
+  end
+  if opt["s"]
+    client_name=opt["s"]
+    stop_vbox_vm(client_name)
+    exit
+  end
+end
+
 # Handle AI, KS, or JS
 
 if opt["A"] or opt["K"] or opt["J"]
@@ -485,6 +532,15 @@ if opt["A"] or opt["K"] or opt["J"]
   end
   if opt["J"]
     funct="js"
+  end
+  if opt["O"]
+    if opt["c"]
+      eval"[configure_#{funct}_vbox_vm(client_name,client_arch)]"
+    end
+    if opt["d"]
+      unconfigure_vbox_vm(client_name)
+    end
+    exit
   end
   # Handle server related functions
   if opt ["S"]

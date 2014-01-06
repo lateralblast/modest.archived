@@ -181,3 +181,5 @@
 # Added service check to client creation
 # 0.9.1: Mon  6 Jan 2014 10:22:02 EST
 # Fixed ruby warning messages
+# 0.9.2: Mon  6 Jan 2014 16:26:19 EST
+# Added code to create and manage Virtual Box VMs
