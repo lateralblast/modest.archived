@@ -269,7 +269,7 @@ def boot_vbox_vm(client_name)
     begin
       socket = UNIXSocket.open("/tmp/#{client_name}")
       socket.each_line do |line|
-        puts linr
+        puts line
       end
     rescue
       puts "Cannot open socket"
