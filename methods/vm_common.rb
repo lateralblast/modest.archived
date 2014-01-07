@@ -109,30 +109,29 @@ end
 
 # Configure a AI VM
 
-def configure_ai_vbox_vm(client_name,client_arch)
+def configure_ai_vbox_vm(client_name,client_mac,client_arch)
   os_type="Solaris11_64"
-  configure_vbox_vm(client_name,os_type)
+  configure_vbox_vm(client_name,client_mac,os_type)
   return
 end
 
 # Configure a Jumpstart VM
 
-def configure_js_vbox_vm(client_name,client_arch)
+def configure_js_vbox_vm(client_name,client_mac,client_arch)
   os_type = "OpenSolaris_64"
-  configure_vbox_vm(client_name,os_type)
-  execute_command(message,command)
+  configure_vbox_vm(client_name,client_mac,os_type)
   return
 end
 
 # Configure a Kickstart VM
 
-def configure_ks_vbox_vm(client_name,client_arch)
+def configure_ks_vbox_vm(client_name,client_mac,client_arch)
   if client_arch.match(/i386/)
     os_type = "RedHat"
   else
     os_type = "RedHat_64"
   end
-  configure_vbox_vm(client_name,os_type)
+  configure_vbox_vm(client_name,client_mac,os_type)
   return
 end
 
@@ -188,16 +187,18 @@ def get_bridged_vbox_nic()
   message  = "Checking:\tBridged interfaces"
   command  = "VBoxManage list bridgedifs"
   nic_list = execute_command(message,command)
+  nic_name = ""
   if !nic_list.match(/[A-z]/)
     nic_name = $default_net
   else
+    nic_list=nic_list.split(/\n/)
     nic_list.each do |line|
       line=line.chomp
-      if line.match(/^Name/)
-        nic_name = linx.split(/:/)[1].gsub(/\s+/,"")
-      end
       if line.match(/#{$default_host}/)
         return nic_name
+      end
+      if line.match(/^Name/)
+        nic_name = line.split(/:/)[1].gsub(/\s+/,"")
       end
     end
   end
@@ -223,7 +224,7 @@ end
 
 # Configure a VirtualBox VM
 
-def configure_vbox_vm(client_name,os_type)
+def configure_vbox_vm(client_name,client_macn,os_type)
   vbox_vm_dir      = get_vbox_vm_dir(client_name)
   vbox_disk_name   = vbox_vm_dir+"/"+client_name+".vdi"
   vbox_socket_name = "/tmp/#{client_name}"
@@ -239,14 +240,17 @@ def configure_vbox_vm(client_name,os_type)
   vbox_nic_name=get_bridged_vbox_nic()
   add_bridged_network_to_vbox_vm(client_name,vbox_nic_name)
   set_vbox_vm_boot_priority(client_name)
+  if client_mac.match(/[0-9]/)
+    change_vbox_vm_mac(client_name,client_mac)
+  end
   return
 end
 
 # Unconfigure a VM
 
-def unconfigure_vbox_vm
+def unconfigure_vbox_vm(client_name)
   check_vbox_vm_exists(client_name)
-  message = "Deleting:\tVirtualBox VM "+client_naem
+  message = "Deleting:\tVirtualBox VM "+client_name
   command = "VBoxManage unregistervm #{client_name} --delete"
   execute_command(message,command)
   return
@@ -297,5 +301,15 @@ def get_vbox_vm_mac(client_name)
   vbox_mac = vbox_mac.gsub(/\,/,"")
   puts "MAC Address for "+client_name+":"
   puts vbox_mac
+  return
+end
+
+def change_vbox_vm_mac(client_name,client_mac)
+  message = "Setting:\tVirtualBox VM "+client_name+" MAC address to "+client_mac
+  if client_mac.match(/:/)
+    client_mac = client_mac.gsub(/:/,"")
+  end
+  command = "VBoxManage modifyvm #{client_name} --macaddress1 #{client_mac}"
+  execute_command(message,command)
   return
 end

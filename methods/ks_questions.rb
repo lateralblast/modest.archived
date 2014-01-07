@@ -415,6 +415,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   config = Ks.new(
     type      = "output",
     question  = "Root Password Configuration",
+    ask       = "yes",
     parameter = "rootpw",
     value     = get_ks_password(),
     valid     = "",
@@ -530,6 +531,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   config = Ks.new(
     type      = "output",
     question  = "SELinux Configuration",
+    ask       = "yes",
     parameter = "authconfig",
     value     = "--enableshadow --enablemd5",
     valid     = "",

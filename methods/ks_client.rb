@@ -45,7 +45,15 @@ def configure_ks_pxe_client(client_name,client_mac,service_name)
   file.write("DEFAULT LINUX\n")
   file.write("LABEL LINUX\n")
   file.write("  KERNEL #{vmlinuz_file}\n")
-  file.write("  APPEND initrd=#{initrd_file} ks=#{ks_url}\n")
+  if $text_install == 1
+    if $use_serial == 1
+      file.write("  APPEND initrd=#{initrd_file} ks=#{ks_url} text serial console=ttyS0\n")
+    else
+      file.write("  APPEND initrd=#{initrd_file} ks=#{ks_url} text\n")
+    end
+  else
+    file.write("  APPEND initrd=#{initrd_file} ks=#{ks_url}\n")
+  end
   file.close
   if $verbose_mode == 1
     puts "Created:\tPXE menu file "+pxe_cfg_file+":"
@@ -116,7 +124,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     File.delete(output_file)
   end
   output_ks_header(output_file)
-  pkg_list = populate_ks_pkg_list()
+  pkg_list  = populate_ks_pkg_list()
   output_ks_pkg_list(pkg_list,output_file)
   post_list = populate_ks_post_list(service_name)
   output_ks_post_list(post_list,output_file)
@@ -151,9 +159,9 @@ def populate_ks_post_list(service_name)
   if $use_alt_repo == 1
     post_list.push("mkdir /tmp/rpms")
     post_list.push("cd /tmp/rpms")
-    alt_url = "http://"+$default_host
+    alt_url  = "http://"+$default_host
     rpm_list = build_ks_alt_rpm_list(service_name)
-    alt_dir = $repo_base_dir+"/"+service_name+"/alt"
+    alt_dir  = $repo_base_dir+"/"+service_name+"/alt"
     if $verbose_mode == 1
       puts "Checking:\tAdditional packages"
     end
@@ -161,7 +169,7 @@ def populate_ks_post_list(service_name)
       rpm_list.each do |rpm_url|
         rpm_file = File.basename(rpm_url)
         rpm_file = alt_dir+"/"+rpm_file
-        rpm_url = alt_url+"/"+rpm_file
+        rpm_url  = alt_url+"/"+rpm_file
         if File.exists?(rpm_file)
           post_list.push("wget #{rpm_url}")
         end
@@ -199,7 +207,7 @@ def output_ks_header(output_file)
   file=File.open(output_file, 'a')
   $q_order.each do |key|
     if $q_struct[key].type == "output"
-      if $q_struct[key].parameter == ""
+      if !$q_struct[key].parameter.match(/[A-z]/)
         output=$q_struct[key].value+"\n"
       else
         output=$q_struct[key].parameter+" "+$q_struct[key].value+"\n"

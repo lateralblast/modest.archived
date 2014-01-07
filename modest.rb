@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.9.3
+# Version:      0.9.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -278,7 +278,7 @@ def check_local_config()
     end
     if os_name.match(/Darwin/)
       $default_net="en0"
-      command = "ifconfig #{$default_net} |grep inet |awk '{print $2}'"
+      command = "ifconfig #{$default_net} |grep 'inet ' |awk '{print $2}'"
     end
     $default_host = execute_command(message,command)
     $default_host = $default_host.chomp
@@ -585,6 +585,13 @@ if opt["O"] and !opt["A"] and !opt["K"] and !opt["J"]
     stop_vbox_vm(client_name)
     exit
   end
+  if opt["d"]
+    unconfigure_vbox_vm(client_name)
+  end
+  if opt["e"]
+    client_mac=opt["e"]
+    change_vbox_vm_mac(client_name,client_mac)
+  end
 end
 
 # Handle AI, KS, or JS
@@ -603,10 +610,7 @@ if opt["A"] or opt["K"] or opt["J"]
   if opt["O"]
     if opt["c"]
       check_client_arch(client_arch)
-      eval"[configure_#{funct}_vbox_vm(client_name,client_arch)]"
-    end
-    if opt["d"]
-      unconfigure_vbox_vm(client_name)
+      eval"[configure_#{funct}_vbox_vm(client_name,client_mac,client_arch)]"
     end
     exit
   end
