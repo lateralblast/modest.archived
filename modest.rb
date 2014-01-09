@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.9.4
+# Version:      0.9.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -111,6 +111,7 @@ def print_usage()
   puts "-A: Configure AI"
   puts "-J: Configure Jumpstart"
   puts "-K: Configure Kicstart"
+  puts "-E: Configure VSphere"
   puts "-M: Maintenance mode"
   puts "-a: Architecture"
   puts "-e: Client MAC Address"
@@ -159,16 +160,19 @@ def print_examples(examples)
     puts "Create KS (Linux) VM:\t\t"+$script+" -K -O -c centos59vm01 -a x86_64"
     puts "Create JS (Solaris 10) VM:\t"+$script+" -J -O -c sol10u11vm01 -a i386"
     puts "Create AI (Solaris 11) VM:\t"+$script+" -A -O -c sol11u01vm03 -a i386"
-    puts "Delete KS (Linux) VM:\t\t"+$script+" -K -O -d centos59vm01"
-    puts "Delete JS (Solaris 10) VM:\t"+$script+" -J -O -d sol10u11vm01"
-    puts "Delete AI (Solaris 11) VM:\t"+$script+" -A -O -d sol11u01vm03"
+    puts "Create VS (ESXi) VM:\t\t"+$script+" -E -O -c vmware55vm01 -e 08:00:27:61:B7:AD"
+    puts "Delete KS (Linux) VM:\t\t"+$script+" -O -d centos59vm01"
+    puts "Delete JS (Solaris 10) VM:\t"+$script+" -O -d sol10u11vm01"
+    puts "Delete AI (Solaris 11) VM:\t"+$script+" -O -d sol11u01vm03"
+    puts "Delete VS (ESXi) VM:\t\t"+$script+" -O -d vmware55vm01"
     puts
-  end
-  if examples.match(/vbox/)
     puts "Managing VirtualBox VM examples:"
     puts
-    puts "Boot Linux VM:\t\t"+$script+" -O -b centos59vm01"
-    puts "Halt Linux VM:\t\t"+$script+" -O -s centos59vm01"
+    puts "Boot headless Linux VM:\t\t\t"+$script+" -O -b centos59vm01"
+    puts "Boot headless serial enabled Linux VM:\t"+$script+" -O -b centos59vm01 -U"
+    puts "Boot non headless Linux VM:\t\t"+$script+" -O -b centos59vm01 -X"
+    puts "Halt Linux VM:\t\t\t\t"+$script+" -O -s centos59vm01"
+    puts "Modify VM MAC Address:\t\t\t"+$script+" -O -c centos59vm01 -e 00:50:56:26:92:d8"
     puts
   end
   if examples.match(/server/)
@@ -215,6 +219,8 @@ def print_examples(examples)
     puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -a x86_64 -i 192.168.1.194 -n centos_5_9_x86_64"
     puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
     puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
+    puts "Create VS client:\t\t"+$script+" -E -C -c vmware55vm01 -e 08:00:27:61:B7:AD -i 192.168.1.195 -n vmware_5_5_0_x86_64"
+    puts "Delete VS client:\t\t"+$script+" -E -C -d vmware55vm01"
     puts
   end
   exit
@@ -243,7 +249,7 @@ end
 # If not running on Solaris, run in test mode
 # Useful for generating client config files
 
-def check_local_config()
+def check_local_config(mode)
   if !$work_dir.match(/[A-z]/)
     dir_name=File.basename($script,".*")
     id=%x[/usr/bin/id -u]
@@ -286,8 +292,10 @@ def check_local_config()
   if !$default_apache_allow.match(/[0-9]/)
     $default_apache_allow=$default_host.split(/\./)[0..2].join(".")
   end
-  if $verbose_mode == 1
-    puts "Information:\tSetting apache allow range to "+$default_apache_allow
+  if mode == "server"
+    if $verbose_mode == 1
+      puts "Information:\tSetting apache allow range to "+$default_apache_allow
+    end
   end
   $backup_dir = $work_dir+"/backup"
   check_dir_exists($backup_dir)
@@ -376,7 +384,12 @@ end
 
 # Check local configuration
 
-check_local_config()
+if opt["S"] or opt["W"]
+  mode="server"
+else
+  mode="client"
+end
+check_local_config(mode)
 
 if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"]
   puts "Warning:\tClient name not given"
@@ -572,8 +585,15 @@ else
 end
 
 if opt["O"] and !opt["A"] and !opt["K"] and !opt["J"]
-  if opt ["E"]
-    get_vbox_vm_mac(client_name)
+  if opt ["L"]
+    search_string=""
+    if opt["c"]
+      search_string=opt["c"]
+    end
+    if opt["e"]
+      search_string=opt["e"]
+    end
+    list_vbox_vms(search_string)
   end
   if opt["b"]
     client_name=opt["b"]
@@ -594,9 +614,16 @@ if opt["O"] and !opt["A"] and !opt["K"] and !opt["J"]
   end
 end
 
+# Force architecture to 64 bit for ESX
+
+if opt["E"]
+  client_arch="x86_64"
+  puts "Setting:\tArchitecture to "+client_arch
+end
+
 # Handle AI, KS, or JS
 
-if opt["A"] or opt["K"] or opt["J"]
+if opt["A"] or opt["K"] or opt["J"] or opt["E"]
   # Set function
   if opt["A"]
     funct="ai"
@@ -607,10 +634,16 @@ if opt["A"] or opt["K"] or opt["J"]
   if opt["J"]
     funct="js"
   end
+  if opt["E"]
+    funct="vs"
+  end
   if opt["O"]
     if opt["c"]
       check_client_arch(client_arch)
       eval"[configure_#{funct}_vbox_vm(client_name,client_mac,client_arch)]"
+    end
+    if opt["L"]
+      eval"[list_#{funct}_vbox_vms()]"
     end
     exit
   end

@@ -1,30 +1,27 @@
 
-# Server code for Kickstart
+# Server code for VSphere
 
 # List available ISOs
 
-def list_ks_isos()
-  search_string = "CentOS|rhel"
+def list_vs_isos()
+  search_string = "VMvisor"
   iso_list      = check_iso_base_dir(search_string)
   iso_list.each do |iso_file|
-    iso_file     = iso_file.chomp
-    iso_info     = File.basename(iso_file)
-    iso_info     = iso_info.split(/-/)
-    linux_distro = iso_info[0]
-    linux_distro = linux_distro.downcase
-    if linux_distro.match(/centos/)
-      iso_version = iso_info[1]
-      iso_arch    = iso_info[2]
-    else
-      iso_version = iso_info[2]
-      iso_arch    = iso_info[3]
-    end
+    iso_file    = iso_file.chomp
+    iso_info    = File.basename(iso_file)
+    iso_info    = iso_info.split(/-/)
+    vs_distro   = iso_info[0]
+    vs_distro   = vs_distro.downcase
+    iso_version = iso_info[3]
+    iso_arch    = iso_info[4].split(/\./)[1]
+    iso_release = iso_info[4].split(/\./)[0]
     puts "ISO file:\t"+iso_file
-    puts "Distribution:\t"+linux_distro
+    puts "Distribution:\t"+vs_distro
     puts "Version:\t"+iso_version
+    puts "Release:\t"+iso_release
     puts "Architecture:\t"+iso_arch
     iso_version      = iso_version.gsub(/\./,"_")
-    service_name     = linux_distro+"_"+iso_version+"_"+iso_arch
+    service_name     = vs_distro+"_"+iso_version+"_"+iso_arch
     repo_version_dir = $repo_base_dir+"/"+service_name
     if File.directory?(repo_version_dir)
       puts "Service Name:\t"+service_name+" (exists)"
@@ -37,14 +34,14 @@ end
 
 # Unconfigure alternate packages
 
-def unconfigure_ks_alt_repo(service_name)
+def unconfigure_vs_alt_repo(service_name)
   return
 end
 
 # Configure alternate packages
 
-def configure_ks_alt_repo(service_name,client_arch)
-  rpm_list = build_ks_alt_rpm_list(service_name)
+def configure_vs_alt_repo(service_name,client_arch)
+  rpm_list = build_vs_alt_rpm_list(service_name)
   alt_dir  = $repo_base_dir+"/"+service_name+"/alt"
   check_dir_exists(alt_dir)
   rpm_list.each do |rpm_url|
@@ -59,7 +56,7 @@ end
 
 # Unconfigure Linux repo
 
-def unconfigure_ks_repo(service_name)
+def unconfigure_vs_repo(service_name)
   remove_apache_alias(service_name)
   repo_version_dir = $repo_base_dir+"/"+service_name
   destroy_zfs_fs(repo_version_dir)
@@ -68,11 +65,11 @@ end
 
 # Copy Linux ISO contents to
 
-def configure_ks_repo(iso_file,repo_version_dir)
+def configure_vs_repo(iso_file,repo_version_dir)
   check_zfs_fs_exists(repo_version_dir)
-  check_dir = repo_version_dir+"/isolinux"
+  check_dir = repo_version_dir+"/upgrade"
   if $verbose_mode == 1
-    puts "Checking:\tDirectory "+check_dir+" exits"
+    puts "Checking:\tDirectory "+check_dir+" exists"
   end
   if !File.directory?(check_dir)
     mount_iso(iso_file)
@@ -82,29 +79,33 @@ def configure_ks_repo(iso_file,repo_version_dir)
   return
 end
 
-# Unconfigure Kickstart server
+# Unconfigure VSphere server
 
-def unconfigure_ks_server(service_name)
-  unconfigure_ks_repo(service_name)
+def unconfigure_vs_server(service_name)
+  unconfigure_vs_repo(service_name)
 end
 
 # Configure PXE boot
 
-def configure_ks_pxe_boot(service_name)
+def configure_vs_pxe_boot(service_name)
   pxe_boot_dir = $tftp_dir+"/"+service_name
   test_dir     = pxe_boot_dir+"/usr"
   if !File.directory?(test_dir)
-    if service_name.match(/centos/)
-      rpm_dir = $repo_base_dir+"/"+service_name+"/CentOS"
-    else
-      rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
-    end
+    rpm_dir=$work_dir+"/rpms"
+    check_dir_exists(rpm_dir)
     if File.directory?(rpm_dir)
-      message  = "Locating syslinux package"
+      message  = "Locating:\tSyslinux package"
       command  = "ls #{rpm_dir} |grep 'syslinux-[0-9]'"
       output   = execute_command(message,command)
       rpm_file = output.chomp
-      rpm_file = rpm_dir+"/"+rpm_file
+      if !rpm_file.match(/syslinux/)
+        rpm_file="syslinux-4.02-7.2.el5.i386.rpm"
+        rpm_file = rpm_dir+"/"+rpm_file
+        rpm_url="http://mirror.centos.org/centos/5/os/i386/CentOS/syslinux-4.02-7.2.el5.i386.rpm"
+        wget_file(rpm_url,rpm_file)
+      else
+        rpm_file = rpm_dir+"/"+rpm_file
+      end
       check_dir_exists(pxe_boot_dir)
       message = "Copying:\tPXE boot files from "+rpm_file+" to "+pxe_boot_dir
       command = "cd #{pxe_boot_dir} ; #{$rpm2cpio_bin} #{rpm_file} | cpio -iud"
@@ -128,23 +129,14 @@ end
 
 # Unconfigure PXE boot
 
-def unconfigure_ks_pxe_boot(service_name)
+def unconfigure_vs_pxe_boot(service_name)
   return
 end
 
-# Configure Kickstart server
+# Configure VSphere server
 
-def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
-  if service_name.match(/[A-z]/)
-    if service_name.downcase.match(/centos/)
-      search_string = "CentOS"
-    end
-    if service_name.downcase.match(/redhat/)
-      search_string = "rhel"
-    end
-  else
-    search_string = "CentOS|rhel"
-  end
+def configure_vs_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
+  search_string = "VMvisor"
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)
       iso_list[0] = iso_file
@@ -156,40 +148,35 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
   end
   if iso_list[0]
     iso_list.each do |iso_file_name|
-      iso_file_name  = iso_file_name.chomp
-      iso_linux_info = File.basename(iso_file_name)
-      iso_linux_info = iso_linux_info.split(/-/)
-      linux_distro   = iso_linux_info[0]
-      linux_distro   = linux_distro.downcase
-      if linux_distro.match(/centos/)
-        iso_linux_version = iso_linux_info[1]
-        iso_arch          = iso_linux_info[2]
-      else
-        iso_linux_version = iso_linux_info[2]
-        iso_arch          = iso_linux_info[3]
-      end
-      iso_linux_version = iso_linux_version.gsub(/\./,"_")
-      service_name      = linux_distro+"_"+iso_linux_version+"_"+iso_arch
-      repo_version_dir  = $repo_base_dir+"/"+service_name
+      iso_file_name    = iso_file_name.chomp
+      iso_info         = File.basename(iso_file_name)
+      iso_info         = iso_info.split(/-/)
+      vs_distro        = iso_info[0]
+      vs_distro        = vs_distro.downcase
+      iso_version      = iso_info[3]
+      iso_arch         = iso_info[4].split(/\./)[1]
+      iso_version      = iso_version.gsub(/\./,"_")
+      service_name     = vs_distro+"_"+iso_version+"_"+iso_arch
+      repo_version_dir = $repo_base_dir+"/"+service_name
       add_apache_alias(service_name)
-      configure_ks_repo(iso_file_name,repo_version_dir)
-      configure_ks_pxe_boot(service_name)
+      configure_vs_repo(iso_file_name,repo_version_dir)
+      configure_vs_pxe_boot(service_name)
     end
   else
     add_apache_alias(service_name)
-    configure_ks_repo(iso_file,repo_version_dir)
-    configure_ks_pxe_boot(service_name)
+    configure_vs_repo(iso_file,repo_version_dir)
+    configure_vs_pxe_boot(service_name)
   end
   return
 end
 
 # List kickstart services
 
-def list_ks_services()
-  puts "Kickstart services:"
+def list_vs_services()
+  puts "VSphere services:"
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
-    if service_name.match(/centos|rhel/)
+    if service_name.match(/vmware/)
       puts service_name
     end
   end

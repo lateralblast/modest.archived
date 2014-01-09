@@ -64,8 +64,8 @@ def add_dhcp_client(client_name,client_mac,client_ip,service_name)
     file.write("  filename \"#{tftp_pxe_file}\";\n")
     file.write("}\n")
     file.close
+    restart_dhcpd()
   end
-  restart_dhcpd()
   return
 end
 
@@ -164,9 +164,20 @@ end
 def check_zfs_fs_exists(dir_name)
   output=""
   if !File.directory?(dir_name)
-    message = "Warning:\t"+dir_name+" does not exist"
-    command = "zfs create #{$default_zpool}#{dir_name}"
-    output  = execute_command(message,command)
+    message     = "Warning:\t"+dir_name+" does not exist"
+    zfs_fs_name = $default_zpool+dir_name
+    command     = "zfs create #{$zfs_name}"
+    output      = execute_command(message,command)
+    if dir_name.match(/vmware/)
+      service_name = File.basename(dir_name)
+      mount_dir    = $tftp_dir+"/"+service_name
+      message      = "Information:\tVMware repository being mounted under "+mount_dir
+      command      = "zfs set mountpoint=#{mount_dir} #{zfs_name}"
+      execute_command(message,command)
+      message = "Information:\tSymlinking "+mount_dir+" to "+dir_name
+      command = "ln -s #{mount_dir} #{dir_name}"
+      execute_command(message,command)
+    end
   end
   return output
 end
@@ -467,6 +478,10 @@ def mount_iso(iso_file)
     else
       if iso_file.match(/rhel/)
         iso_test_dir = $iso_mount_dir+"/Packages"
+      else
+        if iso_file.match(/VM/)
+          iso_test_dir = $iso_mount_dir+"/upgrade"
+        end
       end
     end
   end
@@ -491,6 +506,11 @@ def copy_iso(iso_file,repo_version_dir)
     if iso_file.match(/CentOS|rhel/)
       iso_repo_dir = $iso_mount_dir
       test_dir     = repo_version_dir+"/isolinux"
+    else
+      if iso_file.match(/VM/)
+        iso_repo_dir = $iso_mount_dir
+        test_dir     = repo_version_dir+"/upgrade"
+      end
     end
   end
   if !File.directory?(repo_version_dir)

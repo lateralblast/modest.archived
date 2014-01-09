@@ -135,6 +135,14 @@ def configure_ks_vbox_vm(client_name,client_mac,client_arch)
   return
 end
 
+# Configure a ESX VM
+
+def configure_vs_vbox_vm(client_name,client_mac,client_arch)
+  os_type="Linux_64"
+  configure_vbox_vm(client_name,client_mac,os_type)
+  return
+end
+
 # List Linux KS VMs
 
 def list_ks_vbox_vms()
@@ -162,10 +170,21 @@ end
 # List VirtualBox VMs
 
 def list_vbox_vms(search_string)
-  message = "Available VMs:"
-  command = "VBoxManage list vms"
-  output  = execute_command(message,command)
-  puts output
+  message      = "Available VMs:"
+  command      = "VBoxManage list vms |grep -v 'inaccessible' |awk '{print $1}'"
+  vbox_vm_list = execute_command(message,command)
+  vbox_vm_list = vbox_vm_list.split(/\n/)
+  vbox_vm_list.each do |vbox_vm_name|
+    vbox_vm_mac = get_vbox_vm_mac(vbox_vm_name)
+    output      = vbox_vm_name+" "+vbox_vm_mac
+    if search_string.match(/[A-z]/)
+      if output.matc(/#{search_string}/)
+        puts output
+      end
+    else
+      puts output
+    end
+  end
   return
 end
 
@@ -219,12 +238,13 @@ end
 def set_vbox_vm_boot_priority(client_name)
   message = "Setting:\tBoot priority for "+client_name+" to network"
   command = "VBoxManage modifyvm #{client_name} --boot1 net"
+  execute_command(message,command)
   return
 end
 
 # Configure a VirtualBox VM
 
-def configure_vbox_vm(client_name,client_macn,os_type)
+def configure_vbox_vm(client_name,client_mac,os_type)
   vbox_vm_dir      = get_vbox_vm_dir(client_name)
   vbox_disk_name   = vbox_vm_dir+"/"+client_name+".vdi"
   vbox_socket_name = "/tmp/#{client_name}"
@@ -242,7 +262,10 @@ def configure_vbox_vm(client_name,client_macn,os_type)
   set_vbox_vm_boot_priority(client_name)
   if client_mac.match(/[0-9]/)
     change_vbox_vm_mac(client_name,client_mac)
+  else
+    client_mac = get_vbox_vm_mac(client_name)
   end
+  puts "Created:\tVirtualBox VM "+client_name+" with MAC address "+client_mac
   return
 end
 
@@ -297,11 +320,9 @@ end
 def get_vbox_vm_mac(client_name)
   message  = "Getting:\tMAC address for "+client_name
   command  = "VBoxManage showvminfo #{client_name} |grep MAC |awk '{print $4}'"
-  vbox_mac = execute_command(message,command)
-  vbox_mac = vbox_mac.gsub(/\,/,"")
-  puts "MAC Address for "+client_name+":"
-  puts vbox_mac
-  return
+  vbox_vm_mac = execute_command(message,command)
+  vbox_vm_mac = vbox_vm_mac.gsub(/\,/,"")
+  return vbox_vm_mac
 end
 
 def change_vbox_vm_mac(client_name,client_mac)

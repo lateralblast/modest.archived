@@ -187,3 +187,9 @@
 # Improved help and VirtualBox handling
 # 0.9.4: Tue  7 Jan 2014 14:57:29 EST
 # Fixed VirtualBox VM creation and deletion
+# 0.9.5: Wed  8 Jan 2014 14:25:56 EST
+# Added inital ESX server support
+# 0.9.6: Thu  9 Jan 2014 10:41:07 EST
+# Fixed ESXi boot.cfg creation
+# 0.9.7: Thu  9 Jan 2014 12:23:00 EST
+# Cleaned up ESXi kickstart script
