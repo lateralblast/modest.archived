@@ -193,3 +193,5 @@
 # Fixed ESXi boot.cfg creation
 # 0.9.7: Thu  9 Jan 2014 12:23:00 EST
 # Cleaned up ESXi kickstart script
+# 0.9.8: Thu  9 Jan 2014 13:00:45 EST
+# Minor fixes

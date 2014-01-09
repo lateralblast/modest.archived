@@ -11,7 +11,7 @@ def list_vs_clients()
       repo_version_dir = $repo_base_dir+"/"+service_name
       client_list      = Dir.entries(repo_version_dir)
       client_list.each do |client_name|
-        if client_name.match(/\.cfg$/)
+        if client_name.match(/\.cfg$/) and !client_name.match(/boot\.cfg|isolinux\.cfg/)
           puts client_name+" service = "+service_name
         end
       end

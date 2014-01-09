@@ -618,7 +618,9 @@ end
 
 if opt["E"]
   client_arch="x86_64"
-  puts "Setting:\tArchitecture to "+client_arch
+  if $verbose_mode == 1
+    puts "Setting:\tArchitecture to "+client_arch
+  end
 end
 
 # Handle AI, KS, or JS
