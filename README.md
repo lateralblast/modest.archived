@@ -8,6 +8,7 @@ A Ruby script to configure server and client configuration for PXE/DHCP and BOOT
 - Solaris 11 base Automated Installer (AI) service
 - Solaris 10 and early Jumpstart services
 - Linux Kickstart services
+- ESXi Kickstart services
 
 This script is a wrapper which sits on top of the exisitng tools.
 It changes defaults to be more suitable to customer environments,
@@ -17,7 +18,7 @@ By doing this the script reduces the time lost debugging installations,
 which in complex environments can be time consuming.
 It also reduces the time to deploy servers and increases the consistency of installations.
 
-This script will provide the ability to install Solaris 2.6-10, Solaris 11,
+This script will provide the ability to install Solaris 2.6-10, Solaris 11, ESXi,
 and Linux all from one server and OS, consolidating and simplifying installation services.
 This can be hosted on a physical server or a VM.
 In particular it can be used with a laptop to provide installation services via a cross-over cable.
@@ -57,6 +58,11 @@ Solaris Jumpstart:
 
 - Automatically tries to determine boot and mirror disk ids based on model
 - Automatically tires to determine kernel architecture (e.g. sun4u / sun4v) based on model
+
+ESXi Kickstart:
+
+- Automatically created PXE boot and jumpstart configuration files
+- Automatically adds post install commands to turn on ESXi services such as SSH
 
 All:
 
@@ -117,6 +123,13 @@ Jumpstart Related Information
 https://github.com/richardatlateralblast/modest/wiki/JSServerExamples
 
 https://github.com/richardatlateralblast/modest/wiki/JSClientExamples
+
+ESXi Related Information
+========================
+
+https://github.com/richardatlateralblast/modest/wiki/VSServerExamples
+
+https://github.com/richardatlateralblast/modest/wiki/VSClientExamples
 
 Virtual Box Related Information
 ===============================
