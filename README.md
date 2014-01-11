@@ -7,7 +7,8 @@ A Ruby script to configure server and client configuration for PXE/DHCP and BOOT
 
 - Solaris 11 base Automated Installer (AI) service
 - Solaris 10 and early Jumpstart services
-- Linux Kickstart services
+- Centos and RedHat Linux Kickstart services
+- Ubuntu Linux Preseed support
 - ESXi Kickstart services
 
 This script is a wrapper which sits on top of the exisitng tools.
