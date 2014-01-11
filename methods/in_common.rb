@@ -165,7 +165,7 @@ def check_zfs_fs_exists(dir_name)
   output=""
   if !File.directory?(dir_name)
     message     = "Warning:\t"+dir_name+" does not exist"
-    zfs_fs_name = $default_zpool+dir_name
+    zfs_name    = $default_zpool+dir_name
     command     = "zfs create #{$zfs_name}"
     output      = execute_command(message,command)
     if dir_name.match(/vmware/)
@@ -420,17 +420,15 @@ def add_apache_alias(service_base_name)
     command = "cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
     execute_command(message,command)
     if $verbose_mode == 1
-      puts "Adding:\t\tDirectory entry to "+apache_config_file
+      puts "Adding:\t\tDirectory and Alias entry to "+apache_config_file
     end
     output=File.open(apache_config_file,"a")
+    output.write("Alias /#{service_base_name} #{repo_version_dir}")
     output.write("<Directory #{repo_version_dir}>\n")
     output.write("Options Indexes\n")
     output.write("Allow from #{$default_apache_allow}\n")
     output.write("</Directory>\n")
     output.close
-    message = "Adding:\t\tAlias entry to "+apache_config_file
-    command = "echo 'Alias /#{service_base_name} #{repo_version_dir}' >> #{apache_config_file}"
-    execute_command(message,command)
     smf_service_name = "apache22"
     enable_smf_service(smf_service_name)
     refresh_smf_service(smf_service_name)
@@ -481,6 +479,8 @@ def mount_iso(iso_file)
       else
         if iso_file.match(/VM/)
           iso_test_dir = $iso_mount_dir+"/upgrade"
+        else
+          iso_test_dir = $iso_mount_dir+"/install"
         end
       end
     end
@@ -503,13 +503,14 @@ def copy_iso(iso_file,repo_version_dir)
     iso_repo_dir = $iso_mount_dir+"/repo"
     test_dir     = repo_version_dir+"/publisher"
   else
+    iso_repo_dir = $iso_mount_dir
     if iso_file.match(/CentOS|rhel/)
-      iso_repo_dir = $iso_mount_dir
       test_dir     = repo_version_dir+"/isolinux"
     else
       if iso_file.match(/VM/)
-        iso_repo_dir = $iso_mount_dir
         test_dir     = repo_version_dir+"/upgrade"
+      else
+        test_dir     = repo_version_dir+"/install"
       end
     end
   end
@@ -540,7 +541,7 @@ end
 # Unmount ISO
 
 def umount_iso()
-  message = "Unmounting:\tISO mounted on $iso_mount_dir"
+  message = "Unmounting:\tISO mounted on"+$iso_mount_dir
   command = "umount #{$iso_mount_dir}"
   execute_command(message,command)
   return

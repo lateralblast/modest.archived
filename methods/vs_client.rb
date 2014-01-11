@@ -23,11 +23,11 @@ end
 # Configure client PXE boot
 
 def configure_vs_pxe_client(client_name,client_mac,service_name)
-  tftp_pxe_file = client_mac.gsub(/:/,"")
-  tftp_pxe_file = tftp_pxe_file.upcase
+  tftp_pxe_file  = client_mac.gsub(/:/,"")
+  tftp_pxe_file  = tftp_pxe_file.upcase
   tftp_boot_file = "boot.cfg.01"+tftp_pxe_file
-  tftp_pxe_file = "01"+tftp_pxe_file+".pxelinux"
-  test_file     = $tftp_dir+"/"+tftp_pxe_file
+  tftp_pxe_file  = "01"+tftp_pxe_file+".pxelinux"
+  test_file      = $tftp_dir+"/"+tftp_pxe_file
   if !File.exists?(test_file)
     pxelinux_file = service_name+"/usr/share/syslinux/pxelinux.0"
     message       = "Creating:\tPXE boot file for "+client_name+" with MAC address "+client_mac
@@ -44,7 +44,7 @@ def configure_vs_pxe_client(client_name,client_mac,service_name)
   if $verbose_mode == 1
     puts "Creating:\tMenu config file "+pxe_cfg_file
   end
-  file         = File.open(pxe_cfg_file,"w")
+  file = File.open(pxe_cfg_file,"w")
   file.write("DEFAULT ESX\n")
   file.write("LABEL ESX\n")
   file.write("KERNEL #{mboot_file}\n")
@@ -71,7 +71,7 @@ def configure_vs_pxe_client(client_name,client_mac,service_name)
       copy.push(line)
     end
   end
-  File.open(tftp_boot_file,"w") {|file| file.puts copy}
+  File.open(tftp_boot_file,"w") {|file_data| file_data.puts copy}
   if $verbose_mode == 1
     puts "Created:\tBoot config file "+tftp_boot_file+":"
     system("cat #{tftp_boot_file}")

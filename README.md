@@ -54,6 +54,11 @@ Linux Kickstart
   - Automatically downloads Puppet packages
   - Add packages to post installation
 
+Ubuntu Preseed
+
+- Adds required append statement to PXE configuration so install is fully automated
+- Currently only basic client support (auto partitions disk)
+
 Solaris Jumpstart:
 
 - Automatically tries to determine boot and mirror disk ids based on model
@@ -110,8 +115,8 @@ https://github.com/richardatlateralblast/modest/wiki/AIServerExamples
 
 https://github.com/richardatlateralblast/modest/wiki/AIClientExamples
 
-Kickstart Related Information
-=============================
+Kickstart and Preseed Related Information
+=========================================
 
 https://github.com/richardatlateralblast/modest/wiki/KSServerExamples
 

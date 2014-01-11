@@ -19,12 +19,12 @@ end
 
 def get_ks_network()
   if $q_struct["bootproto"].value == "dhcp"
-    result = "--device "+$q_struct["nic"].value+" --bootproto "+$q_struct["bootproto"].value
+    result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value
   else
     client_ip = $q_struct["ip"].value
     client_name = $q_struct["hostname"].value
     gateway = get_ipv4_default_route(client_ip)
-    result = "--device "+$q_struct["nic"].value+" --bootproto "+$q_struct["bootproto"].value+" --ip "+client_ip+" --netmask "+$default_netmask+" --gateway "+gateway+" --nameserver "+$default_nameserver+" --hostname "+client_name
+    result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value+" --ip="+client_ip+" --netmask="+$default_netmask+" --gateway "+gateway+" --nameserver="+$default_nameserver+" --hostname="+client_name
   end
   return result
 end
@@ -51,7 +51,7 @@ end
 # Construct admin ks password line
 
 def get_ks_admin_password()
-  result = "--name = "+$q_struct["adminuser"].value+" --groups="+$q_struct["admingroup"].value+" --homedir="+$q_struct["adminhome"].value+" --password="+$q_struct["admincrypt"].value.to_s+" --iscrypted --shell="+$q_struct["adminshell"].value+" --uid="+$q_struct["adminuid"].value
+  result = "--name="+$q_struct["adminuser"].value+" --groups="+$q_struct["admingroup"].value+" --homedir="+$q_struct["adminhome"].value+" --password="+$q_struct["admincrypt"].value.to_s+" --iscrypted --shell="+$q_struct["adminshell"].value+" --uid="+$q_struct["adminuid"].value
   return result
 end
 
@@ -72,35 +72,49 @@ end
 # Construct ks boot partition line
 
 def get_ks_bootpart()
-  result = $q_struct["bootmount"].value+" --fstype "+$q_struct["bootfs"].value+" --size = "+$q_struct["bootsize"].value+" --ondisk="+$q_struct["bootdevice"].value
+  result = "/boot --fstype "+$q_struct["bootfs"].value+" --size "+$q_struct["bootsize"].value+" --ondisk="+$q_struct["bootdevice"].value
+  return result
+end
+
+# Construct ks root partition line
+
+def get_ks_swappart()
+  result = "swap --size "+$q_struct["swapmax"].value
+  return result
+end
+
+# Construct ks root partition line
+
+def get_ks_rootpart()
+  result = "/ --fstype "+$q_struct["rootfs"].value+" --size 1 --grow --asprimary"
   return result
 end
 
 # Construct ks volume partition line
 
 def get_ks_volpart()
-  result = $q_struct["volname"].value+" --size = "+$q_struct["volsize"].value+" --grow --ondisk="+$q_struct["bootdevice"].value
+  result = $q_struct["volname"].value+" --size="+$q_struct["volsize"].value+" --grow --ondisk="+$q_struct["bootdevice"].value
   return result
 end
 
 # Construct ks volume group line
 
 def get_ks_volgroup()
-  result = $q_struct["volgroupname"].value+" --pesize = "+$q_struct["pesize"].value+" "+$q_struct["volname"].value
+  result = $q_struct["volgroupname"].value+" --pesize="+$q_struct["pesize"].value+" "+$q_struct["volname"].value
   return result
 end
 
 # Construct ks log swap line
 
 def get_ks_logswap()
-  result = "swap --fstype swap --name = "+$q_struct["swapvol"].value+" --vgname = "+$q_struct["volgroupname"].value+" --size = "+$q_struct["swapmin"].value+" --grow --maxsize = "+$q_struct["swapmax"].value
+  result = "swap --fstype swap --name="+$q_struct["swapvol"].value+" --vgname="+$q_struct["volgroupname"].value+" --size="+$q_struct["swapmin"].value+" --grow --maxsize="+$q_struct["swapmax"].value
   return result
 end
 
 # Construct ks log root line
 
 def get_ks_logroot()
-  result = "/ --fstype "+$q_struct["rootfs"].value+" --name = "+$q_struct["rootvol"].value+" --vgname = "+$q_struct["volgroupname"].value+" --size = "+$q_struct["rootsize"].value+" --grow"
+  result = "/ --fstype "+$q_struct["rootfs"].value+" --name="+$q_struct["rootvol"].value+" --vgname="+$q_struct["volgroupname"].value+" --size="+$q_struct["rootsize"].value+" --grow"
   return result
 end
 
@@ -164,6 +178,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     )
   $q_struct[name] = config
   $q_order.push(name)
+
 
   name = "install_method"
   config = Ks.new(
@@ -605,23 +620,11 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "bootmount"
-  config = Ks.new(
-    type      = "",
-    question  = "Boot Mount Point",
-    ask       = "yes",
-    parameter = "",
-    value     = "/boot",
-    valid     = "",
-    eval      = "no"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
-
   name = "bootfs"
   config = Ks.new(
     type      = "",
     question  = "Boot Filesystem",
+    ask       = "no",
     parameter = "",
     value     = "ext3",
     valid     = "",
@@ -646,7 +649,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   name = "bootpart"
   config = Ks.new(
     type      = "output",
-    question  = "Clear Parition",
+    question  = "Boot Parition",
     ask       = "yes",
     parameter = "part",
     value     = get_ks_bootpart(),
@@ -790,7 +793,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Root Filesystem",
     ask       = "yes",
     parameter = "",
-    value     = "ext3",
+    value     = root_fs_type,
     valid     = "",
     eval      = "no"
     )
@@ -822,8 +825,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     )
   $q_struct[name] = config
   $q_order.push(name)
-
-  name = "logroot"
+ name = "logroot"
   config = Ks.new(
     type      = "output",
     question  = "Root Logical Volume Configuration",

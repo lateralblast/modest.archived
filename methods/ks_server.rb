@@ -1,25 +1,42 @@
 
 # Server code for Kickstart
 
+# Process ISO file to get details
+
+def get_linux_version_info(iso_file_name)
+  iso_info     = File.basename(iso_file_name)
+  iso_info     = iso_info.split(/-/)
+  linux_distro = iso_info[0]
+  linux_distro = linux_distro.downcase
+  if linux_distro.match(/centos|ubuntu/)
+    iso_version = iso_info[1]
+    if linux_distro.match(/centos/)
+      iso_arch    = iso_info[2]
+    else
+      iso_arch    = iso_info[3]
+      iso_arch    = iso_arch.split(/\./)[0]
+      if iso_arch.match(/amd64/)
+        iso_arch  = "x86_64"
+      else
+        iso_arch  = "i386"
+      end
+    end
+  else
+    iso_version = iso_info[2]
+    iso_arch    = iso_info[3]
+  end
+  return linux_distro,iso_version,iso_arch
+end
+
 # List available ISOs
 
 def list_ks_isos()
-  search_string = "CentOS|rhel"
+  search_string = "CentOS|rhel|ubuntu"
   iso_list      = check_iso_base_dir(search_string)
-  iso_list.each do |iso_file|
-    iso_file     = iso_file.chomp
-    iso_info     = File.basename(iso_file)
-    iso_info     = iso_info.split(/-/)
-    linux_distro = iso_info[0]
-    linux_distro = linux_distro.downcase
-    if linux_distro.match(/centos/)
-      iso_version = iso_info[1]
-      iso_arch    = iso_info[2]
-    else
-      iso_version = iso_info[2]
-      iso_arch    = iso_info[3]
-    end
-    puts "ISO file:\t"+iso_file
+  iso_list.each do |iso_file_name|
+    iso_file_name = iso_file_name.chomp
+    (linux_distro,iso_version,iso_arch) = get_linux_version_info(iso_file_name)
+    puts "ISO file:\t"+iso_file_name
     puts "Distribution:\t"+linux_distro
     puts "Version:\t"+iso_version
     puts "Architecture:\t"+iso_arch
@@ -92,33 +109,45 @@ end
 
 def configure_ks_pxe_boot(service_name)
   pxe_boot_dir = $tftp_dir+"/"+service_name
-  test_dir     = pxe_boot_dir+"/usr"
-  if !File.directory?(test_dir)
-    if service_name.match(/centos/)
-      rpm_dir = $repo_base_dir+"/"+service_name+"/CentOS"
-    else
-      rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
+  if service_name.match(/centos|rhel/)
+    test_dir     = pxe_boot_dir+"/usr"
+    if !File.directory?(test_dir)
+      if service_name.match(/centos/)
+        rpm_dir = $repo_base_dir+"/"+service_name+"/CentOS"
+      else
+        rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
+      end
+      if File.directory?(rpm_dir)
+        message  = "Locating:\tSyslinux package"
+        command  = "ls #{rpm_dir} |grep 'syslinux-[0-9]'"
+        output   = execute_command(message,command)
+        rpm_file = output.chomp
+        rpm_file = rpm_dir+"/"+rpm_file
+        check_dir_exists(pxe_boot_dir)
+        message = "Copying:\tPXE boot files from "+rpm_file+" to "+pxe_boot_dir
+        command = "cd #{pxe_boot_dir} ; #{$rpm2cpio_bin} #{rpm_file} | cpio -iud"
+        output  = execute_command(message,command)
+      else
+        puts "Warning:\tSource directory "+rpm_dir+" does not exist"
+        exit
+      end
     end
-    if File.directory?(rpm_dir)
-      message  = "Locating syslinux package"
-      command  = "ls #{rpm_dir} |grep 'syslinux-[0-9]'"
-      output   = execute_command(message,command)
-      rpm_file = output.chomp
-      rpm_file = rpm_dir+"/"+rpm_file
-      check_dir_exists(pxe_boot_dir)
-      message = "Copying:\tPXE boot files from "+rpm_file+" to "+pxe_boot_dir
-      command = "cd #{pxe_boot_dir} ; #{$rpm2cpio_bin} #{rpm_file} | cpio -iud"
-      output  = execute_command(message,command)
-    else
-      puts "Warning:\tSource directory "+rpm_dir+" does not exist"
-      exit
+    pxe_image_dir=pxe_boot_dir+"/images"
+    if !File.directory?(pxe_image_dir)
+      iso_image_dir = $repo_base_dir+"/"+service_name+"/images"
+      message       = "Copying:\tPXE boot images from "+iso_image_dir+" to "+pxe_image_dir
+      command       = "cp -r #{iso_image_dir} #{pxe_boot_dir}"
+      output        = execute_command(message,command)
     end
-  end
-  pxe_image_dir=pxe_boot_dir+"/images"
-  if !File.directory?(pxe_image_dir)
-    iso_image_dir = $repo_base_dir+"/"+service_name+"/images"
-    message       = "Copying:\tPXE boot images from "+iso_image_dir+" to "+pxe_image_dir
-    command       = "cp -r #{iso_image_dir} #{pxe_boot_dir}"
+  else
+    check_dir_exists(pxe_boot_dir)
+    pxe_image_dir = pxe_boot_dir+"/images"
+    check_dir_exists(pxe_image_dir)
+    pxe_image_dir = pxe_boot_dir+"/images/pxeboot"
+    check_dir_exists(pxe_image_dir)
+    iso_image_dir = $repo_base_dir+"/"+service_name+"/install"
+    message       = "Copying:\tPXE boot files from "+iso_image_dir+" to "+pxe_image_dir
+    command       = "cd #{pxe_image_dir} ; cp -r #{iso_image_dir}/* . "
     output        = execute_command(message,command)
   end
   pxe_cfg_dir = $tftp_dir+"/pxelinux.cfg"
@@ -143,7 +172,7 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
       search_string = "rhel"
     end
   else
-    search_string = "CentOS|rhel"
+    search_string = "CentOS|rhel|ubuntu"
   end
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)
@@ -156,20 +185,10 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
   end
   if iso_list[0]
     iso_list.each do |iso_file_name|
-      iso_file_name  = iso_file_name.chomp
-      iso_linux_info = File.basename(iso_file_name)
-      iso_linux_info = iso_linux_info.split(/-/)
-      linux_distro   = iso_linux_info[0]
-      linux_distro   = linux_distro.downcase
-      if linux_distro.match(/centos/)
-        iso_linux_version = iso_linux_info[1]
-        iso_arch          = iso_linux_info[2]
-      else
-        iso_linux_version = iso_linux_info[2]
-        iso_arch          = iso_linux_info[3]
-      end
-      iso_linux_version = iso_linux_version.gsub(/\./,"_")
-      service_name      = linux_distro+"_"+iso_linux_version+"_"+iso_arch
+      iso_file_name=iso_file_name.chomp
+      (linux_distro,iso_version,iso_arch) = get_linux_version_info(iso_file_name)
+      iso_version = iso_version.gsub(/\./,"_")
+      service_name      = linux_distro+"_"+iso_version+"_"+iso_arch
       repo_version_dir  = $repo_base_dir+"/"+service_name
       add_apache_alias(service_name)
       configure_ks_repo(iso_file_name,repo_version_dir)

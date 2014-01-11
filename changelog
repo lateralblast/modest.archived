@@ -195,3 +195,5 @@
 # Cleaned up ESXi kickstart script
 # 0.9.8: Thu  9 Jan 2014 13:00:45 EST
 # Minor fixes
+# 0.9.9: Sat 11 Jan 2014 22:19:35 EST
+# Added basic Ubuntu preseed support
