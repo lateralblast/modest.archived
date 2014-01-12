@@ -458,7 +458,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
     question  = "User Password Crypt",
     ask       = "yes",
     parameter = "passwd/user-password-crypted",
-    value     = get_password_crypt($default_root_password),
+    value     = get_password_crypt($default_admin_password),
     valid     = "",
     eval      = "get_password_crypt(answer)"
     )

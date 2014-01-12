@@ -72,8 +72,10 @@ def configure_ks_pxe_client(client_name,client_mac,service_name)
   file.write(append_string)
   file.close
   if $verbose_mode == 1
-    puts "Created:\tPXE menu file "+pxe_cfg_file+":"
+    puts "Information:\tPXE menu file "+pxe_cfg_file+" contents:"
+    puts
     system("cat #{pxe_cfg_file}")
+    puts
   end
   return
 end
@@ -175,10 +177,14 @@ def populate_ks_post_list(service_name)
     admin_user  = $q_struct["adminuser"].value
     admin_crypt = $q_struct["admincrypt"].value
     admin_home  = $q_struct["adminhome"].value
+    post_list.push("# Add Admin user")
     post_list.push("groupadd #{admin_group}")
     post_list.push("groupadd #{admin_user}")
-    post_list.push("useradd -p #{admin_crypt} -g #{admin_user} -G #{admin_group} -d #{admin_home} -m #{admin_user}")
+    post_list.push("useradd -p '#{admin_crypt}' -g #{admin_user} -G #{admin_group} -d #{admin_home} -m #{admin_user}")
     post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers")
+    post_list.push("# Enable serial console")
+    post_list.push("sed -i 's/9600/115200/' /etc/inittab")
+    post_list.push("sed -i 's/kernel.*/& console=ttyS0,115200n8/' /etc/grub.conf")
     if $use_alt_repo == 1
       post_list.push("mkdir /tmp/rpms")
       post_list.push("cd /tmp/rpms")
@@ -203,7 +209,11 @@ def populate_ks_post_list(service_name)
       post_list.push("rm -rf /tmp/rpms")
     end
   else
-    post_list.push("apt-get install puppet")
+    post_list.push("apt-get install -y puppet")
+    post_list.push("apt-get install -y openssh-server")
+    post_list.push("apt-get install -y python-software-properties")
+    post_list.push("apt-get install -y software-properties-common")
+    post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers.d/sysadmin")
   end
   post_list.push("")
   return post_list
@@ -295,6 +305,12 @@ def output_ks_post_list(post_list,output_file,service_name)
     file.write(output)
   end
   file.close
+  if $verbose_mode == 1
+    puts "Information:\tInstall file "+output_file+" contents:"
+    puts
+    system("cat #{output_file}")
+    puts
+  end
   return
 end
 

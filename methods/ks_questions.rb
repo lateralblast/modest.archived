@@ -72,21 +72,21 @@ end
 # Construct ks boot partition line
 
 def get_ks_bootpart()
-  result = "/boot --fstype "+$q_struct["bootfs"].value+" --size "+$q_struct["bootsize"].value+" --ondisk="+$q_struct["bootdevice"].value
+  result = "/boot --fstype "+$q_struct["bootfs"].value+" --size="+$q_struct["bootsize"].value+" --ondisk="+$q_struct["bootdevice"].value
   return result
 end
 
 # Construct ks root partition line
 
 def get_ks_swappart()
-  result = "swap --size "+$q_struct["swapmax"].value
+  result = "swap --size="+$q_struct["swapmax"].value
   return result
 end
 
 # Construct ks root partition line
 
 def get_ks_rootpart()
-  result = "/ --fstype "+$q_struct["rootfs"].value+" --size 1 --grow --asprimary"
+  result = "/ --fstype "+$q_struct["rootfs"].value+" --size=1 --grow --asprimary"
   return result
 end
 
@@ -663,6 +663,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   config = Ks.new(
     type      = "",
     question  = "Physical Volume Name",
+    ask       = "yes",
     parameter = "",
     value     = "pv.2",
     valid     = "",
@@ -766,6 +767,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   config = Ks.new(
     type      = "",
     question  = "Swap Volume Name",
+    ask       = "yes",
     parameter = "",
     value     = "LogVol01",
     valid     = "",
@@ -793,7 +795,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Root Filesystem",
     ask       = "yes",
     parameter = "",
-    value     = root_fs_type,
+    value     = "ext3",
     valid     = "",
     eval      = "no"
     )

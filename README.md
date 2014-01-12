@@ -142,3 +142,7 @@ Virtual Box Related Information
 
 https://github.com/richardatlateralblast/modest/wiki/VirtualBoxExamples
 
+VMware Fusion Related Information
+=================================
+
+https://github.com/richardatlateralblast/modest/wiki/VMwareFusionExamples

@@ -152,7 +152,7 @@ def check_dir_exists(dir_name)
   output  = ""
   if !File.directory?(dir_name)
   message = "Creating:\t"+dir_name
-  command = "mkdir -p #{dir_name}"
+  command = "mkdir -p '#{dir_name}'"
   output  = execute_command(message,command)
   end
   return output

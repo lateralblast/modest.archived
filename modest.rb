@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      0.9.9
+# Version:      1.0.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -22,11 +22,12 @@ require 'rubygems'
 require 'getopt/std'
 require 'builder'
 require 'socket'
+require 'parseconfig'
 
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "F:a:b:c:d:e:f:h:i:m:n:p:s:z:ACDEHIJKLMOPRSTUVWXZtv"
+$options                = "a:b:c:d:e:f:h:i:m:n:o:p:s:z:ACDEFHIJKLMOPRSTUVWXZtv"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -38,6 +39,7 @@ $tmp_dir                = ""
 $alt_repo_name          = "alt"
 $alt_prefix_name        = "solaris"
 $home_dir               = ENV["HOME"]
+$fusion_dir             = ""
 $default_zpool          = "rpool"
 $default_ai_port        = "10081"
 $default_host           = ""
@@ -81,7 +83,7 @@ $backup_dir             = ""
 $rpm2cpio_url           = "http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
 $rpm2cpio_bin           = ""
 $vbox_disk_type         = "ide"
-$vm_disk_size           = "10000"
+$vm_disk_size           = "10G"
 $vm_memory_size         = "1024"
 $use_serial             = 0
 
@@ -123,12 +125,13 @@ def print_usage()
   puts "-S: Configure server"
   puts "-C: Configure client services"
   puts "-O: Configure VirtualBox VM"
+  puts "-F: Configure VMware Fusion VM"
+  puts "-o: Specify OS type (used when creating VMs)"
   puts "-p: Puplisher server port number"
   puts "-h: Puplisher server Hostname/IP"
   puts "-t: Run it test mode (in client mode create files but don't import them)"
   puts "-v: Run in verbose mode"
   puts "-f: ISO file to use"
-  puts "-F: Set location of ISOs (directory)"
   puts "-d: Delete client"
   puts "-n: Set service name"
   puts "-z: Delete service name"
@@ -160,14 +163,15 @@ def print_examples(examples)
   if examples.match(/vbox/)
     puts "Creating VirtualBox VM examples:"
     puts
-    puts "Create KS (Linux) VM:\t\t"+$script+" -K -O -c centos59vm01 -a x86_64"
-    puts "Create JS (Solaris 10) VM:\t"+$script+" -J -O -c sol10u11vm01 -a i386"
-    puts "Create AI (Solaris 11) VM:\t"+$script+" -A -O -c sol11u01vm03 -a i386"
-    puts "Create VS (ESXi) VM:\t\t"+$script+" -E -O -c vmware55vm01 -e 08:00:27:61:B7:AD"
-    puts "Delete KS (Linux) VM:\t\t"+$script+" -O -d centos59vm01"
-    puts "Delete JS (Solaris 10) VM:\t"+$script+" -O -d sol10u11vm01"
-    puts "Delete AI (Solaris 11) VM:\t"+$script+" -O -d sol11u01vm03"
-    puts "Delete VS (ESXi) VM:\t\t"+$script+" -O -d vmware55vm01"
+    puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -O -c centos59vm01 -a x86_64 -e 00:50:56:34:4E:7A"
+    puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -O -c ubuntu1310vm01 -a x86_64 -e 08:00:27:BA:34:7C"
+    puts "Create JS (Solaris 10) VM:\t\t"+$script+" -J -O -c sol10u11vm01 -a i386 -e 00:0C:29:FA:0C:7F"
+    puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -O -c sol11u01vm03 -a i386 -e 00:50:56:26:92:D8"
+    puts "Create VS (ESXi) VM:\t\t\t"+$script+" -E -O -c vmware55vm01 -e 08:00:27:61:B7:AD"
+    puts "Delete KS (Linux) VM:\t\t\t"+$script+" -O -d centos59vm01"
+    puts "Delete JS (Solaris 10) VM:\t\t"+$script+" -O -d sol10u11vm01"
+    puts "Delete AI (Solaris 11) VM:\t\t"+$script+" -O -d sol11u01vm03"
+    puts "Delete VS (ESXi) VM:\t\t\t"+$script+" -O -d vmware55vm01"
     puts
     puts "Managing VirtualBox VM examples:"
     puts
@@ -175,7 +179,29 @@ def print_examples(examples)
     puts "Boot headless serial enabled Linux VM:\t"+$script+" -O -b centos59vm01 -U"
     puts "Boot non headless Linux VM:\t\t"+$script+" -O -b centos59vm01 -X"
     puts "Halt Linux VM:\t\t\t\t"+$script+" -O -s centos59vm01"
-    puts "Modify VM MAC Address:\t\t\t"+$script+" -O -c centos59vm01 -e 00:50:56:26:92:d8"
+    puts "Modify VM MAC Address:\t\t\t"+$script+" -O -c centos59vm01 -e 00:50:56:34:4E:7A"
+    puts
+  end
+  if examples.match(/fusion/)
+    puts "Creating VMware Fusion VM examples:"
+    puts
+    puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -F -c centos59vm01 -a x86_64 -e 00:50:56:34:4E:7A"
+    puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -F -c ubuntu1310vm01 -a x86_64 -e 08:00:27:BA:34:7C"
+    puts "Create JS (Solaris 10) VM:\t\t"+$script+" -J -F -c sol10u11vm01 -a i386 -e 00:0C:29:FA:0C:7F"
+    puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -F -c sol11u01vm03 -a i386 -e 00:50:56:26:92:D8"
+    puts "Create VS (ESXi) VM:\t\t\t"+$script+" -E -F -c vmware55vm01 -e 08:00:27:61:B7:AD"
+    puts "Delete KS (Linux) VM:\t\t\t"+$script+" -F -d centos59vm01"
+    puts "Delete JS (Solaris 10) VM:\t\t"+$script+" -F -d sol10u11vm01"
+    puts "Delete AI (Solaris 11) VM:\t\t"+$script+" -F -d sol11u01vm03"
+    puts "Delete VS (ESXi) VM:\t\t\t"+$script+" -F -d vmware55vm01"
+    puts
+    puts "Managing VMware Fusion VM examples:"
+    puts
+    puts "Boot headless Linux VM:\t\t\t"+$script+" -F -b centos59vm01"
+    puts "Boot headless serial enabled Linux VM:\t"+$script+" -F -b centos59vm01 -U"
+    puts "Boot non headless Linux VM:\t\t"+$script+" -F -b centos59vm01 -X"
+    puts "Halt Linux VM:\t\t\t\t"+$script+" -F -s centos59vm01"
+    puts "Modify VM MAC Address:\t\t\t"+$script+" -F -c centos59vm01 -e 00:50:56:34:4E:7A"
     puts
   end
   if examples.match(/server/)
@@ -249,12 +275,25 @@ def print_version()
   exit
 end
 
+def create_client_mac(client_mac)
+  if !client_mac.match(/[0-9]/)
+    client_mac = (1..6).map{"%0.2X"%rand(256)}.join(":")
+    if $verbose_mode == 1
+      puts "Information:\tGenerated MAC address "+client_mac
+    end
+  end
+  return client_mac
+end
+
 # Check local configuration
 # Create work directory if it doesn't exist
 # If not running on Solaris, run in test mode
 # Useful for generating client config files
 
 def check_local_config(mode)
+  if $verbose_mode == 1
+    puts "Information:\tHome directory "+$home_dir
+  end
   if !$work_dir.match(/[A-z]/)
     dir_name=File.basename($script,".*")
     id=%x[/usr/bin/id -u]
@@ -276,12 +315,20 @@ def check_local_config(mode)
     puts "Information:\tSetting temporary directory to "+$work_dir
   end
   check_dir_exists($tmp_dir)
-  os_ver=%x[uname -r]
-  if os_ver.match(/5\.11/)
-    $default_net = "net0"
-  end
   os_name=%x[uname]
   os_name=os_name.chomp
+  if os_name.match(/SunOS/)
+    os_ver=%x[uname -r]
+    if os_ver.match(/5\.11/)
+      $default_net = "net0"
+    end
+  end
+  if os_name.match(/Darwin/)
+    $fusion_dir=$home_dir+"/Documents/Virtual Machines.localized"
+    if !File.directory?($fusion_dir)
+      $fusion_dir=$home_dir+"/Documents/Virtual Machines"
+    end
+  end
   if !$default_host.match(/[0-9]/)
     message = "Determining:\tDefault host IP"
     if os_name.match(/SunOS/)
@@ -346,6 +393,10 @@ if opt["H"]
     examples="vbox"
     print_examples(examples)
   end
+  if opt["F"]
+    examples="fusion"
+    print_examples(examples)
+  end
   if opt["C"]
     examples="client"
     print_examples(examples)
@@ -387,6 +438,14 @@ if opt["t"]
   puts "Information:\tRunning in test mode"
 end
 
+# Get OS type
+
+if opt["o"]
+  os_type=opt["o"]
+else
+  os_type=""
+end
+
 # Check local configuration
 
 if opt["S"] or opt["W"]
@@ -396,7 +455,7 @@ else
 end
 check_local_config(mode)
 
-if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"]
+if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"] and !opt["F"]
   puts "Warning:\tClient name not given"
   exit
 else
@@ -589,7 +648,15 @@ else
   end
 end
 
-if opt["O"] and !opt["A"] and !opt["K"] and !opt["J"]
+if opt["O"]
+  $vm_disk_size=$vm_disk_size.gsub(/G/,"000")
+  vfunct="vbox"
+end
+if opt["F"]
+  vfunct="fusion"
+end
+
+if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"]
   if opt ["L"]
     search_string=""
     if opt["c"]
@@ -598,25 +665,26 @@ if opt["O"] and !opt["A"] and !opt["K"] and !opt["J"]
     if opt["e"]
       search_string=opt["e"]
     end
-    list_vbox_vms(search_string)
+    eval"[list_#{vfunct}_vms(search_string)]"
   end
   if opt["b"]
     client_name=opt["b"]
-    boot_vbox_vm(client_name)
+    eval"[boot_#{vfunct}_vm(client_name)]"
     exit
   end
   if opt["s"]
     client_name=opt["s"]
-    stop_vbox_vm(client_name)
+    eval"[stop_#{vfunct}_vm(client_name)]"
     exit
   end
   if opt["d"]
-    unconfigure_vbox_vm(client_name)
+    eval"[unconfigure_#{vfunct}_vm(client_name)]"
   end
   if opt["e"]
     client_mac=opt["e"]
-    change_vbox_vm_mac(client_name,client_mac)
+    eval"[change_#{vfunct}_vm_mac(client_name,client_mac)]"
   end
+  exit
 end
 
 # Force architecture to 64 bit for ESX
@@ -644,13 +712,14 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"]
   if opt["E"]
     funct="vs"
   end
-  if opt["O"]
+  if opt["O"] or opt["F"]
     if opt["c"]
       check_client_arch(client_arch)
-      eval"[configure_#{funct}_vbox_vm(client_name,client_mac,client_arch)]"
+      client_mac = create_client_mac(client_mac)
+      eval"[configure_#{funct}_#{vfunct}_vm(client_name,client_mac,client_arch,os_type)]"
     end
     if opt["L"]
-      eval"[list_#{funct}_vbox_vms()]"
+      eval"[list_#{funct}_#{vfunct}_vms()]"
     end
     exit
   end
