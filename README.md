@@ -9,6 +9,7 @@ A Ruby script to configure server and client configuration for PXE/DHCP and BOOT
 - Solaris 10 and early Jumpstart services
 - Centos and RedHat Linux Kickstart services
 - Ubuntu Linux Preseed support
+- SuSE AutoYast support
 - ESXi Kickstart services
 
 This script is a wrapper which sits on top of the exisitng tools.
