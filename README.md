@@ -114,22 +114,22 @@ For more information, including examples of usage refer to the wiki:
 
 https://github.com/richardatlateralblast/modest/wiki
 
-AI Related Information
-======================
+Solaris 11 AI Related Information
+=================================
 
 https://github.com/richardatlateralblast/modest/wiki/AIServerExamples
 
 https://github.com/richardatlateralblast/modest/wiki/AIClientExamples
 
-Kickstart Preseed, and AutoYast Related Information
+Kickstart, Preseed, and AutoYast Related Information
 ===================================================
 
 https://github.com/richardatlateralblast/modest/wiki/KSServerExamples
 
 https://github.com/richardatlateralblast/modest/wiki/KSClientExamples
 
-Jumpstart Related Information
-=============================
+Solaris 10 (and earlier) Jumpstart Related Information
+======================================================
 
 https://github.com/richardatlateralblast/modest/wiki/JSServerExamples
 
