@@ -9,7 +9,7 @@ A Ruby script to configure server and client configuration for PXE/DHCP and BOOT
 - Solaris 10 and early Jumpstart services
 - Centos and RedHat Linux Kickstart services
 - Ubuntu Linux Preseed support
-- SuSE AutoYast support
+- SuSE Linux AutoYast support
 - ESXi Kickstart services
 
 This script is a wrapper which sits on top of the exisitng tools.
@@ -31,7 +31,7 @@ to install patches, firmware and SRUs.
 Features
 ========
 
-Solaris AI
+Solaris 11 AI
 
 - If a local repository exists it is used to configure installation services
 - If a local repository is not present it mounts the repository ISO and configures it
@@ -48,7 +48,7 @@ Solaris AI
   - Adds packages to base installation manifest
 - Post installation script capability (work in progress)
 
-Linux Kickstart
+Centos and RedHat Linux Kickstart
 
 - Creates an Apache directory and alias for a HTTP based installation
 - Creates PXE configuration that jumps straight into an installation and pulls kickstart file from server
@@ -56,16 +56,16 @@ Linux Kickstart
   - Automatically downloads Puppet packages
   - Add packages to post installation
 
-Ubuntu Preseed
+Ubuntu Linux Preseed
 
 - Adds required append statement to PXE configuration so install is fully automated
 - Currently only basic client support (auto partitions disk)
 
-SuSE AutoYast
+SuSE Linux AutoYast
 
 - Creates AutoYast XML file based on answers to questions
 
-Solaris Jumpstart:
+Solaris 10 (and earlier) Jumpstart:
 
 - Automatically tries to determine boot and mirror disk ids based on model
 - Automatically tires to determine kernel architecture (e.g. sun4u / sun4v) based on model
