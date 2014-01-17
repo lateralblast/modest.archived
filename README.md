@@ -5,8 +5,8 @@ Multi Os Deployment Engine Server Tool
 
 A Ruby script to configure server and client configuration for PXE/DHCP and BOOTP based install services, eg:
 
-- Solaris 11 base Automated Installer (AI) service
-- Solaris 10 and early Jumpstart services
+- Solaris 11 Automated Installer (AI) service
+- Solaris 10 (and earlier) Jumpstart services
 - Centos and RedHat Linux Kickstart services
 - Ubuntu Linux Preseed support
 - SuSE Linux AutoYast support
@@ -30,6 +30,10 @@ to install patches, firmware and SRUs.
 
 Features
 ========
+
+VirtualBox and VMware Fusion VM creation
+
+- Can create VMs to speed up the automation of testing new images
 
 Solaris 11 AI
 
