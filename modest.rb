@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.0.0
+# Version:      1.0.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -27,7 +27,7 @@ require 'parseconfig'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:h:i:m:n:o:p:s:z:ACDEFHIJKLMOPRSTUVWXZtv"
+$options                = "a:b:c:d:e:f:h:i:m:n:o:p:s:z:ABCDEFGHIJKLMNOPRSTUVWXYZtv"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -51,11 +51,13 @@ $default_country        = "AU"
 $default_timeserver     = "0."+$default_country.downcase+".pool.ntp.org"
 $default_keymap         = "US-English"
 $default_environment    = "en_US.UTF-8"
+$default_language       = "en_US"
 $default_system_locale  = "C"
 $default_nameserver     = "8.8.8.8"
 $default_name_service   = "none"
 $default_security       = "none"
 $default_netmask        = "255.255.255.0"
+$default_domain         = "local"
 $default_search         = "local"
 $default_files          = "files"
 $default_hosts          = "files dns"
@@ -68,8 +70,8 @@ $default_apache_allow   = ""
 $default_admin_name      = "Sys Admin"
 $default_admin_user     = "sysadmin"
 $default_admin_group    = "wheel"
-$default_admin_home     = "/export/home"
-$default_admin_shell    = "/export/home"
+$default_admin_home     = "/home/"+$default_admin_user
+$default_admin_shell    = "/bin/bash"
 $default_admin_uid      = "200"
 $tftp_dir               = "/etc/netboot"
 $default_cluster        = "SUNWCprog"
@@ -86,6 +88,7 @@ $vbox_disk_type         = "ide"
 $vm_disk_size           = "10G"
 $vm_memory_size         = "1024"
 $use_serial             = 0
+$os_name                = ""
 
 # Declare some package versions
 
@@ -115,7 +118,9 @@ def print_usage()
   puts "-V: Display version"
   puts "-A: Configure AI"
   puts "-J: Configure Jumpstart"
-  puts "-K: Configure Kicstart"
+  puts "-K: Configure Kickstart (CentOS and RedHat)"
+  puts "-U: Configure Preseed (Ubuntu)"
+  puts "-Y: Configure AutoYast (SuSE)"
   puts "-E: Configure VSphere"
   puts "-M: Maintenance mode"
   puts "-a: Architecture"
@@ -142,8 +147,9 @@ def print_usage()
   puts "-Z: Destroy ZFS filesystem as part of uninstallation"
   puts "-D: Use default values for questions"
   puts "-T: Use text mode install"
-  puts "-U: Use serial connectivity (emulated)"
+  puts "-B: Use serial connectivity (emulated)"
   puts "-X: X Windows based install (default is text based)"
+  puts "    or run VM in GUI mode (default is headless)"
   puts "-H: Provide detailed examples"
   puts
   exit
@@ -164,7 +170,8 @@ def print_examples(examples)
     puts "Creating VirtualBox VM examples:"
     puts
     puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -O -c centos59vm01 -a x86_64 -e 00:50:56:34:4E:7A"
-    puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -O -c ubuntu1310vm01 -a x86_64 -e 08:00:27:BA:34:7C"
+    puts "Create PS (Linux) VM:\t\t\t"+$script+" -U -O -c ubuntu1310vm01 -a x86_64 -e 08:00:27:BA:34:7C"
+    puts "Create AY (Linux) VM:\t\t\t"+$script+" -Y -F -c sles11sp2vm01 -a x86_64 -e 08:00:27:BA:34:7D"
     puts "Create JS (Solaris 10) VM:\t\t"+$script+" -J -O -c sol10u11vm01 -a i386 -e 00:0C:29:FA:0C:7F"
     puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -O -c sol11u01vm03 -a i386 -e 00:50:56:26:92:D8"
     puts "Create VS (ESXi) VM:\t\t\t"+$script+" -E -O -c vmware55vm01 -e 08:00:27:61:B7:AD"
@@ -176,7 +183,7 @@ def print_examples(examples)
     puts "Managing VirtualBox VM examples:"
     puts
     puts "Boot headless Linux VM:\t\t\t"+$script+" -O -b centos59vm01"
-    puts "Boot headless serial enabled Linux VM:\t"+$script+" -O -b centos59vm01 -U"
+    puts "Boot headless serial enabled Linux VM:\t"+$script+" -O -b centos59vm01 -B"
     puts "Boot non headless Linux VM:\t\t"+$script+" -O -b centos59vm01 -X"
     puts "Halt Linux VM:\t\t\t\t"+$script+" -O -s centos59vm01"
     puts "Modify VM MAC Address:\t\t\t"+$script+" -O -c centos59vm01 -e 00:50:56:34:4E:7A"
@@ -186,10 +193,12 @@ def print_examples(examples)
     puts "Creating VMware Fusion VM examples:"
     puts
     puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -F -c centos59vm01 -a x86_64 -e 00:50:56:34:4E:7A"
-    puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -F -c ubuntu1310vm01 -a x86_64 -e 08:00:27:BA:34:7C"
+    puts "Create PS (Linux) VM:\t\t\t"+$script+" -U -F -c ubuntu1310vm01 -a x86_64 -e 08:00:27:BA:34:7C"
+    puts "Create AY (Linux) VM:\t\t\t"+$script+" -Y -F -c sles11sp2vm01 -a x86_64 -e 08:00:27:BA:34:7D"
     puts "Create JS (Solaris 10) VM:\t\t"+$script+" -J -F -c sol10u11vm01 -a i386 -e 00:0C:29:FA:0C:7F"
     puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -F -c sol11u01vm03 -a i386 -e 00:50:56:26:92:D8"
     puts "Create VS (ESXi) VM:\t\t\t"+$script+" -E -F -c vmware55vm01 -e 08:00:27:61:B7:AD"
+    puts "Create NT (Windows) VM:\t\t\t"+$script+" -N -F -c win2008r2vm01 -e 08:00:27:61:B7:AF"
     puts "Delete KS (Linux) VM:\t\t\t"+$script+" -F -d centos59vm01"
     puts "Delete JS (Solaris 10) VM:\t\t"+$script+" -F -d sol10u11vm01"
     puts "Delete AI (Solaris 11) VM:\t\t"+$script+" -F -d sol11u01vm03"
@@ -198,9 +207,10 @@ def print_examples(examples)
     puts "Managing VMware Fusion VM examples:"
     puts
     puts "Boot headless Linux VM:\t\t\t"+$script+" -F -b centos59vm01"
-    puts "Boot headless serial enabled Linux VM:\t"+$script+" -F -b centos59vm01 -U"
+    puts "Boot headless serial enabled Linux VM:\t"+$script+" -F -b centos59vm01 -B"
     puts "Boot non headless Linux VM:\t\t"+$script+" -F -b centos59vm01 -X"
     puts "Halt Linux VM:\t\t\t\t"+$script+" -F -s centos59vm01"
+    puts "Boot Windows VM:\t\t\t"+$script+" -F -b win2008r2vm01 -X"
     puts "Modify VM MAC Address:\t\t\t"+$script+" -F -c centos59vm01 -e 00:50:56:34:4E:7A"
     puts
   end
@@ -247,6 +257,7 @@ def print_examples(examples)
     puts "Delete JS client:\t\t"+$script+" -J -C -d sol10u11vm01"
     puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -a x86_64 -i 192.168.1.194 -n centos_5_9_x86_64"
     puts "Create KS client:\t\t"+$script+" -K -C -c ubuntu1310vm01 -e 08:00:27:BA:34:7C -a x86_64 -i 192.168.1.196 -n ubuntu_13_10_x86_64"
+    puts "Create KS client:\t\t"+$script+" -K -C -c sles11sp2vm01 -e 08:00:27:BA:34:7D -a x86_64 -i 192.168.1.197 -n sles_11_2_x86_64"
     puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
     puts "Delete KS client:\t\t"+$script+" -K -C -d ubuntu1310vm01"
     puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
@@ -315,15 +326,15 @@ def check_local_config(mode)
     puts "Information:\tSetting temporary directory to "+$work_dir
   end
   check_dir_exists($tmp_dir)
-  os_name=%x[uname]
-  os_name=os_name.chomp
-  if os_name.match(/SunOS/)
+  $os_name=%x[uname]
+  $os_name=$os_name.chomp
+  if $os_name.match(/SunOS/)
     os_ver=%x[uname -r]
     if os_ver.match(/5\.11/)
       $default_net = "net0"
     end
   end
-  if os_name.match(/Darwin/)
+  if $os_name.match(/Darwin/)
     $fusion_dir=$home_dir+"/Documents/Virtual Machines.localized"
     if !File.directory?($fusion_dir)
       $fusion_dir=$home_dir+"/Documents/Virtual Machines"
@@ -331,10 +342,10 @@ def check_local_config(mode)
   end
   if !$default_host.match(/[0-9]/)
     message = "Determining:\tDefault host IP"
-    if os_name.match(/SunOS/)
+    if $os_name.match(/SunOS/)
       command = "ipadm show-addr #{$default_net}/v4 |grep net |awk '{print $4}' |cut -f1 -d'/'"
     end
-    if os_name.match(/Darwin/)
+    if $os_name.match(/Darwin/)
       $default_net="en0"
       command = "ifconfig #{$default_net} |grep 'inet ' |awk '{print $2}'"
     end
@@ -354,7 +365,7 @@ def check_local_config(mode)
   bin_dir     = $work_dir+"/bin"
   check_dir_exists(bin_dir)
   $rpm2cpio_bin=bin_dir+"rpm2cpio"
-  if os_name.match(/SunOS/)
+  if $os_name.match(/SunOS/)
     if !File.exist?($rpm2cpio_bin)
       message = "Fetching:\tTool rpm2cpio"
       command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
@@ -616,9 +627,9 @@ if opt["T"]
   $text_install = 1
 end
 
-# If given -U use serial based install
+# If given -B use serial based install
 
-if opt["U"]
+if opt["B"]
   $text_install = 1
   $use_serial   = 1
   if $verbose_mode == 1
@@ -656,24 +667,24 @@ if opt["F"]
   vfunct="fusion"
 end
 
-if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"]
+if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] and !opt["Y"] and !opt["U"]
   if opt ["L"]
-    search_string=""
+    search_string = ""
     if opt["c"]
-      search_string=opt["c"]
+      search_string = opt["c"]
     end
     if opt["e"]
-      search_string=opt["e"]
+      search_string = opt["e"]
     end
     eval"[list_#{vfunct}_vms(search_string)]"
   end
   if opt["b"]
-    client_name=opt["b"]
+    client_name = opt["b"]
     eval"[boot_#{vfunct}_vm(client_name)]"
     exit
   end
   if opt["s"]
-    client_name=opt["s"]
+    client_name = opt["s"]
     eval"[stop_#{vfunct}_vm(client_name)]"
     exit
   end
@@ -681,7 +692,7 @@ if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"]
     eval"[unconfigure_#{vfunct}_vm(client_name)]"
   end
   if opt["e"]
-    client_mac=opt["e"]
+    client_mac = opt["e"]
     eval"[change_#{vfunct}_vm_mac(client_name,client_mac)]"
   end
   exit
@@ -696,21 +707,30 @@ if opt["E"]
   end
 end
 
-# Handle AI, KS, or JS
+# Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE
 
-if opt["A"] or opt["K"] or opt["J"] or opt["E"]
+if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["Y"]
   # Set function
   if opt["A"]
-    funct="ai"
+    funct = "ai"
   end
   if opt["K"]
-    funct="ks"
+    funct = "ks"
+  end
+  if opt["Y"]
+    funct = "ay"
+  end
+  if opt["U"]
+    funct = "ps"
   end
   if opt["J"]
-    funct="js"
+    funct = "js"
   end
   if opt["E"]
-    funct="vs"
+    funct = "vs"
+  end
+  if opt["N"]
+    funct = "pe"
   end
   if opt["O"] or opt["F"]
     if opt["c"]

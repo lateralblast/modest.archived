@@ -22,7 +22,7 @@ end
 
 # Configure client PXE boot
 
-def configure_ks_pxe_client(client_name,client_mac,service_name)
+def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   tftp_pxe_file = client_mac.gsub(/:/,"")
   tftp_pxe_file = tftp_pxe_file.upcase
   tftp_pxe_file = "01"+tftp_pxe_file+".pxelinux"
@@ -42,7 +42,11 @@ def configure_ks_pxe_client(client_name,client_mac,service_name)
   pxe_cfg_file = "01-"+pxe_cfg_file
   pxe_cfg_file = pxe_cfg_file.downcase
   pxe_cfg_file = pxe_cfg_dir+"/"+pxe_cfg_file
-  vmlinuz_file = "/"+service_name+"/images/pxeboot/vmlinuz"
+  if service_name.match(/sles/)
+    vmlinuz_file = "/"+service_name+"/boot/#{client_arch}/loader/linux"
+  else
+    vmlinuz_file = "/"+service_name+"/images/pxeboot/vmlinuz"
+  end
   if service_name.match(/ubuntu/)
     if service_name.match(/x86_64/)
       initrd_file  = "/"+service_name+"/images/pxeboot/netboot/ubuntu-installer/amd64/initrd.gz"
@@ -50,9 +54,15 @@ def configure_ks_pxe_client(client_name,client_mac,service_name)
       initrd_file  = "/"+service_name+"/images/pxeboot/netboot/ubuntu-installer/i386/initrd.gz"
     end
   else
-    initrd_file  = "/"+service_name+"/images/pxeboot/initrd.img"
+    if service_name.match(/sles/)
+      initrd_file  = "/"+service_name+"/boot/#{client_arch}/loader/initrd"
+    else
+      initrd_file  = "/"+service_name+"/images/pxeboot/initrd.img"
+    end
   end
   ks_url       = "http://"+$default_host+"/"+service_name+"/"+client_name+".cfg"
+  autoyast_url = "http://"+$default_host+"/"+service_name+"/"+client_name+".xml"
+  install_url  = "http://"+$default_host+"/"+service_name
   file         = File.open(pxe_cfg_file,"w")
   file.write("DEFAULT LINUX\n")
   file.write("LABEL LINUX\n")
@@ -60,10 +70,18 @@ def configure_ks_pxe_client(client_name,client_mac,service_name)
   if service_name.match(/ubuntu/)
     append_string = "  APPEND auto=true priority=critical preseed/url=#{ks_url} console-keymaps-at/keymap=us locale=en_US hostname=#{client_name} initrd=#{initrd_file}"
   else
-    append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url}"
+    if service_name.match(/sles/)
+      append_string = "  APPEND initrd=#{initrd_file} install=#{install_url} autoyast=#{autoyast_url} language=#{$default_language}"
+    else
+      append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url}"
+    end
   end
   if $text_install == 1
-    append_string = append_string+" text"
+    if service_name.match(/sles/)
+      append_string = append_string+" textmode=1"
+    else
+      append_string = append_string+" text"
+    end
     if $use_serial == 1
       append_string = append_string+" serial console=ttyS0"
     end
@@ -135,7 +153,11 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     list_ks_services()
     exit
   end
-  output_file = repo_version_dir+"/"+client_name+".cfg"
+  if service_name.match(/sles/)
+    output_file = repo_version_dir+"/"+client_name+".xml"
+  else
+    output_file = repo_version_dir+"/"+client_name+".cfg"
+  end
   if File.exists?(output_file)
     File.delete(output_file)
   end
@@ -148,14 +170,22 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     post_list = populate_ks_post_list(service_name)
     output_ks_post_list(post_list,output_file,service_name)
   else
-    populate_ps_questions(service_name,client_name,client_ip)
-    process_questions
-    output_ps_header(output_file)
-    output_file = repo_version_dir+"/"+client_name+"_post.sh"
-    post_list   = populate_ks_post_list(service_name)
-    output_ks_post_list(post_list,output_file,service_name)
+    if service_name.match(/sles/)
+      populate_ks_questions(service_name,client_name,client_ip)
+      process_questions()
+      output_ay_client_profile(client_name,client_ip,client_mac,output_file)
+    else
+      if service_name.match(/ubuntu/)
+        populate_ps_questions(service_name,client_name,client_ip)
+        process_questions
+        output_ps_header(output_file)
+        output_file = repo_version_dir+"/"+client_name+"_post.sh"
+        post_list   = populate_ks_post_list(service_name)
+        output_ks_post_list(post_list,output_file,service_name)
+      end
+    end
   end
-  configure_ks_pxe_client(client_name,client_mac,service_name)
+  configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   configure_ks_dhcp_client(client_name,client_mac,client_ip,service_name)
   return
 end
@@ -172,7 +202,7 @@ end
 
 def populate_ks_post_list(service_name)
   post_list   = []
-  if service_name.match(/centos|rhel/)
+  if service_name.match(/centos|rhel|sles/)
     admin_group = $q_struct["admingroup"].value
     admin_user  = $q_struct["adminuser"].value
     admin_crypt = $q_struct["admincrypt"].value
@@ -180,8 +210,19 @@ def populate_ks_post_list(service_name)
     post_list.push("# Add Admin user")
     post_list.push("groupadd #{admin_group}")
     post_list.push("groupadd #{admin_user}")
+    post_list.push("# Add admin user")
     post_list.push("useradd -p '#{admin_crypt}' -g #{admin_user} -G #{admin_group} -d #{admin_home} -m #{admin_user}")
+    post_list.push("# Setup sudoers")
     post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers")
+    post_list.push("# Install VM tools")
+    post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
+    post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-DSA-KEY.pub")
+    post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub")
+    post_list.push("  ")
+    post_list.push("  OSREL=`lsb_release -r |awk '{print $2}' |cut -f1 -d'.'`")
+    post_list.push("  echo -e \"[vmware-tools]\nname=VMware Tools\nbaseurl=http://packages.vmware.com/tools/esx/latest/rhel$OSREL/#{client_arch}\nenabled=1\ngpgcheck=1\" >> /etc/yum.repos.d/vmware-tools.repo")
+    post_list.push("  yum -y install vmware-tools-esx-kmods vmware-tools-esx")
+    post_list.push("fi")
     post_list.push("# Enable serial console")
     post_list.push("sed -i 's/9600/115200/' /etc/inittab")
     post_list.push("sed -i 's/kernel.*/& console=ttyS0,115200n8/' /etc/grub.conf")
@@ -209,11 +250,26 @@ def populate_ks_post_list(service_name)
       post_list.push("rm -rf /tmp/rpms")
     end
   else
+    post_list.push("# Install additional pacakges")
     post_list.push("apt-get install -y puppet")
+    post_list.push("apt-get install -y nfs-common")
     post_list.push("apt-get install -y openssh-server")
     post_list.push("apt-get install -y python-software-properties")
     post_list.push("apt-get install -y software-properties-common")
+    post_list.push("# Install VM tools")
+    post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
+    post_list.push("  apt-get install -y open-vm-tools")
+    post_list.push("fi")
+    post_list.push("# Setup sudoers")
     post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers.d/sysadmin")
+    post_list.push("# Enable serial console")
+    post_list.push("echo 'start on stopped rc or RUNLEVEL=[12345]' > /etc/init/ttyS0.conf")
+    post_list.push("echo 'stop on runlevel [!12345]' >> /etc/init/ttyS0.conf")
+    post_list.push("echo 'respawn' >> /etc/init/ttyS0.conf")
+    post_list.push("echo 'exec /sbin/getty -L 115200 ttyS0 vt100' >> /etc/init/ttyS0.conf")
+    post_list.push("start getty")
+    post_list.push("sed -i 's/^#GRUB_TERMINAL/GRUB_TERMINAL=console/' /etc/default/grub")
+    post_list.push("echo 'GRUB_SERIAL_COMMAND=\"serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1\"' >> /etc/default/grub")
   end
   post_list.push("")
   return post_list

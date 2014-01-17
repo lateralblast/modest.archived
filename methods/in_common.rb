@@ -164,20 +164,24 @@ end
 def check_zfs_fs_exists(dir_name)
   output=""
   if !File.directory?(dir_name)
-    message     = "Warning:\t"+dir_name+" does not exist"
-    zfs_name    = $default_zpool+dir_name
-    command     = "zfs create #{$zfs_name}"
-    output      = execute_command(message,command)
-    if dir_name.match(/vmware/)
-      service_name = File.basename(dir_name)
-      mount_dir    = $tftp_dir+"/"+service_name
-      message      = "Information:\tVMware repository being mounted under "+mount_dir
-      command      = "zfs set mountpoint=#{mount_dir} #{zfs_name}"
-      execute_command(message,command)
-      message = "Information:\tSymlinking "+mount_dir+" to "+dir_name
-      command = "ln -s #{mount_dir} #{dir_name}"
-      execute_command(message,command)
+    if $os_name.match(/SunOS/)
+      message     = "Warning:\t"+dir_name+" does not exist"
+      zfs_name    = $default_zpool+dir_name
+      command     = "zfs create #{zfs_name}"
+      output      = execute_command(message,command)
+      if dir_name.match(/vmware/)
+        service_name = File.basename(dir_name)
+        mount_dir    = $tftp_dir+"/"+service_name
+        message      = "Information:\tVMware repository being mounted under "+mount_dir
+        command      = "zfs set mountpoint=#{mount_dir} #{zfs_name}"
+        execute_command(message,command)
+        message = "Information:\tSymlinking "+mount_dir+" to "+dir_name
+        command = "ln -s #{mount_dir} #{dir_name}"
+        execute_command(message,command)
+      end
     end
+  else
+    check_dir_exists(dir_name)
   end
   return output
 end
@@ -423,11 +427,11 @@ def add_apache_alias(service_base_name)
       puts "Adding:\t\tDirectory and Alias entry to "+apache_config_file
     end
     output=File.open(apache_config_file,"a")
-    output.write("Alias /#{service_base_name} #{repo_version_dir}")
     output.write("<Directory #{repo_version_dir}>\n")
     output.write("Options Indexes\n")
     output.write("Allow from #{$default_apache_allow}\n")
     output.write("</Directory>\n")
+    output.write("Alias /#{service_base_name} #{repo_version_dir}\n")
     output.close
     smf_service_name = "apache22"
     enable_smf_service(smf_service_name)
@@ -480,7 +484,11 @@ def mount_iso(iso_file)
         if iso_file.match(/VM/)
           iso_test_dir = $iso_mount_dir+"/upgrade"
         else
-          iso_test_dir = $iso_mount_dir+"/install"
+          if iso_file.match(/SLES/)
+            iso_test_dir = $iso_mount_dir+"/suse"
+          else
+            iso_test_dir = $iso_mount_dir+"/install"
+          end
         end
       end
     end

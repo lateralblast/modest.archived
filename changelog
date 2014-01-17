@@ -197,3 +197,7 @@
 # Minor fixes
 # 0.9.9: Sat 11 Jan 2014 22:19:35 EST
 # Added basic Ubuntu preseed support
+# 1.0.0: Tue 14 Jan 2014 13:21:29 EST
+# Added SLES server support
+# 1.0.1: Fri 17 Jan 2014 16:31:13 EST
+# Added SLES AutoYast client support

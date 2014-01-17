@@ -561,7 +561,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Timezone",
     ask       = "yes",
     parameter = "timezone",
-    value     = "Australia/Melbourne",
+    value     = $default_timezone,
     valid     = "",
     eval      = "no"
     )
@@ -821,7 +821,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Root Size",
     ask       = "yes",
     parameter = "",
-    value     = "1024",
+    value     = "2048",
     valid     = "",
     eval      = "no"
     )
@@ -855,4 +855,3 @@ def populate_ks_questions(service_name,client_name,client_ip)
 
   return
 end
-

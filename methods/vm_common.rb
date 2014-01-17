@@ -123,7 +123,7 @@ def configure_js_vbox_vm(client_name,client_mac,client_arch,os_type)
   return
 end
 
-# Configure a Kickstart Virtual Box VM
+# Configure a RedHat or Centos Kickstart VirtualBox VM
 
 def configure_ks_vbox_vm(client_name,client_mac,client_arch,os_type)
   if client_arch.match(/i386/)
@@ -135,7 +135,29 @@ def configure_ks_vbox_vm(client_name,client_mac,client_arch,os_type)
   return
 end
 
-# Configure a ESX Virtual Box VM
+# Configure a Preseed Ubuntu VirtualBox VM
+
+def configure_ps_vbox_vm(client_name,client_mac,client_arch,os_type)
+  os_type = "Ubuntu"
+  if client_arch.match(/x86_64/)
+    os_type = os_type+"_64"
+  end
+  configure_vbox_vm(client_name,client_mac,os_type)
+  return
+end
+
+# Configure a AutoYast SuSE VirtualBox VM
+
+def configure_ay_vbox_vm(client_name,client_mac,client_arch,os_type)
+  os_type = "OpenSUSE"
+  if client_arch.match(/x86_64/)
+    os_type = os_type+"_64"
+  end
+  configure_vbox_vm(client_name,client_mac,os_type)
+  return
+end
+
+# Configure a ESX VirtualBox VM
 
 def configure_vs_vbox_vm(client_name,client_mac,client_arch,os_type)
   os_type = "Linux_64"
@@ -155,6 +177,36 @@ end
 
 def configure_js_fusion_vm(client_name,client_mac,client_arch,os_type)
   os_type = "solaris10-64"
+  configure_fusion_vm(client_name,client_mac,os_type)
+  return
+end
+
+# configure an AutoYast (Suse) VMware Fusion VM
+
+def configure_ay_fusion_vm(client_name,client_mac,client_arch,os_type)
+  os_type = "sles11"
+  if !client_arch.match(/i386/) and !client_arch.match(/64/)
+    os_type = os_type+"-64"
+  end
+  configure_fusion_vm(client_name,client_mac,os_type)
+  return
+end
+
+# Configure an Ubuntu VMware Fusion VM
+
+def configure_ps_fusion_vm(client_name,client_mac,client_arch,os_type)
+  os_type = "ubuntu"
+  if !client_arch.match(/i386/) and !client_arch.match(/64/)
+    os_type = os_type+"-64"
+  end
+  configure_fusion_vm(client_name,client_mac,os_type)
+  return
+end
+
+# Configure a Windows VMware Fusion VM
+
+def configure_pe_fusion_vm(client_name,client_mac,client_arch,os_type)
+  os_type = "windows7srv-64"
   configure_fusion_vm(client_name,client_mac,os_type)
   return
 end
@@ -405,11 +457,20 @@ def populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
   vmx_info.push("virtualHW.version,10")
   vmx_info.push("vcpu.hotadd,TRUE")
   vmx_info.push("scsi0.present,TRUE")
-  vmx_info.push("scsi0.virtualDev,lsilogic")
+  if os_type.match(/windows7srv-64/)
+    vmx_info.push("scsi0.virtualDev,lsisas1068")
+  else
+    vmx_info.push("scsi0.virtualDev,lsilogic")
+  end
   vmx_info.push("sata0.present,TRUE")
   vmx_info.push("memsize,#{$vm_memory_size}")
   vmx_info.push("mem.hotadd,TRUE")
+  vmx_info.push("scsi0:0.present,TRUE")
+  vmx_info.push("scsi0:0.fileName,#{client_name}.vmdk")
   vmx_info.push("sata0:1.present,FALSE")
+  vmx_info.push("floppy0.fileType,device")
+  vmx_info.push("floppy0.fileName,")
+  vmx_info.push("floppy0.clientDevice,FALSE")
   vmx_info.push("ethernet0.present,TRUE")
   vmx_info.push("ethernet0.connectionType,bridged")
   vmx_info.push("ethernet0.virtualDev,e1000")
@@ -420,6 +481,9 @@ def populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
   vmx_info.push("ehci.present,TRUE")
   vmx_info.push("ehci.pciSlotNumber,35")
   vmx_info.push("sound.present,TRUE")
+  if os_type.match(/windows7srv-64/)
+    vmx_info.push("sound.virtualDev,hdaudio")
+  end
   vmx_info.push("sound.fileName,-1")
   vmx_info.push("sound.autodetect,TRUE")
   vmx_info.push("mks.enable3d,TRUE")
@@ -465,6 +529,9 @@ def populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
   vmx_info.push("sound.pciSlotNumber,34")
   vmx_info.push("vmci0.pciSlotNumber,36")
   vmx_info.push("sata0.pciSlotNumber,37")
+  if os_type.match(/windows7srv-64/)
+    vmx_info.push("scsi0.sasWWID,50 05 05 63 9c 8f c0 c0")
+  end
   vmx_info.push("ethernet0.generatedAddressOffset,0")
   vmx_info.push("vmci0.id,-1176557972")
   vmx_info.push("vmotion.checkpointFBSize,134217728")
@@ -477,19 +544,17 @@ def populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
   vmx_info.push("usb:1.parent,-1")
   vmx_info.push("checkpoint.vmState,")
   vmx_info.push("sata0:1.startConnected,FALSE")
-  vmx_info.push("ethernet0.address,#{client_mac}")
   vmx_info.push("usb:0.present,TRUE")
   vmx_info.push("usb:0.deviceType,hid")
   vmx_info.push("usb:0.port,0")
   vmx_info.push("usb:0.parent,-1")
+  vmx_info.push("ethernet0.address,#{client_mac}")
   vmx_info.push("floppy0.present,FALSE")
   vmx_info.push("serial0.present,TRUE")
   vmx_info.push("serial0.fileType,pipe")
   vmx_info.push("serial0.yieldOnMsrRead,TRUE")
   vmx_info.push("serial0.startConnected,TRUE")
   vmx_info.push("serial0.fileName,/tmp/#{client_name}")
-  vmx_info.push("scsi0:0.present,TRUE")
-  vmx_info.push("scsi0:0.fileName,#{client_name}.vmdk")
   vmx_info.push("scsi0:0.redo,")
   return vmx_info
 end

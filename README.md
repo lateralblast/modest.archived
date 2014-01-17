@@ -20,8 +20,8 @@ which in complex environments can be time consuming.
 It also reduces the time to deploy servers and increases the consistency of installations.
 
 This script will provide the ability to install Solaris 2.6-10, Solaris 11, ESXi,
-and Linux all from one server and OS, consolidating and simplifying installation services.
-This can be hosted on a physical server or a VM.
+and Linux (SuSE, Ubuntu, RedHat and Centos) all from one server and OS, consolidating and
+simplifying installation services. This can be hosted on a physical server or a VM.
 In particular it can be used with a laptop to provide installation services via a cross-over cable.
 This is expecially useful for resolving issues with servers and installing firmware.
 It can be used in combination with the firmware and patch repository script (goofball)
@@ -59,6 +59,10 @@ Ubuntu Preseed
 
 - Adds required append statement to PXE configuration so install is fully automated
 - Currently only basic client support (auto partitions disk)
+
+SuSE AutoYast
+
+- Creates AutoYast XML file based on answers to questions
 
 Solaris Jumpstart:
 
@@ -116,8 +120,8 @@ https://github.com/richardatlateralblast/modest/wiki/AIServerExamples
 
 https://github.com/richardatlateralblast/modest/wiki/AIClientExamples
 
-Kickstart and Preseed Related Information
-=========================================
+Kickstart Preseed, and AutoYast Related Information
+===================================================
 
 https://github.com/richardatlateralblast/modest/wiki/KSServerExamples
 
