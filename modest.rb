@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.0.1
+# Version:      1.0.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -39,6 +39,7 @@ $tmp_dir                = ""
 $alt_repo_name          = "alt"
 $alt_prefix_name        = "solaris"
 $home_dir               = ENV["HOME"]
+$dhcpd_file             = "/etc/inet/dhcpd4.conf"
 $fusion_dir             = ""
 $default_zpool          = "rpool"
 $default_ai_port        = "10081"
@@ -325,6 +326,7 @@ def check_local_config(mode)
   if $verbose_mode == 1
     puts "Information:\tSetting temporary directory to "+$work_dir
   end
+  # Get OS name and set system settings appropriately
   check_dir_exists($tmp_dir)
   $os_name=%x[uname]
   $os_name=$os_name.chomp
@@ -332,12 +334,6 @@ def check_local_config(mode)
     os_ver=%x[uname -r]
     if os_ver.match(/5\.11/)
       $default_net = "net0"
-    end
-  end
-  if $os_name.match(/Darwin/)
-    $fusion_dir=$home_dir+"/Documents/Virtual Machines.localized"
-    if !File.directory?($fusion_dir)
-      $fusion_dir=$home_dir+"/Documents/Virtual Machines"
     end
   end
   if !$default_host.match(/[0-9]/)
@@ -358,6 +354,27 @@ def check_local_config(mode)
   if mode == "server"
     if $verbose_mode == 1
       puts "Information:\tSetting apache allow range to "+$default_apache_allow
+    end
+    if $os_name.match(/Darwin/)
+      check_osx_tftpd()
+      check_osx_dhcpd()
+      $tftp_dir   = "/private/tftpboot"
+      $dhcpd_file = "/usr/local/etc/dhcpd.conf"
+    end
+  end
+  # If runnning on OS X check we have brew installed
+  if $os_name.match(/Darwn/)
+    if !File.exists?("/usr/local/bin/brew")
+      message = "Installing:\tBrew for OS X"
+      command = "ruby -e \"$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)\""
+      execute_command(message,command)
+    end
+  end
+  # Set location of VMware Fusion and VirtualBox VMs
+  if $os_name.match(/Darwin/)
+    $fusion_dir=$home_dir+"/Documents/Virtual Machines.localized"
+    if !File.directory?($fusion_dir)
+      $fusion_dir=$home_dir+"/Documents/Virtual Machines"
     end
   end
   $backup_dir = $work_dir+"/backup"
@@ -745,6 +762,7 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["
   end
   # Handle server related functions
   if opt ["S"]
+    check_dhcpd_config(publisher_host)
     # List server services
     if opt["L"]
       eval"[list_#{funct}_services()]"

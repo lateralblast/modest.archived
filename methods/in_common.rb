@@ -1,6 +1,138 @@
 
 # Code common to all services
 
+# Check DHCPd config
+
+def check_dhcpd_config(publisher_host)
+  network_address = $default_host.split(/\./)[0..2].join(".")+".0"
+  broadcast_address = $default_host.split(/\./)[0..2].join(".")+".255"
+  gateway_address = $default_host.split(/\./)[0..2].join(".")+".254"
+  message - "Checking:\tDHCPd config for subnet entry"
+  command = "cat #{$dhcpd_file} | grep 'subnet #{network_address}'"
+  output  = execute_command(message, command)
+  if !output.match(/subnet/)
+    text = []
+    text.push("\n")
+    text.push("option arch code 93 = unsigned integer 16;\n")
+    text.push("option grubmenu code 150 = text;\n")
+    text.push("\n")
+    text.push("class \"PXEBoot\" {\n")
+    text.push("  match if (substring(option vendor-class-identifier, 0, 9) = \"PXEClient\");\n")
+    text.push("}\n")
+    text.push("\n")
+    text.push("class \"SPARC\" {\n")
+    text.push("  match if not (substring(option vendor-class-identifier, 0, 9) = \"PXEClient\");\n")
+    text.push("  filename \"http://#{publisher_host}:5555/cgi-bin/wanboot-cgi\";\n")
+    text.push("}\n")
+    text.push("\n")
+    text.push("allow booting;\n")
+    text.push("allow bootp;\n")
+    text.push("\n")
+    text.push("subnet #{network_address} {\n")
+    text.push("  option broadcast-address #{broadcast_address};\n")
+    text.push("  option routers #{gateway_address};\n")
+    text.push("  next-server #{$default_host};\n")
+    text.push("}\n")
+    text.push("")
+    text.push("")
+    text.push("")
+    text.push("")
+  end
+  return
+end
+
+# Check TFTPd enabled on OS X
+
+def check_osx_tftpd()
+  tftpd_file  = "/System/Library/LaunchDaemons/tftp.plist"
+  backup_file = tftpd_file+".orig"
+  tmp_file    = "/tmp/tftp.plist"
+  message     = "Checking:\tTFTPd is enabled"
+  command     = "cat #{tftpd_file} | grep -C1 Disabled |grep true"
+  output      = execute_command(message,command)
+  if !output.match(/true/)
+    if $verbose_mode == 1
+      puts "Information:\tTFTPd enabled"
+    end
+  else
+    backup_file = tftpd_file + ".orig"
+    message     = "Archiving:\tTFTPd file "+tftpd_file+" to "+backup_file
+    command     = "sudo cp #{tftpd_file} #{backup_file}"
+    execute_command(message,command)
+    copy      = []
+    check     = 0
+    file_info = IO.readlines(tftpd_file)
+    file_info.each do |line|
+      if line.match(/Disabled/)
+        check = 1
+      end
+      if line.match(/Label/)
+        check = 0
+      end
+      if check == 1 and line.match(/true/)
+        copy = line.gsub(/true/,"false")
+      else
+        copy = line
+      end
+    end
+    File.open(tmp_file,"w") {|file| file.puts copy}
+    message = "Modifying:\tEnabling TFTPd"
+    command = "sudo cp #{tmp_file} #{tftpd_file}"
+    execute_command(message,command)
+    message = "Loading:\tTFTPd serice profile"
+    command = "sudo launchctl load -F /System/Library/LaunchDaemons/tftp.plist"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Check ISC DHCP installed on OS X
+
+def check_osx_dhcpd()
+  dhcpd_url   = "http://ftp.isc.org/isc/dhcp/4.3.0a1/dhcp-4.3.0a1.tar.gz"
+  brew_file   = "/usr/local/Library/Formula/isc-dhcp.rb"
+  backup_file = brew_file+".orig"
+  dhcpd_bin = "/usr/local/sbin/dhcpd"
+  if !File.exists?(dhcpd_bin)
+    message = "Installing:\tBind (required for ISC DHCPd server)"
+    command = "brew install bind"
+    execute_command(message,command)
+    message = "Updating:\tBrew sources list"
+    command = "brew update"
+    execute_command(message,command)
+    message = "Checking:\rOS X Version"
+    command = "sw_vers |grep ProductVersion |awk '{print $2}'"
+    output  = execute_command(message,command)
+    if output.match(/10\.9/)
+      if File.exists?(brew_file)
+        message = "Checking:\tVersion of ISC DHCPd"
+        command = "cat #{brew_file} | grep url"
+        output  = execute_command(message,command)
+        if output.match(/4\.2\.5\-P1/)
+          messagr = "Archiving:\tBrew file "+brew_file+" to "+backup_file
+          command = "sudo cp #{brew_file} #{backup_file}"
+          execute_command(message,command)
+          message = "Fixing:\tBrew configuration file "+brew_file
+          command = "sudo cat #{backup_file} | grep -v sha1 | sed 's/4\.2\.5\-P1/4\.3\.0a1/g' > #{brew_file}"
+          execute_command(message,command)
+        end
+      end
+    end
+    message = "Creating:\tLaunchd service for ISC DHCPd"
+    command = "sudo cp -fv /usr/local/opt/isc-dhcp/*.plist /Library/LaunchDaemons"
+    execute_command(message,command)
+    if !File.exists?($dhcpd_file)
+      message = "Creating:\tDHCPd configuration file "+$dhcpd_file
+      command = "touch #{$dhcpd_file}"
+      execute_command(message,command)
+    end
+    message = "Loading:\tISC DHCPd service profile"
+    command = "sudo launchctl load /Library/LaunchDaemons/homebrew.mxcl.isc-dhcp.plist"
+    execute_command(message,command)
+  end
+  return
+end
+
 # Add hosts entry
 
 def add_hosts_entry(client_name,client_ip)
@@ -50,13 +182,12 @@ def add_dhcp_client(client_name,client_mac,client_ip,service_name)
     suffix = ".pxelinux"
   end
   tftp_pxe_file = "01"+tftp_pxe_file+suffix
-  dhcpd_file = "/etc/inet/dhcpd4.conf"
   message    = "Checking:\fIf DHCPd configuration contains "+client_name
-  command    = "cat #{dhcpd_file} | grep '#{client_name}'"
+  command    = "cat #{$dhcpd_file} | grep '#{client_name}'"
   output     = execute_command(message,command)
   if !output.match(/#{client_name}/)
-    backup_file(dhcpd_file)
-    file=File.open(dhcpd_file,"a")
+    backup_file($dhcpd_file)
+    file=File.open($dhcpd_file,"a")
     file.write("\n")
     file.write("host #{client_name} {\n")
     file.write("  fixed-address #{client_ip};\n")
@@ -126,8 +257,7 @@ def get_client_mac(client_name)
     client_mac = client_mac.chomp
   end
   if !output.match(/[0-9]/)
-    dhcpd_file="/etc/inet/dhcpd4.conf"
-    file=IO.readlines(dhcpd_file)
+    file=IO.readlines($dhcpd_file)
     file.each do |line|
       line=line.chomp
       if line.match(/#{client_name}/)
