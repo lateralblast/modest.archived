@@ -41,6 +41,96 @@ def check_dhcpd_config(publisher_host)
   return
 end
 
+# Check TFTPd enabled on CentOS / RedHat
+
+def check_yum_tftpd()
+  message = "Checking:\tTFTPd is installed"
+  command = "rpm -q tftp-server"
+  output  = execute_command(message,command)
+  if !output.match(/tftp/)
+    message = "installing:\tTFTPd"
+    command = "yum -y install tftp-server"
+    execute_command(message,command)
+    check_dir_exists($tftp_dir)
+    message = "Enabling:\tTFTPd"
+    command = "chkconfig tftp on"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Check DHCPd enabled on CentOS / RedHat
+
+def check_yum_dhcpd()
+  message = "Checking:\tDHCPd is installed"
+  command = "rpm -q dhcp"
+  output  = execute_command(message,command)
+  if !output.match(/dhcp/)
+    message = "installing:\tDHCPd"
+    command = "yum -y install dhcp"
+    execute_command(message,command)
+    message = "Enabling:\tDHCPd"
+    command = "chkconfig dhcpd on"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Check TFTPd enabled on CentOS / RedHat
+
+def check_apt_tftpd()
+  tftpd_file = "/etc/xinetd.d/tftp"
+  tmp_file = "/tmp/tftp"
+  message = "Checking:\tTFTPd is installed"
+  command = "dpkg -l tftpd |grep '^ii'"
+  output  = execute_command(message,command)
+  if !output.match(/tftp/)
+    message = "installing:\tTFTPd"
+    command = "apt-get -y install tftpd"
+    execute_command(message,command)
+    check_dir_exists($tftp_dir)
+    if !File.exists?(tftpd_file)
+      file=File.open(tmp_file,"w")
+      file.write("service tftp\n")
+      file.write("{\n")
+      file.write("protocol        = udp\n")
+      file.write("port            = 69\n")
+      file.write("socket_type     = dgram\n")
+      file.write("wait            = yes\n")
+      file.write("user            = nobody\n")
+      file.write("server          = /usr/sbin/in.tftpd\n")
+      file.write("server_args     = /tftpboot\n")
+      file.write("disable         = no\n")
+      file.write("}\n")
+    end
+    message = "Creating:\tTFTPd configuration file "+tftpd_file
+    command = "cp #{tmp_file} #{tftpd_file} ; rm #{tmp_file}"
+    execute_command(message,command)
+    message = "Enabling:\tTFTPd"
+    command = "/etc/init.d/xinetd restart"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Check DHCPd enabled on CentOS / RedHat
+
+def check_apt_dhcpd()
+  message = "Checking:\tDHCPd is installed"
+  command = "dpkg -l isc-dhcp-server |grep '^ii'"
+  output  = execute_command(message,command)
+  if !output.match(/dhcp/)
+    message = "installing:\tDHCPd"
+    command = "yum -y install isc-dhcp-server"
+    execute_command(message,command)
+    message = "Enabling:\tDHCPd"
+    command = "chkconfig dhcpd on"
+    execute_command(message,command)
+  end
+  return
+end
+
+
 # Check TFTPd enabled on OS X
 
 def check_osx_tftpd()
@@ -57,7 +147,7 @@ def check_osx_tftpd()
   else
     backup_file = tftpd_file + ".orig"
     message     = "Archiving:\tTFTPd file "+tftpd_file+" to "+backup_file
-    command     = "sudo cp #{tftpd_file} #{backup_file}"
+    command     = "cp #{tftpd_file} #{backup_file}"
     execute_command(message,command)
     copy      = []
     check     = 0
@@ -77,10 +167,10 @@ def check_osx_tftpd()
     end
     File.open(tmp_file,"w") {|file| file.puts copy}
     message = "Modifying:\tEnabling TFTPd"
-    command = "sudo cp #{tmp_file} #{tftpd_file}"
+    command = "cp #{tmp_file} #{tftpd_file}"
     execute_command(message,command)
     message = "Loading:\tTFTPd serice profile"
-    command = "sudo launchctl load -F /System/Library/LaunchDaemons/tftp.plist"
+    command = "launchctl load -F /System/Library/LaunchDaemons/tftp.plist"
     execute_command(message,command)
   end
   return
@@ -110,16 +200,16 @@ def check_osx_dhcpd()
         output  = execute_command(message,command)
         if output.match(/4\.2\.5\-P1/)
           messagr = "Archiving:\tBrew file "+brew_file+" to "+backup_file
-          command = "sudo cp #{brew_file} #{backup_file}"
+          command = "cp #{brew_file} #{backup_file}"
           execute_command(message,command)
           message = "Fixing:\tBrew configuration file "+brew_file
-          command = "sudo cat #{backup_file} | grep -v sha1 | sed 's/4\.2\.5\-P1/4\.3\.0a1/g' > #{brew_file}"
+          command = "cat #{backup_file} | grep -v sha1 | sed 's/4\.2\.5\-P1/4\.3\.0a1/g' > #{brew_file}"
           execute_command(message,command)
         end
       end
     end
     message = "Creating:\tLaunchd service for ISC DHCPd"
-    command = "sudo cp -fv /usr/local/opt/isc-dhcp/*.plist /Library/LaunchDaemons"
+    command = "cp -fv /usr/local/opt/isc-dhcp/*.plist /Library/LaunchDaemons"
     execute_command(message,command)
     if !File.exists?($dhcpd_file)
       message = "Creating:\tDHCPd configuration file "+$dhcpd_file
@@ -127,7 +217,7 @@ def check_osx_dhcpd()
       execute_command(message,command)
     end
     message = "Loading:\tISC DHCPd service profile"
-    command = "sudo launchctl load /Library/LaunchDaemons/homebrew.mxcl.isc-dhcp.plist"
+    command = "launchctl load /Library/LaunchDaemons/homebrew.mxcl.isc-dhcp.plist"
     execute_command(message,command)
   end
   return
@@ -335,7 +425,8 @@ end
 # Does not execute cerver/client import/create operations in test mode
 
 def execute_command(message,command)
-  output = ""
+  output  = ""
+  execute = 0
   if $verbose_mode == 1
     if message.match(/[A-z|0-9]/)
       puts message
@@ -343,10 +434,16 @@ def execute_command(message,command)
     puts "Executing:\t"+command
   end
   if $test_mode == 1
-    if !command.match(/create|update|import|delete|svccfg|rsync|cp|touch|svcadm|VBoxManage/)
-      output = %x[#{command}]
+    if !command.match(/create|update|import|delete|svccfg|rsync|cp|touch|svcadm|VBoxManage|vmrun/)
+      execute = 1
     end
   else
+    execute = 1
+  end
+  if execute == 1
+    if $id != 0
+      command = "sudo -s -- '"+command+"'"
+    end
     output = %x[#{command}]
   end
   if $verbose_mode == 1

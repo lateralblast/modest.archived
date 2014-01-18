@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.0.2
+# Version:      1.0.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -306,11 +306,11 @@ def check_local_config(mode)
   if $verbose_mode == 1
     puts "Information:\tHome directory "+$home_dir
   end
+  $id=%x[/usr/bin/id -u]
+  $id=Integer(id)
   if !$work_dir.match(/[A-z]/)
     dir_name=File.basename($script,".*")
-    id=%x[/usr/bin/id -u]
-    id=Integer(id)
-    if id == 0
+    if $id == 0
       $work_dir = "/opt/"+dir_name
     else
       $work_dir = $home_dir+"/."+dir_name
@@ -336,6 +336,15 @@ def check_local_config(mode)
       $default_net = "net0"
     end
   end
+  if $os_name.match(/Linux/)
+    if File.exists?("/etc/redhat-release")
+      $os_name = "RedHat"
+    else
+      $os_name = %x[lsb_release -i]
+      $os_name = $os_name.chomp
+    end
+  end
+  end
   if !$default_host.match(/[0-9]/)
     message = "Determining:\tDefault host IP"
     if $os_name.match(/SunOS/)
@@ -354,6 +363,18 @@ def check_local_config(mode)
   if mode == "server"
     if $verbose_mode == 1
       puts "Information:\tSetting apache allow range to "+$default_apache_allow
+    end
+    if $os_name.match(/RedHat|CentOS/)
+      check_yum_tftpd()
+      check_yum_dhcpd()
+      $tftp_dir   = "/tftpboot"
+      $dhcpd_file = "/etc/dhcpd.conf"
+    end
+    if $os_name.match(/RedHat|CentOS/)
+      check_apt_tftpd()
+      check_apt_dhcpd()
+      $tftp_dir   = "/tftpboot"
+      $dhcpd_file = "/etc/dhcp/dhcpd.conf"
     end
     if $os_name.match(/Darwin/)
       check_osx_tftpd()

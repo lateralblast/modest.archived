@@ -203,3 +203,5 @@
 # Added SLES AutoYast client support
 # 1.0.2: Sat 18 Jan 2014 16:42:01 EST
 # Added initial support for OS X as a server
+# 1.0.3: Sun 19 Jan 2014 08:55:27 EST
+# Added intial support for Linux as a server
