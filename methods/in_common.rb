@@ -7,7 +7,7 @@ def check_dhcpd_config(publisher_host)
   network_address = $default_host.split(/\./)[0..2].join(".")+".0"
   broadcast_address = $default_host.split(/\./)[0..2].join(".")+".255"
   gateway_address = $default_host.split(/\./)[0..2].join(".")+".254"
-  message - "Checking:\tDHCPd config for subnet entry"
+  message = "Checking:\tDHCPd config for subnet entry"
   command = "cat #{$dhcpd_file} | grep 'subnet #{network_address}'"
   output  = execute_command(message, command)
   if !output.match(/subnet/)
@@ -179,7 +179,6 @@ end
 # Check ISC DHCP installed on OS X
 
 def check_osx_dhcpd()
-  dhcpd_url   = "http://ftp.isc.org/isc/dhcp/4.3.0a1/dhcp-4.3.0a1.tar.gz"
   brew_file   = "/usr/local/Library/Formula/isc-dhcp.rb"
   backup_file = brew_file+".orig"
   dhcpd_bin = "/usr/local/sbin/dhcpd"
@@ -199,7 +198,7 @@ def check_osx_dhcpd()
         command = "cat #{brew_file} | grep url"
         output  = execute_command(message,command)
         if output.match(/4\.2\.5\-P1/)
-          messagr = "Archiving:\tBrew file "+brew_file+" to "+backup_file
+          message = "Archiving:\tBrew file "+brew_file+" to "+backup_file
           command = "cp #{brew_file} #{backup_file}"
           execute_command(message,command)
           message = "Fixing:\tBrew configuration file "+brew_file
