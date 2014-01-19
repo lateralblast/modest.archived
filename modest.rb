@@ -344,7 +344,6 @@ def check_local_config(mode)
       $os_name = $os_name.chomp
     end
   end
-  end
   if !$default_host.match(/[0-9]/)
     message = "Determining:\tDefault host IP"
     if $os_name.match(/SunOS/)
