@@ -1,63 +1,11 @@
 
 # Server code for Kickstart
 
-# Process ISO file to get details
-
-def get_linux_version_info(iso_file_name)
-  iso_info     = File.basename(iso_file_name)
-  iso_info     = iso_info.split(/-/)
-  linux_distro = iso_info[0]
-  linux_distro = linux_distro.downcase
-  if linux_distro.match(/centos|ubuntu|sles/)
-    if linux_distro.match(/sles/)
-      iso_version = iso_info[1]+"."+iso_info[2]
-      iso_version = iso_version.gsub(/SP/,"")
-    else
-      iso_version = iso_info[1]
-    end
-    if linux_distro.match(/centos/)
-      iso_arch = iso_info[2]
-    else
-      if linux_distro.match(/sles/)
-        iso_arch  = iso_info[4]
-      else
-        iso_arch = iso_info[3]
-        iso_arch = iso_arch.split(/\./)[0]
-        if iso_arch.match(/amd64/)
-          iso_arch  = "x86_64"
-        else
-          iso_arch  = "i386"
-        end
-      end
-    end
-  else
-    iso_version = iso_info[2]
-    iso_arch    = iso_info[3]
-  end
-  return linux_distro,iso_version,iso_arch
-end
-
-# List available ISOs
+# List available Kiskstart ISOs
 
 def list_ks_isos()
-  search_string = "CentOS|rhel|ubuntu|SLES"
-  iso_list      = check_iso_base_dir(search_string)
-  iso_list.each do |iso_file_name|
-    iso_file_name = iso_file_name.chomp
-    (linux_distro,iso_version,iso_arch) = get_linux_version_info(iso_file_name)
-    puts "ISO file:\t"+iso_file_name
-    puts "Distribution:\t"+linux_distro
-    puts "Version:\t"+iso_version
-    puts "Architecture:\t"+iso_arch
-    iso_version      = iso_version.gsub(/\./,"_")
-    service_name     = linux_distro+"_"+iso_version+"_"+iso_arch
-    repo_version_dir = $repo_base_dir+"/"+service_name
-    if File.directory?(repo_version_dir)
-      puts "Service Name:\t"+service_name+" (exists)"
-    else
-      puts "Service Name:\t"+service_name
-    end
-  end
+  search_string = "CentOS|rhel"
+  list_linux_isos(search_string)
   return
 end
 
@@ -132,7 +80,7 @@ def configure_ks_pxe_boot(service_name,iso_arch)
       end
       if File.directory?(rpm_dir)
         message  = "Locating:\tSyslinux package"
-        command  = "cd #{rpm_dir} ; find . -name 'syslinux*' |grep '#{iso_arch}'"
+        command  = "cd #{rpm_dir} ; find . -name 'syslinux-[0-9]*' |grep '#{iso_arch}'"
         output   = execute_command(message,command)
         rpm_file = output.chomp
         rpm_file = rpm_file.gsub(/\.\//,"")
@@ -231,7 +179,7 @@ def list_ks_services()
   puts "Kickstart services:"
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
-    if service_name.match(/centos|rhel|ubuntu|sles/)
+    if service_name.match(/centos|rhel|ubuntu/)
       puts service_name
     end
   end

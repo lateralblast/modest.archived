@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.0.3
+# Version:      1.0.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -307,7 +307,7 @@ def check_local_config(mode)
     puts "Information:\tHome directory "+$home_dir
   end
   $id=%x[/usr/bin/id -u]
-  $id=Integer(id)
+  $id=Integer($id)
   if !$work_dir.match(/[A-z]/)
     dir_name=File.basename($script,".*")
     if $id == 0
@@ -401,14 +401,12 @@ def check_local_config(mode)
   check_dir_exists($backup_dir)
   bin_dir     = $work_dir+"/bin"
   check_dir_exists(bin_dir)
-  $rpm2cpio_bin=bin_dir+"rpm2cpio"
-  if $os_name.match(/SunOS/)
-    if !File.exist?($rpm2cpio_bin)
-      message = "Fetching:\tTool rpm2cpio"
-      command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
-      execute_command(message,command)
-      system("chmod +x #{$rpm2cpio_bin}")
-    end
+  $rpm2cpio_bin=bin_dir+"/rpm2cpio"
+  if !File.exist?($rpm2cpio_bin)
+    message = "Fetching:\tTool rpm2cpio"
+    command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
+    execute_command(message,command)
+    system("chmod +x #{$rpm2cpio_bin}")
   end
   return
 end

@@ -1,6 +1,66 @@
 
 # Code common to all services
 
+# Process ISO file to get details
+
+def get_linux_version_info(iso_file_name)
+  iso_info     = File.basename(iso_file_name)
+  iso_info     = iso_info.split(/-/)
+  linux_distro = iso_info[0]
+  linux_distro = linux_distro.downcase
+  if linux_distro.match(/centos|ubuntu|sles/)
+    if linux_distro.match(/sles/)
+      iso_version = iso_info[1]+"."+iso_info[2]
+      iso_version = iso_version.gsub(/SP/,"")
+    else
+      iso_version = iso_info[1]
+    end
+    if linux_distro.match(/centos/)
+      iso_arch = iso_info[2]
+    else
+      if linux_distro.match(/sles/)
+        iso_arch  = iso_info[4]
+      else
+        iso_arch = iso_info[3]
+        iso_arch = iso_arch.split(/\./)[0]
+        if iso_arch.match(/amd64/)
+          iso_arch  = "x86_64"
+        else
+          iso_arch  = "i386"
+        end
+      end
+    end
+  else
+    iso_version = iso_info[2]
+    iso_arch    = iso_info[3]
+  end
+  return linux_distro,iso_version,iso_arch
+end
+
+
+# List ISOs
+
+def list_linux_isos(search_string)
+  iso_list      = check_iso_base_dir(search_string)
+  iso_list.each do |iso_file_name|
+    iso_file_name = iso_file_name.chomp
+    (linux_distro,iso_version,iso_arch) = get_linux_version_info(iso_file_name)
+    puts "ISO file:\t"+iso_file_name
+    puts "Distribution:\t"+linux_distro
+    puts "Version:\t"+iso_version
+    puts "Architecture:\t"+iso_arch
+    iso_version      = iso_version.gsub(/\./,"_")
+    service_name     = linux_distro+"_"+iso_version+"_"+iso_arch
+    repo_version_dir = $repo_base_dir+"/"+service_name
+    if File.directory?(repo_version_dir)
+      puts "Service Name:\t"+service_name+" (exists)"
+    else
+      puts "Service Name:\t"+service_name
+    end
+  end
+  return
+end
+
 # Check DHCPd config
 
 def check_dhcpd_config(publisher_host)
@@ -377,6 +437,18 @@ def check_dir_exists(dir_name)
   return output
 end
 
+# Check a filesystem / directory exists
+
+def check_fs_exists(dir_name)
+  output = ""
+  if $os_name.match(/SunOS/)
+    output = check_zfs_fs_exists(dir_name)
+  else
+    check_dir_exists(dir_name)
+  end
+  return output
+end
+
 # Check if a ZFS filesystem exists
 # If not create it
 
@@ -398,9 +470,9 @@ def check_zfs_fs_exists(dir_name)
         command = "ln -s #{mount_dir} #{dir_name}"
         execute_command(message,command)
       end
+    else
+      check_dir_exists(dir_name)
     end
-  else
-    check_dir_exists(dir_name)
   end
   return output
 end
@@ -441,7 +513,7 @@ def execute_command(message,command)
   end
   if execute == 1
     if $id != 0
-      command = "sudo -s -- '"+command+"'"
+      command = "sudo -s -- \""+command+"\""
     end
     output = %x[#{command}]
   end
@@ -536,6 +608,95 @@ def check_smf_service(smf_service_name)
   return output
 end
 
+# Enable OS X service
+
+def refresh_osx_service(service_name)
+  disable_osx_service(service_name)
+  enable_osx_service(service_name)
+  return
+end
+
+# Enable OS X service
+
+def enable_osx_service(service_name)
+  message = "Enabling:\tService "+service_name
+  command = "launchctl start #{service_name}"
+  output  = execute_command(message,command)
+  return output
+end
+
+# Enable OS X service
+
+def disable_osx_service(service_name)
+  message = "Disabling:\tService "+service_name
+  command = "launchctl stop #{service_name}"
+  output  = execute_command(message,command)
+  return output
+end
+
+# Get service name
+
+def get_service_name(service_name)
+  if $os_name.match(/SunOS/)
+    if service_name.match(/apache/)
+      service_name = "svc:/network/http:apache22"
+    end
+    if service_name.match(/dhcp/)
+      service_name = "svc:/network/dhcp/server:ipv4"
+    end
+  end
+  if $os_name.match(/Darwin/)
+    if service_name.match(/apache/)
+      service_name = "org.apache.httpd"
+    end
+    if service_name.match(/dhcp/)
+      service_name = "homebrew.mxcl.isc-dhcp"
+    end
+  end
+  if $os_name.match(/RedHat|CentOS|SuSE|Ubuntu/)
+  end
+  return service_name
+end
+
+# Enable service
+
+def enable_service(service_name)
+  service_name = get_service_name(service_name)
+  if $os_name.match(/SunOS/)
+    output = enable_smf_service(service_name)
+  end
+  if $os_name.match(/Darwin/)
+    output = enable_osx_service(service_name)
+  end
+  return output
+end
+
+# Disable service
+
+def disable_service(service_name)
+  service_name = get_service_name(service_name)
+  if $os_name.match(/SunOS/)
+    output = disable_smf_service(service_name)
+  end
+  if $os_name.match(/Darwin/)
+    output = disable_osx_service(service_name)
+  end
+  return output
+end
+
+# Refresh / Restart service
+
+def refresh_service(service_name)
+  service_name = get_service_name(service_name)
+  if $os_name.match(/SunOS/)
+    output = refresh_smf_service(service_name)
+  end
+  if $os_name.match(/Darwin/)
+    output = refresh_osx_service(service_name)
+  end
+  return output
+end
+
 # Calculate route
 
 def get_ipv4_default_route(client_ip)
@@ -557,14 +718,17 @@ def check_iso_base_dir(search_string)
   puts "Checking:\t"+$iso_base_dir
   check_zfs_fs_exists($iso_base_dir)
   message  = "Getting:\t"+$iso_base_dir+" contents"
-  command  = "ls #{$iso_base_dir}/*.iso |egrep \"#{search_string}\""
+  command  = "ls #{$iso_base_dir}/*.iso |egrep '#{search_string}'"
   iso_list = execute_command(message,command)
-  if !iso_list.grep(/full/)
-    puts "Warning:\tNo full repository ISO images exist in "+$iso_base_dir
-    if $test_mode != 1
-      exit
+  if search_string.match(/sol_11/)
+    if !iso_list.grep(/full/)
+      puts "Warning:\tNo full repository ISO images exist in "+$iso_base_dir
+      if $test_mode != 1
+        exit
+      end
     end
   end
+  iso_list = iso_list.split(/\n/)
   return iso_list
 end
 
@@ -602,7 +766,12 @@ end
 # Add apache proxy
 
 def add_apache_proxy(publisher_host,publisher_port,service_base_name)
-  apache_config_file = "/etc/apache2/2.2/httpd.conf"
+  if $os_name.match(/SunOS/)
+    apache_config_file = "/etc/apache2/2.2/httpd.conf"
+  end
+  if $os_name.match(/Darwin/)
+    apache_config_file = "/etc/apache2/httpd.conf"
+  end
   apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
   if !apache_check.match(/#{service_base_name}/)
     message = "Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
@@ -611,9 +780,9 @@ def add_apache_proxy(publisher_host,publisher_port,service_base_name)
     message = "Adding:\t\tProxy entry to "+apache_config_file
     command = "echo 'ProxyPass /"+service_base_name+" http://"+publisher_host+":"+publisher_port+" nocanon max=200' >>"+apache_config_file
     execute_command(message,command)
-    smf_service_name = "apache22"
-    enable_smf_service(smf_service_name)
-    refresh_smf_service(smf_service_name)
+    service_name = "apache"
+    enable_service(service_name)
+    refresh_service(service_name)
   end
   return
 end
@@ -621,18 +790,23 @@ end
 # Remove apache proxy
 
 def remove_apache_proxy(service_base_name)
-  apache_config_file="/etc/apache2/2.2/httpd.conf"
-  message="Checking:\tApache confing file "+apache_config_file+" for "+service_base_name
-  command="cat #{apache_config_file} |grep '#{service_base_name}'"
-  apache_check=execute_command(message,command)
+  if $os_name.match(/SunOS/)
+    apache_config_file = "/etc/apache2/2.2/httpd.conf"
+  end
+  if $os_name.match(/Darwin/)
+    apache_config_file = "/etc/apache2/httpd.conf"
+  end
+  message      = "Checking:\tApache confing file "+apache_config_file+" for "+service_base_name
+  command      = "cat #{apache_config_file} |grep '#{service_base_name}'"
+  apache_check = execute_command(message,command)
   if apache_check.match(/#{service_base_name}/)
-    restore_file=apache_config_file+".no_"+service_base_name
+    restore_file = apache_config_file+".no_"+service_base_name
     if File.exists?(restore_file)
-      message="Restoring:\t"+restore_file+" to "+apache_config_file
-      command="cp #{restore_file} #{apache_config_file}"
+      message = "Restoring:\t"+restore_file+" to "+apache_config_file
+      command = "cp #{restore_file} #{apache_config_file}"
       execute_command(message,command)
-      smf_service_name="apache22"
-      refresh_smf_service(smf_service_name)
+      service_name = "apache"
+      refresh_service(service_name)
     end
   end
 end
@@ -641,27 +815,39 @@ end
 
 def add_apache_alias(service_base_name)
   repo_version_dir=$repo_base_dir+"/"+service_base_name
-  apache_config_file="/etc/apache2/2.2/httpd.conf"
+  if $os_name.match(/SunOS/)
+    apache_config_file = "/etc/apache2/2.2/httpd.conf"
+  end
+  if $os_name.match(/Darwin/)
+    apache_config_file = "/etc/apache2/httpd.conf"
+  end
+  tmp_file     = "/tmp/httpd.conf"
   message      = "Checking:\tApache confing file "+apache_config_file+" for "+service_base_name
   command      = "cat #{apache_config_file} |grep '#{service_base_name}'"
   apache_check = execute_command(message,command)
   if !apache_check.match(/#{service_base_name}/)
-    message = "Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
+    message = "Archiving:\tApache config file "+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
     command = "cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
     execute_command(message,command)
     if $verbose_mode == 1
       puts "Adding:\t\tDirectory and Alias entry to "+apache_config_file
     end
-    output=File.open(apache_config_file,"a")
+    message = "Copying:\tApache config file so it can be edited"
+    command = "cp #{apache_config_file} #{tmp_file} ; chown #{$id} #{tmp_file}"
+    execute_command(message,command)
+    output = File.open(tmp_file,"a")
     output.write("<Directory #{repo_version_dir}>\n")
     output.write("Options Indexes\n")
     output.write("Allow from #{$default_apache_allow}\n")
     output.write("</Directory>\n")
     output.write("Alias /#{service_base_name} #{repo_version_dir}\n")
     output.close
-    smf_service_name = "apache22"
-    enable_smf_service(smf_service_name)
-    refresh_smf_service(smf_service_name)
+    message = "Updating:\tApache config file"
+    command = "cp #{tmp_file} #{apache_config_file} ; rm #{tmp_file}"
+    execute_command(message,command)
+    service_name = "apache"
+    enable_service(service_name)
+    refresh_service(service_name)
   end
   return
 end
@@ -692,7 +878,17 @@ def mount_iso(iso_file)
     output  = execute_command(message,command)
   end
   message = "Mounting:\tISO "+iso_file+" on "+$iso_mount_dir
-  command = "mount -F hsfs "+iso_file+" "+$iso_mount_dir
+  if $os_name.match(/SunOS/)
+    command = "mount -F hsfs "+iso_file+" "+$iso_mount_dir
+  end
+  if $os_name.match(/Darwin/)
+    disk_id = %x[hdiutil attach -nomount #{iso_file}]
+    disk_id = disk_id.chomp
+    command = "mount -t cd9660 "+disk_id+" "+$iso_mount_dir
+  end
+  if $os_name.match(/CentOS|RedHat|Ubuntu/)
+    command = "mount -t iso9660 "+iso_file+" "+$iso_mount_dir
+  end
   output  = execute_command(message,command)
   if iso_file.match(/sol/)
     if iso_file.match(/\-ga\-/)
@@ -775,8 +971,17 @@ end
 # Unmount ISO
 
 def umount_iso()
+  if $os_name.match(/Darwin/)
+    disk_id = %x[df |grep '#{$iso_mount_dir}i$']
+    disk_id = disk_id.chomp
+  end
   message = "Unmounting:\tISO mounted on"+$iso_mount_dir
   command = "umount #{$iso_mount_dir}"
   execute_command(message,command)
+  if $os_name.match(/Darwin/)
+    message = "Detaching:\tISO device "+disk_id
+    command = "hdiutil detach #{disk_id}"
+    execute_command(message,command)
+  end
   return
 end
