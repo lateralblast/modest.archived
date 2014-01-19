@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.0.4
+# Version:      1.0.5
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -220,6 +220,8 @@ def print_examples(examples)
     puts
     puts "List AI services:\t\t"+$script+" -A -S -L"
     puts "List KS services:\t\t"+$script+" -K -S -L"
+    puts "List AY services:\t\t"+$script+" -Y -S -L"
+    puts "List PS services:\t\t"+$script+" -U -S -L"
     puts "List JS services:\t\t"+$script+" -J -S -L"
     puts "Configure all AI services:\t"+$script+" -A -S"
     puts "Configure KS services:\t\t"+$script+" -K -S"
@@ -251,14 +253,16 @@ def print_examples(examples)
     puts
     puts "List AI clients:\t\t"+$script+" -A -C -L"
     puts "List KS clients:\t\t"+$script+" -K -C -L"
+    puts "List AY clients:\t\t"+$script+" -Y -C -L"
+    puts "List PS clients:\t\t"+$script+" -U -C -L"
     puts "List JS clients:\t\t"+$script+" -J -C -L"
     puts "Create AI client:\t\t"+$script+" -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
     puts "Delete AI client:\t\t"+$script+" -A -C -d sol11u01vm03"
     puts "Create JS client:\t\t"+$script+" -J -C -c sol10u11vm01 -e 00:0C:29:FA:0C:7F -a i386 -i 192.168.1.195 -n sol_10_11"
     puts "Delete JS client:\t\t"+$script+" -J -C -d sol10u11vm01"
     puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -a x86_64 -i 192.168.1.194 -n centos_5_9_x86_64"
-    puts "Create KS client:\t\t"+$script+" -K -C -c ubuntu1310vm01 -e 08:00:27:BA:34:7C -a x86_64 -i 192.168.1.196 -n ubuntu_13_10_x86_64"
-    puts "Create KS client:\t\t"+$script+" -K -C -c sles11sp2vm01 -e 08:00:27:BA:34:7D -a x86_64 -i 192.168.1.197 -n sles_11_2_x86_64"
+    puts "Create KS client:\t\t"+$script+" -U -C -c ubuntu1310vm01 -e 08:00:27:BA:34:7C -a x86_64 -i 192.168.1.196 -n ubuntu_13_10_x86_64"
+    puts "Create KS client:\t\t"+$script+" -Y -C -c sles11sp2vm01 -e 08:00:27:BA:34:7D -a x86_64 -i 192.168.1.197 -n sles_11_2_x86_64"
     puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
     puts "Delete KS client:\t\t"+$script+" -K -C -d ubuntu1310vm01"
     puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
@@ -355,6 +359,9 @@ def check_local_config(mode)
     end
     $default_host = execute_command(message,command)
     $default_host = $default_host.chomp
+    if $default_host.match(/inet/)
+      $default_host = $default_host.gsub(/^\s+/,"").split(/\s+/)[1]
+    end
   end
   if !$default_apache_allow.match(/[0-9]/)
     $default_apache_allow=$default_host.split(/\./)[0..2].join(".")
@@ -404,7 +411,7 @@ def check_local_config(mode)
   $rpm2cpio_bin=bin_dir+"/rpm2cpio"
   if !File.exist?($rpm2cpio_bin)
     message = "Fetching:\tTool rpm2cpio"
-    command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin}"
+    command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin} ; chown #{$id} #{$rpm2cpio_bin} ; chmod +x #{$rpm2cpio_bin}"
     execute_command(message,command)
     system("chmod +x #{$rpm2cpio_bin}")
   end
@@ -781,6 +788,7 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["
   # Handle server related functions
   if opt ["S"]
     check_dhcpd_config(publisher_host)
+    check_apache_config()
     # List server services
     if opt["L"]
       eval"[list_#{funct}_services()]"

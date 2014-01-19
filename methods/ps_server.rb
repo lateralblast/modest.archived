@@ -12,7 +12,8 @@ end
 # Configure Preseed server
 
 def configure_ps_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
-  configure_ks_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
+  search_string = "ubuntu"
+  configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
   return
 end
 

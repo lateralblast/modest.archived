@@ -1,6 +1,16 @@
 
 # Code common to all services
 
+# Check Apache enabled
+
+def check_apache_config()
+  if $os_name.match(/Darwin/)
+    service = "apache"
+    check_osx_service_is_enabled(service)
+  end
+  return
+end
+
 # Process ISO file to get details
 
 def get_linux_version_info(iso_file_name)
@@ -190,28 +200,34 @@ def check_apt_dhcpd()
   return
 end
 
+# Check OSX service is enabled
 
-# Check TFTPd enabled on OS X
-
-def check_osx_tftpd()
-  tftpd_file  = "/System/Library/LaunchDaemons/tftp.plist"
-  backup_file = tftpd_file+".orig"
-  tmp_file    = "/tmp/tftp.plist"
-  message     = "Checking:\tTFTPd is enabled"
-  command     = "cat #{tftpd_file} | grep -C1 Disabled |grep true"
+def check_osx_service_is_enabled(service)
+  service     = get_service_name(service)
+  plist_file  = "/Library/LaunchDaemons/"+service+".plist"
+  if !File.exists?(plist_file)
+    plist_file = "/System"+plist_file
+  end
+  if !File.exists?(plist_file)
+    puts "Warning:\tLaunch Agent not found for "+service
+    exit
+  end
+  tmp_file    = "/tmp/tmp.plist"
+  message     = "Checking:\tService "+service+" is enabled"
+  command     = "cat #{plist_file} | grep -C1 Disabled |grep true"
   output      = execute_command(message,command)
   if !output.match(/true/)
     if $verbose_mode == 1
-      puts "Information:\tTFTPd enabled"
+      puts "Information:\t"+service+" enabled"
     end
   else
-    backup_file = tftpd_file + ".orig"
-    message     = "Archiving:\tTFTPd file "+tftpd_file+" to "+backup_file
-    command     = "cp #{tftpd_file} #{backup_file}"
+    backup_file = plist_file + ".orig"
+    message     = "Archiving:\tFile "+plist_file+" to "+backup_file
+    command     = "cp #{plist_file} #{backup_file}"
     execute_command(message,command)
     copy      = []
     check     = 0
-    file_info = IO.readlines(tftpd_file)
+    file_info = IO.readlines(plist_file)
     file_info.each do |line|
       if line.match(/Disabled/)
         check = 1
@@ -220,19 +236,27 @@ def check_osx_tftpd()
         check = 0
       end
       if check == 1 and line.match(/true/)
-        copy = line.gsub(/true/,"false")
+        copy.push(line.gsub(/true/,"false"))
       else
-        copy = line
+        copy.push(line)
       end
     end
     File.open(tmp_file,"w") {|file| file.puts copy}
-    message = "Modifying:\tEnabling TFTPd"
-    command = "cp #{tmp_file} #{tftpd_file}"
+    message = "Enablbline:\t"+service
+    command = "cp #{tmp_file} #{plist_file} ; rm #{tmp_file}"
     execute_command(message,command)
-    message = "Loading:\tTFTPd serice profile"
-    command = "launchctl load -F /System/Library/LaunchDaemons/tftp.plist"
+    message = "Loading:\t"+service+" profile"
+    command = "launchctl load -F #{plist_file}"
     execute_command(message,command)
   end
+  return
+end
+
+# Check TFTPd enabled on OS X
+
+def check_osx_tftpd()
+  service = "tftp"
+  check_osx_service_is_enabled(service)
   return
 end
 
@@ -242,7 +266,7 @@ def check_osx_dhcpd()
   brew_file   = "/usr/local/Library/Formula/isc-dhcp.rb"
   backup_file = brew_file+".orig"
   dhcpd_bin = "/usr/local/sbin/dhcpd"
-  if !File.exists?(dhcpd_bin)
+  if !File.symlink?(dhcpd_bin)
     message = "Installing:\tBind (required for ISC DHCPd server)"
     command = "brew install bind"
     execute_command(message,command)
@@ -278,6 +302,9 @@ def check_osx_dhcpd()
     message = "Loading:\tISC DHCPd service profile"
     command = "launchctl load /Library/LaunchDaemons/homebrew.mxcl.isc-dhcp.plist"
     execute_command(message,command)
+  else
+    service = "dhcp"
+    check_osx_service_is_enabled(service)
   end
   return
 end
@@ -619,6 +646,7 @@ end
 # Enable OS X service
 
 def enable_osx_service(service_name)
+  check_osx_service_is_enabled(service_name)
   message = "Enabling:\tService "+service_name
   command = "launchctl start #{service_name}"
   output  = execute_command(message,command)
@@ -882,7 +910,11 @@ def mount_iso(iso_file)
     command = "mount -F hsfs "+iso_file+" "+$iso_mount_dir
   end
   if $os_name.match(/Darwin/)
-    disk_id = %x[hdiutil attach -nomount #{iso_file}]
+    command = "hdiutil attach -nomount #{iso_file} |head -1 |awk '{print $1}'"
+    if $verbose_mode == 1
+      puts "Executing:\t"+command
+    end
+    disk_id = %x[#{command}]
     disk_id = disk_id.chomp
     command = "mount -t cd9660 "+disk_id+" "+$iso_mount_dir
   end
@@ -972,10 +1004,14 @@ end
 
 def umount_iso()
   if $os_name.match(/Darwin/)
-    disk_id = %x[df |grep '#{$iso_mount_dir}i$']
+    command = "df |grep '#{$iso_mount_dir}$' |head -1 |awk '{print $1}'"
+    if $verbose_mode == 1
+      puts "Executing:\t"+command
+    end
+    disk_id = %x[#{command}]
     disk_id = disk_id.chomp
   end
-  message = "Unmounting:\tISO mounted on"+$iso_mount_dir
+  message = "Unmounting:\tISO mounted on "+$iso_mount_dir
   command = "umount #{$iso_mount_dir}"
   execute_command(message,command)
   if $os_name.match(/Darwin/)

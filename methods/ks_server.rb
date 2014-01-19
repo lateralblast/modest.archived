@@ -44,7 +44,11 @@ end
 
 def configure_ks_repo(iso_file,repo_version_dir)
   check_zfs_fs_exists(repo_version_dir)
-  check_dir = repo_version_dir+"/isolinux"
+  if repo_version_dir.match(/sles/)
+    check_dir = repo_version_dir+"/boot"
+  else
+    check_dir = repo_version_dir+"/isolinux"
+  end
   if $verbose_mode == 1
     puts "Checking:\tDirectory "+check_dir+" exits"
   end
@@ -94,7 +98,11 @@ def configure_ks_pxe_boot(service_name,iso_arch)
         exit
       end
     end
-    pxe_image_dir=pxe_boot_dir+"/images"
+    if service_name.match(/sles/)
+      pxe_image_dir=pxe_boot_dir+"/boot"
+    else
+      pxe_image_dir=pxe_boot_dir+"/images"
+    end
     if !File.directory?(pxe_image_dir)
       if service_name.match(/sles/)
         iso_image_dir = $repo_base_dir+"/"+service_name+"/boot"
@@ -136,15 +144,19 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
     if service_name.downcase.match(/centos/)
       search_string = "CentOS"
     end
-    if service_name.downcase.match(/sles/)
-      search_string = "SLES"
-    end
     if service_name.downcase.match(/redhat/)
       search_string = "rhel"
     end
   else
-    search_string = "CentOS|rhel|ubuntu|SLES"
+    search_string = "CentOS|rhel"
   end
+  configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
+  return
+end
+
+# Configue Linux server
+
+def configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)
       iso_list[0] = iso_file
