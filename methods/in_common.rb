@@ -1,6 +1,65 @@
 
 # Code common to all services
 
+# Get root password crypt
+
+def get_root_password_crypt()
+  password = $q_struct["root_crpyt"].value
+  result = get_password_crypt(password)
+  return result
+end
+
+# Get root password crypt
+
+def get_account_pssword_crypt()
+  password = $q_struct["account_crpyt"].value
+  result = get_password_crypt(password)
+  return result
+end
+
+# Check IPS tools installed on OS other than Solaris
+
+def check_ips ()
+  if $os_name.match(/Darwin/)
+    check_osx_ips()
+  end
+  return
+end
+
+def check_osx_ips()
+  python_bin = "/usr/local/bin/python"
+  pip_bin = "/usr/local/bin/pip"
+  if !File.symlink?(python_bin)
+    message = "Installing:\tPython"
+    command = "brew install python"
+    execute_command(message,command)
+    ["simplejson","coverage","pyOpenSSL"].each do |module_name|
+      message = "Installing:\tPython module "+module_name
+      command = "#{pip_bin} install #{module_name}"
+      execute_command(message,command)
+    end
+  end
+  python_ver = %x[#{python_bin} --version |awk '{print $2}']
+  python_ver = python_ver.chomp.split(/\./)[0..1].join(".")
+  module_dir = "/usr/local/lin/python"+python_ver+"/site-packages"
+  pkg_dest_dir = module_dir+"/pkg"
+  check_dir_exists(pkg_dest_dir)
+  hg_bin = "/usr/local/bin/hg"
+  if !File.exists(hg_bin)
+    message = "Installing:\tMercurial"
+    command = "brew install mercurial"
+    execute_command(message,command)
+  end
+  pkgrepo_bin="/usr/local/bin/pkgrepo"
+  if !file.exists?(pkgrepo_bin)
+    ips_url = "https://hg.java.net/hg/ips~pkg-gate"
+    message = "Downloading:\tIPS source code"
+    command = "cd #{$work_dir} ; hg clone #{ips_url} ips"
+    execute_command(message,command)
+  end
+  return
+end
+
 # Check Apache enabled
 
 def check_apache_config()
@@ -349,15 +408,19 @@ end
 
 # Add host to DHCP config
 
-def add_dhcp_client(client_name,client_mac,client_ip,service_name)
-  tftp_pxe_file = client_mac.gsub(/:/,"")
-  tftp_pxe_file = tftp_pxe_file.upcase
-  if service_name.match(/sol/)
-    suffix = ".bios"
+def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
+  if !client_arch.match(/sparc/)
+    tftp_pxe_file = client_mac.gsub(/:/,"")
+    tftp_pxe_file = tftp_pxe_file.upcase
+    if service_name.match(/sol/)
+      suffix = ".bios"
+    else
+      suffix = ".pxelinux"
+    end
+    tftp_pxe_file = "01"+tftp_pxe_file+suffix
   else
-    suffix = ".pxelinux"
+    tftp_pxe_file = "http://#{$default_host}:5555/cgi-bin/wanboot-cgi"
   end
-  tftp_pxe_file = "01"+tftp_pxe_file+suffix
   message    = "Checking:\fIf DHCPd configuration contains "+client_name
   command    = "cat #{$dhcpd_file} | grep '#{client_name}'"
   output     = execute_command(message,command)
@@ -540,7 +603,9 @@ def execute_command(message,command)
   end
   if execute == 1
     if $id != 0
-      command = "sudo -s -- \""+command+"\""
+      if !command.match(/brew|hg|pip/)
+        command = "sudo -s -- \""+command+"\""
+      end
     end
     output = %x[#{command}]
   end

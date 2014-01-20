@@ -652,6 +652,8 @@ end
 
 if opt["R"]
   $use_alt_repo = 1
+else
+  $use_alt_repo  = 0
 end
 
 # If given -D choose defaults for questions

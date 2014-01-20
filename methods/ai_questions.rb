@@ -98,18 +98,29 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="root_password"
   config=Ai.new(
-    question  = "Root password",
+    question  = "Root Password",
     ask       = "yes",
     value     = $default_root_password,
     valid     = "",
-    eval      = "get_password_crypt(answer)"
+    eval      = "no"
     )
   $q_struct[name]=config
   $q_order.push(name)
 
+  name = "root_crypt"
+  config = Ai.new(
+    question  = "Root Password Crypt",
+    ask       = "yes",
+    value     = "get_ai_root_password_crypt()",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
   name="root_type"
   config=Ai.new(
-    question  = "Root account type",
+    question  = "Root Account Type",
     ask       = "yes",
     value     = "role",
     valid     = "role,normal",
@@ -120,7 +131,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="root_expire"
   config=Ai.new(
-    question  = "Password expiry date (0 = next login)",
+    question  = "Password Expiry Date (0 = next login)",
     ask       = "yes",
     value     = "0",
     valid     = "",
@@ -142,18 +153,29 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="account_password"
   config=Ai.new(
-    question  = "Account password",
+    question  = "Admin Account Password",
     ask       = "yes",
     value     = $default_admin_password,
     valid     = "",
-    eval      = "get_password_crypt(answer)"
+    eval      = "no"
     )
   $q_struct[name]=config
   $q_order.push(name)
 
+  name = "account_crypt"
+  config = Ai.new(
+    question  = "Admin Account Password Crypt",
+    ask       = "yes",
+    value     = "get_ai_account_password_crypt()",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
   name="account_description"
   config=Ai.new(
-    question  = "Account description",
+    question  = "Account Description",
     ask       = "yes",
     value     = "System Administrator",
     valid     = "",
@@ -165,7 +187,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   name="account_shell"
   vaild_shells=get_valid_shells()
   config=Ai.new(
-    question  = "Account shell",
+    question  = "Account Shell",
     ask       = "yes",
     value     = "/usr/bin/bash",
     valid     = vaild_shells,
@@ -220,7 +242,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="account_profiles"
   config=Ai.new(
-    question  = "Account profiles",
+    question  = "Account Profiles",
     ask       = "yes",
     value     = "System Administrator",
     valid     = "",
@@ -231,7 +253,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="account_sudoers"
   config=Ai.new(
-    question  = "Account sudoers entry",
+    question  = "Account Sudoers Entry",
     ask       = "yes",
     value     = "ALL=(ALL) ALL",
     valid     = "",
@@ -242,7 +264,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="account_expire"
   config=Ai.new(
-    question  = "Password expiry date (0 = next login)",
+    question  = "Password Expiry Date (0 = next login)",
     ask       = "yes",
     value     = "0",
     valid     = "",
@@ -264,7 +286,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="system_console"
   config=Ai.new(
-    question  = "Terminal type",
+    question  = "Terminal Type",
     ask       = "yes",
     value     = $default_terminal,
     valid     = "",
@@ -275,7 +297,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="system_keymap"
   config=Ai.new(
-    question  = "System keymap",
+    question  = "System Keymap",
     ask       = "yes",
     value     = $default_keymap,
     valid     = "",
@@ -286,7 +308,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
   name="system_timezone"
   config=Ai.new(
-    question  = "System timezone",
+    question  = "System Timezone",
     ask       = "yes",
     value     = $default_timezone,
     valid     = "",
@@ -297,7 +319,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
 
 name="system_environment"
   config=Ai.new(
-    question  = "System environment",
+    question  = "System Environment",
     ask       = "yes",
     value     = $default_environment,
     valid     = "",
@@ -319,7 +341,7 @@ name="system_environment"
 
   name="ipv4_static_address"
   config=Ai.new(
-    question  = "IPv4 static address",
+    question  = "IPv4 Static Address",
     ask       = "yes",
     value     = client_ip,
     valid     = "",
@@ -331,7 +353,7 @@ name="system_environment"
   name="ipv4_default_route"
   ipv4_default_route=get_ipv4_default_route(client_ip)
     config=Ai.new(
-    question  = "IPv4 default route",
+    question  = "IPv4 Default Route",
     ask       = "yes",
     value     = ipv4_default_route,
     valid     = "",
@@ -342,7 +364,7 @@ name="system_environment"
 
   name="ipv6_interface_name"
     config=Ai.new(
-    question  = "IPv6 interface name",
+    question  = "IPv6 Interface Name",
     ask       = "yes",
     value     = "#{$default_net}/v6",
     valid     = "",
@@ -364,7 +386,7 @@ name="system_environment"
 
   name="dns_search"
   config=Ai.new(
-    question  = "DNS search domain",
+    question  = "DNS Search Domain",
     ask       = "yes",
     value     = $default_search,
     valid     = "",
@@ -375,7 +397,7 @@ name="system_environment"
 
   name="dns_files"
   config=Ai.new(
-    question  = "DNS default lookup",
+    question  = "DNS Default Lookup",
     ask       = "yes",
     value     = $default_files,
     valid     = "",
@@ -386,7 +408,7 @@ name="system_environment"
 
   name="dns_hosts"
     config=Ai.new(
-    question  = "DNS hosts lookup",
+    question  = "DNS Hosts Lookup",
     ask       = "yes",
     value     = $default_hosts,
     valid     = "",

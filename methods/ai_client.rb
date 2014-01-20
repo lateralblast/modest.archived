@@ -214,12 +214,14 @@ def create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
   message = "Creating:\tClient entry for #{client_name} with architecture #{client_arch} and MAC address #{client_mac}"
   command = "installadm create-client -n #{service_name} -e #{client_mac}"
    execute_command(message,command)
-  if client_arch.match(/i386/) or client_arch.mach(/i386/)
+  if client_arch.match(/i386/) or client_arch.match(/i386/)
     update_ai_client_dhcpd_entry(client_name,client_mac,client_ip)
     update_ai_client_grub_cfg(client_mac)
-    smf_service = "svc:/network/dhcp/server:ipv4"
-    refresh_smf_service(smf_service)
+  else
+   add_dhcp_client(client_name,client_mac,client_ip,service_name,client_arch)
   end
+  smf_service = "svc:/network/dhcp/server:ipv4"
+  refresh_smf_service(smf_service)
   return
 end
 

@@ -163,8 +163,8 @@ end
 
 # Configure DHCP client
 
-def configure_js_dhcp_client(client_name,client_mac,client_ip,service_name)
-  add_dhcp_client(client_name,client_mac,client_ip,service_name)
+def configure_js_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
+  add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   return
 end
 
@@ -252,7 +252,7 @@ def configure_js_client(client_name,client_arch,client_mac,client_ip,client_mode
   rules_file = client_dir+"/rules"
   create_js_rules_file(client_name,client_karch,rules_file)
   configure_js_pxe_client(client_name,client_mac,client_arch,service_name,repo_version_dir,publisher_host)
-  configure_js_dhcp_client(client_name,client_mac,client_ip,service_name)
+  configure_js_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   check_js_config(client_name,client_dir,repo_version_dir,os_version)
   return
 end

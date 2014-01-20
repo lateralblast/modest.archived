@@ -43,3 +43,19 @@ def build_ks_alt_rpm_list(service_name,client_arch)
   rpm_list.push("#{prod_url}/puppet-#{$puppet_version}-1.#{noarch_suffix}")
   return rpm_list
 end
+
+# Get root password crypt
+
+def get_ks_root_password_crypt()
+  password = $q_struct["password"].value
+  result = get_password_crypt(password)
+  return result
+end
+
+# Get root password crypt
+
+def get_ks_account_password_crypt()
+  password = $q_struct["adminpassword"].value
+  result = get_password_crypt(password)
+  return result
+end

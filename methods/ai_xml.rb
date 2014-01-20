@@ -9,13 +9,13 @@ def create_ai_client_profile(output_file)
     xml.service(:version => "1", :name => "system/config-user") {
       xml.instance(:enabled => "true", :name => "default") {
         xml.property_group(:name => "root_account") {
-          xml.propval(:type => "astring", :value => $q_struct["root_password"].value, :name => "password")
+          xml.propval(:type => "astring", :value => $q_struct["root_crypt"].value, :name => "password")
           xml.propval(:type => "astring", :value => $q_struct["root_type"].value, :name => "type")
           xml.propval(:type => "astring", :value => $q_struct["root_expire"].value, :name => "expire")
         }
         xml.property_group(:name => "user_account") {
           xml.propval(:type => "astring", :value => $q_struct["account_login"].value, :name => "login")
-          xml.propval(:type => "astring", :value => $q_struct["account_password"].value, :name => "password")
+          xml.propval(:type => "astring", :value => $q_struct["account_crypt"].value, :name => "password")
           xml.propval(:type => "astring", :value => $q_struct["account_description"].value, :name => "description")
           xml.propval(:type => "astring", :value => $q_struct["account_shell"].value, :name => "shell")
           xml.propval(:value => $q_struct["account_uid"].value, :name => "uid")
@@ -116,6 +116,9 @@ def create_ai_client_profile(output_file)
     file.write(item)
   end
   file.close
+  message = "Checking:\tClient profile "+output_file
+  command = "xmllint #{output_file}"
+  execute_command(message,command)
   return
 end
 
@@ -182,4 +185,7 @@ def create_ai_manifest(output_file)
   end
   file.close
   return
+  message = "Checking:\tService profile "+output_file
+  command = "xmllint #{output_file}"
+  execute_command(message,command)
 end

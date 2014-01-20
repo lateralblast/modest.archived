@@ -32,7 +32,7 @@ end
 # Set network
 
 def set_ks_network()
-  if $q_struct["bootproto"].value == "dhcp"
+  if $q_struct["bootproto"].value == "dhcpG"
     $q_struct["ip"].ask = "no"
     $q_struct["ip"].type = ""
     $q_struct["hostname"].ask = "no"
@@ -419,9 +419,9 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Root Password Crypt",
     ask       = "yes",
     parameter = "",
-    value     = get_password_crypt($default_root_password),
+    value     = "get_ks_root_password_crypt()",
     valid     = "",
-    eval      = "get_password_crypt(answer)"
+    eval      = "no"
     )
   $q_struct[name] = config
   $q_order.push(name)
@@ -522,9 +522,9 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Admin User Password Crypt",
     ask       = "yes",
     parameter = "",
-    value     = get_password_crypt($default_admin_password),
+    value     = "get_ks_account_password_crypt()",
     valid     = "",
-    eval      = "get_password_crypt(answer)"
+    eval      = "no"
     )
   $q_struct[name] = config
   $q_order.push(name)

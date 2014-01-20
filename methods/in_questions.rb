@@ -46,6 +46,12 @@ def process_questions()
           correct = 1
         end
       end
+    else
+      if $q_struct[key].value.match(/^get/)
+        new_value            = $q_struct[key].value
+        new_value            = eval"[#{new_value}]"
+        $q_struct[key].value = new_value.join
+      end
     end
   end
   return

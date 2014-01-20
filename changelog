@@ -209,3 +209,5 @@
 # Fixed ISO mounting on OS X
 # 1.0.5: Sun 19 Jan 2014 19:19:03 EST
 # Fixed apache configuration on OS X
+# 1.0.6: Mon 20 Jan 2014 15:29:30 EST
+# Fixed various bugs with questions and AI clients

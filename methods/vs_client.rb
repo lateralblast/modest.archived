@@ -112,8 +112,8 @@ end
 
 # Configure DHCP entry
 
-def configure_vs_dhcp_client(client_name,client_mac,client_ip,service_name)
-  add_dhcp_client(client_name,client_mac,client_ip,service_name)
+def configure_vs_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
+  add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   return
 end
 
@@ -152,7 +152,7 @@ def configure_vs_client(client_name,client_arch,client_mac,client_ip,client_mode
     FileUtils.chmod(0755,output_file)
   end
   configure_vs_pxe_client(client_name,client_mac,service_name)
-  configure_vs_dhcp_client(client_name,client_mac,client_ip,service_name)
+  configure_vs_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   return
 end
 
