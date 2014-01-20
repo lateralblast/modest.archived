@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.0.7
+# Version:      1.0.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -27,11 +27,12 @@ require 'parseconfig'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:h:i:m:n:o:p:s:z:ABCDEFGHIJKLMNOPRSTUVWXYZtvy"
+$options                = "a:b:c:d:e:f:h:i:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPRSTUVWXYZtvy"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
 $repo_base_dir          = "/export/repo"
+$zone_base_dir          = "/zones"
 $iso_mount_dir          = "/cdrom"
 $ai_base_dir            = "/export/auto_install"
 $work_dir               = ""
@@ -124,6 +125,7 @@ def print_usage()
   puts "-U: Configure Preseed (Ubuntu)"
   puts "-Y: Configure AutoYast (SuSE)"
   puts "-E: Configure VSphere"
+  puts "-Z: Configure Zone"
   puts "-M: Maintenance mode"
   puts "-a: Architecture"
   puts "-e: Client MAC Address"
@@ -146,7 +148,7 @@ def print_usage()
   puts "-P: Configure PXE"
   puts "-W: Update apache proxy entry for AI"
   puts "-R: Use alternate package repository (additional packages like puppet)"
-  puts "-Z: Destroy ZFS filesystem as part of uninstallation"
+  puts "-y: Override (destroy ZFS filesystem as part of uninstallation and delete clients)"
   puts "-D: Use default values for questions"
   puts "-T: Use text mode install"
   puts "-B: Use serial connectivity (emulated)"
@@ -249,6 +251,16 @@ def print_examples(examples)
     puts "Unconfigure KS client PXE:\t"+$script+" -K -M -P -d centos59vm01"
     puts
   end
+  if examples.match(/zone/)
+    puts "Zone related examples:"
+    puts
+    puts "List Zones:\t\t"+$script+" -Z -L"
+    puts "Configure Zone:\t\t"+$script+" -Z -c sol11u01z01 -i 192.168.1.181"
+    puts "Delete Zone:\t\t"+$script+" -Z -d sol11u01z01"
+    puts "Boot Zone:\t\t"+$script+" -Z -b sol11u01z01"
+    puts "Halt Zone:\t\t"+$script+" -Z -s sol11u01z01"
+    puts
+  end
   if examples.match(/client/)
     puts "Client related examples:"
     puts
@@ -333,13 +345,13 @@ def check_local_config(mode)
   end
   # Get OS name and set system settings appropriately
   check_dir_exists($tmp_dir)
-  $os_name   = %x[uname]
-  $os_name   = $os_name.chomp
-  $host_arch = %x[uname -p]
-  $host_arch = $host_arch.chomp
+  $os_name = %x[uname]
+  $os_name = $os_name.chomp
+  $os_arch = %x[uname -p]
+  $os_arch = $os_arch.chomp
   if $os_name.match(/SunOS/)
-    os_ver=%x[uname -r]
-    if os_ver.match(/5\.11/)
+    os_rel=%x[uname -r]
+    if os_rel.match(/5\.11/)
       $default_net = "net0"
     end
   end
@@ -437,34 +449,41 @@ end
 # Print examples
 
 if opt["H"]
+  $os_name = %x[uname]
   if opt["M"]
-    examples="maint"
-    print_examples(examples)
+    examples = "maint"
   end
   if opt["S"]
-    examples="server"
-    print_examples(examples)
+    examples = "server"
   end
   if opt["O"]
-    examples="vbox"
-    print_examples(examples)
+    examples = "vbox"
   end
   if opt["F"]
-    examples="fusion"
-    print_examples(examples)
+    examples = "fusion"
   end
   if opt["C"]
-    examples="client"
-    print_examples(examples)
+    examples = "client"
   end
   if opt["V"]
-    examples="vbox"
-    print_examples(examples)
+    examples = "vbox"
   end
   if opt["I"]
-    examples="iso"
+    examples = "iso"
+  end
+  if opt["Z"]
+    if $os_name.match(/SunOS/)
+      examples = "zone"
+    else
+      examples = "lxc"
+    end
+  end
+  if !examples
+    print_usage
+  else
     print_examples(examples)
   end
+  exit
 end
 
 # Print version
@@ -497,9 +516,9 @@ end
 # Get OS type
 
 if opt["o"]
-  os_type=opt["o"]
+  client_os=opt["o"]
 else
-  os_type=""
+  client_os=""
 end
 
 # Check local configuration
@@ -642,15 +661,6 @@ else
   client_arch = ""
 end
 
-# If given -Z destroy ZFS filesystems as part of unconfigure
-
-if opt["Z"]
-  $destroy_fs=1
-  if $verbose_mode == 1
-     puts "Warning:\tDestroying ZFS filesystems"+client_arch
-  end
-end
-
 # If given -R use alternate repos
 
 if opt["R"]
@@ -709,7 +719,7 @@ end
 # If given option O or F do VM related functions
 
 if opt["O"]
-  if $host_arch.match(/i386/)
+  if $os_arch.match(/i386/)
     $vm_disk_size=$vm_disk_size.gsub(/G/,"000")
     vfunct = "vbox"
   else
@@ -757,6 +767,10 @@ end
 
 if opt["y"]
   $yes_to_all = 1
+  $destroy_fs = 1
+  if $verbose_mode == 1
+     puts "Warning:\tDestroying ZFS filesystems"+client_arch
+  end
 end
 
 # Force architecture to 64 bit for ESX
@@ -766,6 +780,55 @@ if opt["E"]
   if $verbose_mode == 1
     puts "Setting:\tArchitecture to "+client_arch
   end
+end
+
+# If given -r set OS release
+
+if opt["r"]
+  client_rel = opt["r"]
+else
+  client_rel = $os_rel
+end
+
+# If given -Z (Zones) make sure we are running on Solaris
+
+if opt["Z"]
+  if !$os_name.match(/SunOS|Linux|CentOS|Ubuntu|RedHat/)
+    puts "Warning:\tContainers can only be created on Solaris (Zones) or Linux (LXC)"
+    exit
+  else
+    if $os_name.match(/SunOS/)
+      vfunct = "zone"
+      if opt["r"]
+        if client_rel.match(/11/) and $client_rel.match(/10/)
+          puts "Warning:\tCannot create Solaris 11 Zones on Solaris 10"
+          exit
+        end
+      end
+    else
+      vfunct = "lxc"
+    end
+  end
+  if opt["c"]
+    check_client_arch(client_arch)
+    client_mac = create_client_mac(client_mac)
+    eval"[configure_#{vfunct}(client_name,client_mac,client_arch,client_os,client_rel)]"
+  end
+  if opt["L"]
+    eval"[list_#{vfunct}s()]"
+  end
+  if opt["b"]
+    client_name = opt["b"]
+    eval"[boot_#{vfunct}(client_name)]"
+  end
+  if opt["s"]
+    client_name = opt["s"]
+    eval"[stop_#{vfunct}(client_name)]"
+  end
+  if opt["d"]
+    eval"[unconfigure_#{vfunct}(client_name)]"
+  end
+  exit
 end
 
 # Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE
@@ -797,7 +860,7 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["
     if opt["c"]
       check_client_arch(client_arch)
       client_mac = create_client_mac(client_mac)
-      eval"[configure_#{funct}_#{vfunct}_vm(client_name,client_mac,client_arch,os_type)]"
+      eval"[configure_#{funct}_#{vfunct}_vm(client_name,client_mac,client_arch,client_os,client_rel)]"
     end
     if opt["L"]
       eval"[list_#{funct}_#{vfunct}_vms()]"

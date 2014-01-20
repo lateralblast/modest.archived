@@ -1,6 +1,98 @@
 
 # Code for creating client VMs for testing (e.g. VirtualBox)
 
+# List available zones
+
+def list_zones()
+  puts "Available Zones:"
+  message = ""
+  command = "zoneadm list |grep -v global"
+  output  = execute_command(message,command)
+  puts output
+  return
+end
+
+# Create zone
+
+def create_zone(client_name,zone_dir,output_file,client_rel)
+  if $os_rel.match(/11/) and client_rel.match(/10/)
+    branded_url = "http://www.oracle.com/technetwork/server-storage/solaris11/vmtemplates-zones-1949718.html"
+    branded_dir = "/export/zones"
+    if $os_arch.match(/i386/)
+      branded_file = branded_dir+"solaris-10u11-x86.bin"
+    else
+      branded_file = branded_dir+"solaris-10u11-sparc.bin"
+    end
+    check_zfs_fs_exists(branded_dir)
+    if !File.exists(branded_file)
+      puts "Warning:\tBranded zone templates not found"
+      puts "Information:\tDownload them from "+branded_url
+      puts "Information:\tCopy them to "+branded_dir
+    end
+  end
+  zone_nic = $q_struct["ipv4_interface_name"].value
+  message = "Creating:\tSolaris "+client_rel+" Zone "+client_name=" in "+zone_dir
+  command = "zonecfg -z #{client_name} -f #{output_file} \"create ; set zonepath=#{zone_dir} ; exit\""
+  execute_command(message,command)
+  message = "Setting:\tZone interface to "+zone_nic
+  command = "zonecfg -z #{client_name} \"select anet linkname=#{zone_nic} ; end\""
+  execute_command(message,command)
+  message = "Installing:\tZone "+client_name
+  command = "zoneadm -z #{client_name} install"
+  execute_command(message,command)
+  if $use_serial == 1
+    system("zlogin #{client_name}")
+  end
+  return
+end
+
+# Delete zone
+
+def unconfigure_zone(client_name)
+  message = "Deleting:\tZone "+client_name
+  command = "zonecfg -z #{client_name}"
+  execute_command(message,command)
+  return
+end
+
+# Boot zone
+
+def boot_zone(client_name)
+  message = "Booting:\tZone "+client_name
+  command = "zoneadm -z #{client_name} boot"
+  execute_command(message,command)
+  return
+end
+
+# Shutdown zone
+
+def stop_zone(client_name)
+  message = "Stopping:\tZone "+client_name
+  command = "zlogin #{client_name} \"shutdown -y -i 0\""
+  execute_command(message,command)
+  return
+end
+
+# Configure zone
+
+def configure_zone(client_name,client_mac,client_arch,client_os,client_rel)
+  if client_rel.match(/11/)
+    populate_ai_client_profile_questions(client_ip,client_name)
+    output_file = $work_dir+"/"+client_name+"_zone_profile.xml"
+    process_questions()
+    create_zone_profile_xml(output_file)
+  else
+    populate_js_client_profile_questions(client_ip,client_name)
+    output_file = $work_dir+"/"+client_name+"_zone_profile.sysidcfg"
+    process_questions()
+    create_zone_profile_sysidcfg(output_file)
+  end
+  check_zfs_fs_exists($zone_base_dir)
+  zone_dir = $zone_base_dir+"/"+client_name
+  create_zone(client_name,zone_dir,output_file,client_rel)
+  return
+end
+
 # Get VirtualBox VM directory
 
 def get_vbox_vm_dir(client_name)
@@ -30,9 +122,9 @@ end
 
 # Routine to register VM
 
-def register_vbox_vm(client_name,os_type)
+def register_vbox_vm(client_name,client_os)
   message = "Registering:\tVM "+client_name
-  command = "VBoxManage createvm --name \"#{client_name}\" --ostype \"#{os_type}\" --register"
+  command = "VBoxManage createvm --name \"#{client_name}\" --ostype \"#{client_os}\" --register"
   execute_command(message,command)
   return
 end
@@ -109,131 +201,131 @@ end
 
 # Configure a AI Virtual Box VM
 
-def configure_ai_vbox_vm(client_name,client_mac,client_arch,os_type)
-  os_type="Solaris11_64"
-  configure_vbox_vm(client_name,client_mac,os_type)
+def configure_ai_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os="Solaris11_64"
+  configure_vbox_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a Jumpstart Virtual Box VM
 
-def configure_js_vbox_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "OpenSolaris_64"
-  configure_vbox_vm(client_name,client_mac,os_type)
+def configure_js_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "OpenSolaris_64"
+  configure_vbox_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a RedHat or Centos Kickstart VirtualBox VM
 
-def configure_ks_vbox_vm(client_name,client_mac,client_arch,os_type)
+def configure_ks_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
   if client_arch.match(/i386/)
-    os_type = "RedHat"
+    client_os = "RedHat"
   else
-    os_type = "RedHat_64"
+    client_os = "RedHat_64"
   end
-  configure_vbox_vm(client_name,client_mac,os_type)
+  configure_vbox_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a Preseed Ubuntu VirtualBox VM
 
-def configure_ps_vbox_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "Ubuntu"
+def configure_ps_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "Ubuntu"
   if client_arch.match(/x86_64/)
-    os_type = os_type+"_64"
+    client_os = client_os+"_64"
   end
-  configure_vbox_vm(client_name,client_mac,os_type)
+  configure_vbox_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a AutoYast SuSE VirtualBox VM
 
-def configure_ay_vbox_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "OpenSUSE"
+def configure_ay_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "OpenSUSE"
   if client_arch.match(/x86_64/)
-    os_type = os_type+"_64"
+    client_os = client_os+"_64"
   end
-  configure_vbox_vm(client_name,client_mac,os_type)
+  configure_vbox_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a ESX VirtualBox VM
 
-def configure_vs_vbox_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "Linux_64"
-  configure_vbox_vm(client_name,client_mac,os_type)
+def configure_vs_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "Linux_64"
+  configure_vbox_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a AI VMware Fusion VM
 
-def configure_ai_fusion_vm(client_name,client_mac,client_arch,os_type)
-  os_type="solaris11-64"
-  configure_fusion_vm(client_name,client_mac,os_type)
+def configure_ai_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os="solaris11-64"
+  configure_fusion_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a Jumpstart VMware Fusion VM
 
-def configure_js_fusion_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "solaris10-64"
-  configure_fusion_vm(client_name,client_mac,os_type)
+def configure_js_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "solaris10-64"
+  configure_fusion_vm(client_name,client_mac,client_os)
   return
 end
 
 # configure an AutoYast (Suse) VMware Fusion VM
 
-def configure_ay_fusion_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "sles11"
+def configure_ay_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "sles11"
   if !client_arch.match(/i386/) and !client_arch.match(/64/)
-    os_type = os_type+"-64"
+    client_os = client_os+"-64"
   end
-  configure_fusion_vm(client_name,client_mac,os_type)
+  configure_fusion_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure an Ubuntu VMware Fusion VM
 
-def configure_ps_fusion_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "ubuntu"
+def configure_ps_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "ubuntu"
   if !client_arch.match(/i386/) and !client_arch.match(/64/)
-    os_type = os_type+"-64"
+    client_os = client_os+"-64"
   end
-  configure_fusion_vm(client_name,client_mac,os_type)
+  configure_fusion_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a Windows VMware Fusion VM
 
-def configure_pe_fusion_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "windows7srv-64"
-  configure_fusion_vm(client_name,client_mac,os_type)
+def configure_pe_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "windows7srv-64"
+  configure_fusion_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a Kickstart VMware Fusion VM
 
-def configure_ks_fusion_vm(client_name,client_mac,client_arch,os_type)
-  if !os_type or !os_type.match(/[A-z]/)
+def configure_ks_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  if !client_os or !client_os.match(/[A-z]/)
     if client_name.match(/ubuntu/)
-      os_type = "ubuntu"
+      client_os = "ubuntu"
     end
     if client_name.match(/centos|redhat|rhel/)
-      os_type = "rhel5"
+      client_os = "rhel5"
     end
   end
   if !client_arch.match(/i386/) and !client_arch.match(/64/)
-    os_type = os_type+"-64"
+    client_os = client_os+"-64"
   end
-  configure_fusion_vm(client_name,client_mac,os_type)
+  configure_fusion_vm(client_name,client_mac,client_os)
   return
 end
 
 # Configure a ESX VMware Fusion VM
 
-def configure_vs_fusion_vm(client_name,client_mac,client_arch,os_type)
-  os_type = "vmkernel5"
-  configure_fusion_vm(client_name,client_mac,os_type)
+def configure_vs_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "vmkernel5"
+  configure_fusion_vm(client_name,client_mac,client_os)
   return
 end
 
@@ -450,14 +542,14 @@ end
 
 # Populate VMware Fusion VM vmx information
 
-def populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
+def populate_fusion_vm_vmx_info(client_name,client_mac,client_os)
   vmx_info = []
   vmx_info.push(".encoding,UTF-8")
   vmx_info.push("config.version,8")
   vmx_info.push("virtualHW.version,10")
   vmx_info.push("vcpu.hotadd,TRUE")
   vmx_info.push("scsi0.present,TRUE")
-  if os_type.match(/windows7srv-64/)
+  if client_os.match(/windows7srv-64/)
     vmx_info.push("scsi0.virtualDev,lsisas1068")
   else
     vmx_info.push("scsi0.virtualDev,lsilogic")
@@ -481,7 +573,7 @@ def populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
   vmx_info.push("ehci.present,TRUE")
   vmx_info.push("ehci.pciSlotNumber,35")
   vmx_info.push("sound.present,TRUE")
-  if os_type.match(/windows7srv-64/)
+  if client_os.match(/windows7srv-64/)
     vmx_info.push("sound.virtualDev,hdaudio")
   end
   vmx_info.push("sound.fileName,-1")
@@ -505,7 +597,7 @@ def populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
   vmx_info.push("usb.vbluetooth.startConnected,TRUE")
   vmx_info.push("tools.syncTime,TRUE")
   vmx_info.push("displayName,#{client_name}")
-  vmx_info.push("guestOS,#{os_type}")
+  vmx_info.push("guestOS,#{client_os}")
   vmx_info.push("nvram,#{client_name}.nvram")
   vmx_info.push("virtualHW.productCompatibility,hosted")
   vmx_info.push("tools.upgrade.policy,upgradeAtPowerCycle")
@@ -529,7 +621,7 @@ def populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
   vmx_info.push("sound.pciSlotNumber,34")
   vmx_info.push("vmci0.pciSlotNumber,36")
   vmx_info.push("sata0.pciSlotNumber,37")
-  if os_type.match(/windows7srv-64/)
+  if client_os.match(/windows7srv-64/)
     vmx_info.push("scsi0.sasWWID,50 05 05 63 9c 8f c0 c0")
   end
   vmx_info.push("ethernet0.generatedAddressOffset,0")
@@ -561,8 +653,8 @@ end
 
 # Create VMware Fusion VM vmx file
 
-def create_fusion_vm_vmx_file(client_name,client_mac,os_type,fusion_vmx_file)
-  vmx_info = populate_fusion_vm_vmx_info(client_name,client_mac,os_type)
+def create_fusion_vm_vmx_file(client_name,client_mac,client_os,fusion_vmx_file)
+  vmx_info = populate_fusion_vm_vmx_info(client_name,client_mac,client_os)
   file = File.open(fusion_vmx_file,"w")
   vmx_info.each do |vmx_line|
     (vmx_param,vmx_value) = vmx_line.split(/\,/)
@@ -582,23 +674,23 @@ end
 
 # Configure a VMware Fusion VM
 
-def configure_fusion_vm(client_name,client_mac,os_type)
+def configure_fusion_vm(client_name,client_mac,client_os)
   (fusion_vm_dir,fusion_vmx_file,fusion_disk_file) = check_fusion_vm_doesnt_exist(client_name)
   check_dir_exists(fusion_vm_dir)
-  create_fusion_vm_vmx_file(client_name,client_mac,os_type,fusion_vmx_file)
+  create_fusion_vm_vmx_file(client_name,client_mac,client_os,fusion_vmx_file)
   create_fusion_vm_disk(client_name,fusion_vm_dir,fusion_disk_file)
   return
 end
 
 # Configure a VirtualBox VM
 
-def configure_vbox_vm(client_name,client_mac,os_type)
+def configure_vbox_vm(client_name,client_mac,client_os)
   vbox_vm_dir      = get_vbox_vm_dir(client_name)
   vbox_disk_name   = vbox_vm_dir+"/"+client_name+".vdi"
   vbox_socket_name = "/tmp/#{client_name}"
   vbox_controller  = get_vbox_controller()
   check_vbox_vm_doesnt_exist(client_name)
-  register_vbox_vm(client_name,os_type)
+  register_vbox_vm(client_name,client_os)
   add_controller_to_vbox_vm(client_name,vbox_controller)
   create_vbox_hdd(client_name,vbox_disk_name)
   add_hdd_to_vbox_vm(client_name,vbox_disk_name)

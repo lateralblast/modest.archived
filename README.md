@@ -12,6 +12,9 @@ BOOTP based install services, eg:
 - Ubuntu Linux Preseed services
 - SuSE Linux AutoYast services
 - ESXi Kickstart services
+- Simplify creation of VirtualBox VMs
+- Simplify creation of VMware Fusion VMs
+- Simpllfy creation of Solaris Zones
 
 This script is a wrapper which sits on top of the exisitng tools.
 It changes defaults to be more suitable to customer environments,
@@ -38,6 +41,10 @@ Features
 VirtualBox and VMware Fusion VM creation
 
 - Can create VMs to speed up the automation of testing new images
+
+Solaris Zone Creation
+
+- Asks a set of questions to generate a template and then install a zone
 
 Solaris 11 AI
 
@@ -174,3 +181,8 @@ VMware Fusion Related Information
 =================================
 
 https://github.com/richardatlateralblast/modest/wiki/VMwareFusionExamples
+
+Zone Related Information
+========================
+
+https://github.com/richardatlateralblast/modest/wiki/ZoneExamples
