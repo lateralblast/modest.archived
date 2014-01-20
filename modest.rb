@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.0.5
+# Version:      1.0.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -27,7 +27,7 @@ require 'parseconfig'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:h:i:m:n:o:p:s:z:ABCDEFGHIJKLMNOPRSTUVWXYZtv"
+$options                = "a:b:c:d:e:f:h:i:m:n:o:p:s:z:ABCDEFGHIJKLMNOPRSTUVWXYZtvy"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -90,6 +90,7 @@ $vm_disk_size           = "10G"
 $vm_memory_size         = "1024"
 $use_serial             = 0
 $os_name                = ""
+$yes_to_all             = 0
 
 # Declare some package versions
 
@@ -332,8 +333,10 @@ def check_local_config(mode)
   end
   # Get OS name and set system settings appropriately
   check_dir_exists($tmp_dir)
-  $os_name=%x[uname]
-  $os_name=$os_name.chomp
+  $os_name   = %x[uname]
+  $os_name   = $os_name.chomp
+  $host_arch = %x[uname -p]
+  $host_arch = $host_arch.chomp
   if $os_name.match(/SunOS/)
     os_ver=%x[uname -r]
     if os_ver.match(/5\.11/)
@@ -703,13 +706,21 @@ else
   end
 end
 
+# If given option O or F do VM related functions
+
 if opt["O"]
-  $vm_disk_size=$vm_disk_size.gsub(/G/,"000")
-  vfunct="vbox"
+  if $host_arch.match(/i386/)
+    $vm_disk_size=$vm_disk_size.gsub(/G/,"000")
+    vfunct = "vbox"
+  else
+    vfunct = "ldom"
+  end
 end
 if opt["F"]
-  vfunct="fusion"
+  vfunct = "fusion"
 end
+
+# VirtualBox and VMware Fusion functions (not create)
 
 if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] and !opt["Y"] and !opt["U"]
   if opt ["L"]
@@ -740,6 +751,12 @@ if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] 
     eval"[change_#{vfunct}_vm_mac(client_name,client_mac)]"
   end
   exit
+end
+
+# If given -y assume yes to all questions
+
+if opt["y"]
+  $yes_to_all = 1
 end
 
 # Force architecture to 64 bit for ESX

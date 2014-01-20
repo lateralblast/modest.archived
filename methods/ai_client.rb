@@ -218,10 +218,29 @@ def create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
     update_ai_client_dhcpd_entry(client_name,client_mac,client_ip)
     update_ai_client_grub_cfg(client_mac)
   else
-   add_dhcp_client(client_name,client_mac,client_ip,service_name,client_arch)
+   add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   end
   smf_service = "svc:/network/dhcp/server:ipv4"
   refresh_smf_service(smf_service)
+  return
+end
+
+# Check AI client doesn't exist
+
+def check_ai_client_doesnt_exist(client_name,client_mac,service_name)
+  client_mac = client_mac.upcase
+  message    = "Checking:\tClient "+client_name+" doesn't exist"
+  command    = "installadm list -p |grep '#{client_mac}'"
+  output     = execute_command(message,command)
+  if output.match(/#{client_name}/)
+    puts "Warning:\tProfile already exists for "+client_name
+    if $yes_to_all == 1
+      puts "Deleting:\rtClient "+client_name
+      unconfigure_ai_client(client_name,client_mac,service_name)
+    else
+      exit
+    end
+  end
   return
 end
 
@@ -229,12 +248,12 @@ end
 
 def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
   # Populate questions for AI profile
+  check_ai_client_doesnt_exist(client_name,client_mac,service_name)
   populate_ai_client_profile_questions(client_ip,client_name)
   process_questions()
   output_file = $work_dir+"/"+client_name+"_ai_profile.xml"
   create_ai_client_profile(output_file)
   puts "Configuring:\tClient "+client_name+" with MAC address "+client_mac
-  output_file  = $work_dir+"/"+client_name+"_ai_profile.xml"
   service_name = get_ai_service_name(client_arch)
   import_ai_client_profile(output_file,client_name,client_mac,service_name)
   create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
