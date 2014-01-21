@@ -244,8 +244,8 @@ def configure_js_server(client_arch,publisher_host,publisher_port,service_name,i
   end
   iso_list.each do |iso_file_name|
     iso_file_name = iso_file_name.chomp
-    iso_info      = File.basename(iso_file)
-    iso_info      = iso_info.split(/-/)
+    iso_info      = File.basename(iso_file_name)
+    iso_info      = iso_info.split(/\-/)
     os_version    = iso_info[1]
     os_update     = iso_info[2]
     os_update     = os_update.gsub(/u/,"")

@@ -224,7 +224,7 @@ def fix_server_dhcpd_range(publisher_host)
   dhcpd_range = publisher_host.split(/\./)[0..2]
   dhcpd_range = dhcpd_range.join(".")
   backup_file(dhcp_file)
-  text        = File.read(file)
+  text        = File.read(dhcp_file)
   text.each do |line|
     if line.match(/range #{dhcpd_range}/) and !line.match(/^#/)
       line = "#"+line
