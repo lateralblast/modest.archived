@@ -27,13 +27,17 @@ def check_ips ()
 end
 
 def check_osx_ips()
-  python_bin = "/usr/local/bin/python"
-  pip_bin = "/usr/local/bin/pip"
-  if !File.symlink?(python_bin)
-    message = "Installing:\tPython"
-    command = "brew install python"
+  python_bin = "/usr/bin/python"
+  pip_bin = "/usr/bin/pip"
+  setup_url = "https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py"
+  if !File.symlink?(pip_bin)
+    message = "Installing:\tPip"
+    command = "/usr/bin/easy_install --prefix=/usr pip"
     execute_command(message,command)
-    ["simplejson","coverage","pyOpenSSL"].each do |module_name|
+    message = "Updating:\tSetuptools"
+    command = "wget #{setup_url} -O |sudo #{python_bin}"
+    execute_command(message,command)
+    ["simplejson","coverage","pyOpenSSL","mercurial"].each do |module_name|
       message = "Installing:\tPython module "+module_name
       command = "#{pip_bin} install #{module_name}"
       execute_command(message,command)
