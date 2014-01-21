@@ -217,3 +217,5 @@
 # Initial Solaris Zones support
 # 1.0.9: Tue 21 Jan 2014 11:31:23 EST
 # Minor updates
+# 1.1.0: Tue 21 Jan 2014 15:58:50 EST
+# Initial LDom primary domain setup code

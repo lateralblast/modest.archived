@@ -32,6 +32,7 @@ $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
 $repo_base_dir          = "/export/repo"
+$ldom_base_dir          = "/ldoms"
 $zone_base_dir          = "/zones"
 $iso_mount_dir          = "/cdrom"
 $ai_base_dir            = "/export/auto_install"
@@ -92,6 +93,11 @@ $vm_memory_size         = "1024"
 $use_serial             = 0
 $os_name                = ""
 $yes_to_all             = 0
+$ldom_primary_mau       = "1"
+$ldom_primary_vcpu      = "8"
+$ldom_primary_mem       = "4G"
+$ldom_config_name       = "initial"
+$ldom_zpool             = "dpool"
 
 # Declare some package versions
 
@@ -349,9 +355,12 @@ def check_local_config(mode)
   $os_name = $os_name.chomp
   $os_arch = %x[uname -p]
   $os_arch = $os_arch.chomp
+  $os_mach = %x[uname -m]
+  $os_mach = $os_mach.chomp
+  $os_rel  = %x[uname -r]
+  $os_rel  = $os_rel.chomp
   if $os_name.match(/SunOS/)
-    os_rel=%x[uname -r]
-    if os_rel.match(/5\.11/)
+    if $os_rel.match(/5\.11/)
       $default_net = "net0"
     end
   end
@@ -450,6 +459,7 @@ end
 
 if opt["H"]
   $os_name = %x[uname]
+  $os_mach = %x[uname -m]
   if opt["M"]
     examples = "maint"
   end
@@ -457,7 +467,11 @@ if opt["H"]
     examples = "server"
   end
   if opt["O"]
-    examples = "vbox"
+    if $os_mach.match(/sparc/)
+      examples = "ldom"
+    else
+      examples = "vbox"
+    end
   end
   if opt["F"]
     examples = "fusion"
@@ -732,7 +746,7 @@ end
 
 # VirtualBox and VMware Fusion functions (not create)
 
-if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] and !opt["Y"] and !opt["U"]
+if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] and !opt["Y"] and !opt["U"] and !$os_arch.match(/sparc/)
   if opt ["L"]
     search_string = ""
     if opt["c"]
@@ -827,6 +841,36 @@ if opt["Z"]
   end
   if opt["d"]
     eval"[unconfigure_#{vfunct}(client_name)]"
+  end
+  exit
+end
+
+# If given -O option and running on sparc handle LDOM routines
+
+if opt["O"] and $os_arch.match(/sparc/)
+  if !$os_mach.match(/sun4v/)
+    puts "Warning:\tArchitecture does not support LDoms"
+    exit
+  end
+  if opt["L"]
+    eval"[list_#{vfunct}s()]"
+  end
+  if opt["b"]
+    client_name = opt["b"]
+    eval"[boot_#{vfunct}(client_name)]"
+  end
+  if opt["s"]
+    client_name = opt["s"]
+    eval"[stop_#{vfunct}(client_name)]"
+  end
+  if opt["d"]
+    eval"[unconfigure_#{vfunct}(client_name)]"
+  end
+  if opt["p"]
+    client_cpus = opt["p"]
+  end
+  if opt["c"]
+    eval"[configure_ldom(client_name,client_mac,client_arch,client_os,client_rel)]"
   end
   exit
 end
