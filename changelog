@@ -221,3 +221,5 @@
 # Initial LDom primary domain setup code
 # 1.1.1: Tue 21 Jan 2014 17:35:27 EST
 # Fixed bugs with DHCP config check and Solaris ISO processing for jumpstart
+# 1.1.2: Wed 22 Jan 2014 10:34:38 EST
+# Various fixes

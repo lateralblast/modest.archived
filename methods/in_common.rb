@@ -578,7 +578,7 @@ def destroy_zfs_fs(dir_name)
   if $destroy_fs == 1
     if File.directory?(dir_name)
       message = "Warning:\tDestroying "+dir_name
-      command = "zfs destroy #{$default_zpool}#{dir_name}"
+      command = "zfs destroy -r #{$default_zpool}#{dir_name}"
       output  = execute_command(message,command)
     end
   end

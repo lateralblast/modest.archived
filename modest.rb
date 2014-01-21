@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.1.1
+# Version:      1.1.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -27,7 +27,7 @@ require 'parseconfig'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:h:i:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPRSTUVWXYZtvy"
+$options                = "a:b:c:d:e:f:g:h:i:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPRSTUVWXYZtvy"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -95,6 +95,7 @@ $os_name                = ""
 $yes_to_all             = 0
 $ldom_primary_mau       = "1"
 $ldom_primary_vcpu      = "8"
+$ldom_guest_vcpu        = "8"
 $ldom_primary_mem       = "4G"
 $ldom_config_name       = "initial"
 $ldom_zpool             = "dpool"
@@ -142,6 +143,10 @@ def print_usage()
   puts "-O: Configure VirtualBox VM"
   puts "-F: Configure VMware Fusion VM"
   puts "-o: Specify OS type (used when creating VMs)"
+  puts "-r: Specify OS release (used when creating VMs)"
+  puts "-b: Boot VM"
+  puts "-s: Boot VM"
+  puts "-g: Halt VM"
   puts "-p: Puplisher server port number"
   puts "-h: Puplisher server Hostname/IP"
   puts "-t: Run it test mode (in client mode create files but don't import them)"
@@ -260,11 +265,12 @@ def print_examples(examples)
   if examples.match(/zone/)
     puts "Zone related examples:"
     puts
-    puts "List Zones:\t\t"+$script+" -Z -L"
-    puts "Configure Zone:\t\t"+$script+" -Z -c sol11u01z01 -i 192.168.1.181"
-    puts "Delete Zone:\t\t"+$script+" -Z -d sol11u01z01"
-    puts "Boot Zone:\t\t"+$script+" -Z -b sol11u01z01"
-    puts "Halt Zone:\t\t"+$script+" -Z -s sol11u01z01"
+    puts "List Zones:\t\t\t"+$script+" -Z -L"
+    puts "Configure Zone:\t\t\t"+$script+" -Z -c sol11u01z01 -i 192.168.1.181"
+    puts "Delete Zone:\t\t\t"+$script+" -Z -d sol11u01z01"
+    puts "Boot Zone:\t\t\t"+$script+" -Z -b sol11u01z01"
+    puts "Boot Zone and connect to console:\t"+$script+" -Z -b sol11u01z01 -B"
+    puts "Halt Zone:\t\t\t"+$script+" -Z -s sol11u01z01"
     puts
   end
   if examples.match(/client/)
@@ -544,7 +550,7 @@ else
 end
 check_local_config(mode)
 
-if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"] and !opt["F"]
+if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"] and !opt["F"] and !opt["Z"]
   puts "Warning:\tClient name not given"
   exit
 else
@@ -800,8 +806,14 @@ end
 
 if opt["r"]
   client_rel = opt["r"]
+  if $verbose_mode == 1
+    puts "Setting:\tSolaris version of zone to "+client_rel
+  end
 else
-  client_rel = $os_rel
+  if $verbose_mode == 1
+    client_rel = $os_rel
+    puts "Setting:\tSolaris version of zone to same as host ["+$os_rel+"]"
+  end
 end
 
 # If given -Z (Zones) make sure we are running on Solaris
@@ -824,9 +836,7 @@ if opt["Z"]
     end
   end
   if opt["c"]
-    check_client_arch(client_arch)
-    client_mac = create_client_mac(client_mac)
-    eval"[configure_#{vfunct}(client_name,client_mac,client_arch,client_os,client_rel)]"
+    eval"[configure_#{vfunct}(client_name,client_ip,client_mac,client_arch,client_os,client_rel)]"
   end
   if opt["L"]
     eval"[list_#{vfunct}s()]"
@@ -838,6 +848,11 @@ if opt["Z"]
   if opt["s"]
     client_name = opt["s"]
     eval"[stop_#{vfunct}(client_name)]"
+  end
+  if opt["g"]
+    client_name = opt["g"]
+    eval"[halt_#{vfunct}(client_name)]"
+    exit
   end
   if opt["d"]
     eval"[unconfigure_#{vfunct}(client_name)]"
@@ -868,9 +883,11 @@ if opt["O"] and $os_arch.match(/sparc/)
   end
   if opt["p"]
     client_cpus = opt["p"]
+  else
+    client_cpus = $ldom_guest_vcpu
   end
   if opt["c"]
-    eval"[configure_ldom(client_name,client_mac,client_arch,client_os,client_rel)]"
+    eval"[configure_ldom(client_name,client_mac,client_arch,client_os,client_rel,client_cpus)]"
   end
   exit
 end

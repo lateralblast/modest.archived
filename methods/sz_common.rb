@@ -31,7 +31,8 @@ def create_zone(client_name,zone_dir,output_file,client_rel)
     end
   end
   zone_nic = $q_struct["ipv4_interface_name"].value
-  message = "Creating:\tSolaris "+client_rel+" Zone "+client_name=" in "+zone_dir
+  zone_nic = zone_nic.split(/\//)[0]
+  message = "Creating:\tSolaris "+client_rel+" zone "+client_name+" in "+zone_dir
   command = "zonecfg -z #{client_name} -f #{output_file} \"create ; set zonepath=#{zone_dir} ; exit\""
   execute_command(message,command)
   message = "Setting:\tZone interface to "+zone_nic
@@ -41,17 +42,31 @@ def create_zone(client_name,zone_dir,output_file,client_rel)
   command = "zoneadm -z #{client_name} install"
   execute_command(message,command)
   if $use_serial == 1
-    system("zlogin #{client_name}")
+    boot_zone(client_name)
   end
+  return
+end
+
+# Halt zone
+
+def halt_zone(client_name)
+  message = "Halting:\tZone "+client_name
+  command = "zoneadm -z #{client_name} halt"
+  execute_command(message,command)
   return
 end
 
 # Delete zone
 
 def unconfigure_zone(client_name)
-  message = "Deleting:\tZone "+client_name
-  command = "zonecfg -z #{client_name}"
+  halt_zone(client_name)
+  message = "Deleting:\tZone "+client_name+" configuration"
+  command = "zonecfg -z #{client_name} delete -F"
   execute_command(message,command)
+  if $yes_to_all == 1
+    zone_dir=$zone_base_dir+"/"+client_name
+    destroy_zfs_fs(zone_dir)
+  end
   return
 end
 
@@ -61,6 +76,9 @@ def boot_zone(client_name)
   message = "Booting:\tZone "+client_name
   command = "zoneadm -z #{client_name} boot"
   execute_command(message,command)
+  if $use_serial == 1
+    system("zlogin #{client_name}")
+  end
   return
 end
 
@@ -68,14 +86,14 @@ end
 
 def stop_zone(client_name)
   message = "Stopping:\tZone "+client_name
-  command = "zlogin #{client_name} \"shutdown -y -i 0\""
+  command = "zlogin #{client_name} shutdown -y -g0 -i 0"
   execute_command(message,command)
   return
 end
 
 # Configure zone
 
-def configure_zone(client_name,client_mac,client_arch,client_os,client_rel)
+def configure_zone(client_name,client_ip,client_mac,client_arch,client_os,client_rel)
   if client_rel.match(/11/)
     populate_ai_client_profile_questions(client_ip,client_name)
     output_file = $work_dir+"/"+client_name+"_zone_profile.xml"
