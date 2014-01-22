@@ -4,7 +4,7 @@
 # List available ISOs
 
 def list_ai_isos()
-  search_string = "repo"
+  search_string = "repoi-full"
   iso_list      = check_iso_base_dir(search_string)
   iso_list.each do |iso_file|
     iso_file    = iso_file.chomp

@@ -267,7 +267,7 @@ def print_examples(examples)
     puts
   end
   if examples.match(/zone/)
-    puts "Zone related examples:"
+    puts "Solaris Zone related examples:"
     puts
     puts "List Zones:\t\t\t"+$script+" -Z -L"
     puts "Configure Zone:\t\t\t"+$script+" -Z -c sol11u01z01 -i 192.168.1.181"
@@ -278,11 +278,18 @@ def print_examples(examples)
     puts
   end
   if examples.match(/ldom/)
-    puts "LDom related examples:"
+    puts "Oracle VM Server for SPARC related examples:"
     puts
     puts "Configure Control Domain:\t\t"+$script+" -O -S"
     puts "List Guest Domains:\t\t\t"+$script+" -O -L"
     puts "Configure Guest Domain:\t\t\t"+$script+" -O -c sol11u01gd01"
+    puts
+  end
+  if examples.match(/lxc/)
+    puts "Linux Container related examples:"
+    puts
+    puts "List Containerss:\t\t\t"+$script+" -O -L"
+    puts "Configure Containers:\t\t\t"+$script+" -O -c sol11u01gd01"
     puts
   end
   if examples.match(/client/)
@@ -377,20 +384,15 @@ def check_local_config(mode)
   $os_mach = $os_mach.chomp
   $os_rel  = %x[uname -r]
   $os_rel  = $os_rel.chomp
-  $os_info = %x[uname -a]
-  $os_info = $os_info.chomp
   if $os_name.match(/SunOS/)
+    $os_info = %x[uname -a]
+    $os_info = $os_info.chomp
     if $os_rel.match(/5\.11/)
       $default_net = "net0"
     end
-  end
-  if $os_name.match(/Linux/)
-    if File.exists?("/etc/redhat-release")
-      $os_name = "RedHat"
-    else
-      $os_name = %x[lsb_release -i]
-      $os_name = $os_name.chomp
-    end
+  else
+    $os_info = %x[lsb_release -i]
+    $os_info = $os_info.chomp
   end
   if !$default_host.match(/[0-9]/)
     message = "Determining:\tDefault host IP"
@@ -399,6 +401,10 @@ def check_local_config(mode)
     end
     if $os_name.match(/Darwin/)
       $default_net="en0"
+      command = "ifconfig #{$default_net} |grep 'inet ' |awk '{print $2}'"
+    end
+    if $os_name.match(/Linux/)
+      $default_net="eth0"
       command = "ifconfig #{$default_net} |grep 'inet ' |awk '{print $2}'"
     end
     $default_host = execute_command(message,command)
@@ -414,17 +420,18 @@ def check_local_config(mode)
     if $verbose_mode == 1
       puts "Information:\tSetting apache allow range to "+$default_apache_allow
     end
-    if $os_name.match(/RedHat|CentOS/)
-      check_yum_tftpd()
-      check_yum_dhcpd()
-      $tftp_dir   = "/tftpboot"
-      $dhcpd_file = "/etc/dhcpd.conf"
-    end
-    if $os_name.match(/RedHat|CentOS/)
-      check_apt_tftpd()
-      check_apt_dhcpd()
-      $tftp_dir   = "/tftpboot"
-      $dhcpd_file = "/etc/dhcp/dhcpd.conf"
+    if $os_name.match(/Linux/)
+      if $os_info.match(/RedHat|CentOS/)
+        check_yum_tftpd()
+        check_yum_dhcpd()
+        $tftp_dir   = "/tftpboot"
+        $dhcpd_file = "/etc/dhcpd.conf"
+      else
+        check_apt_tftpd()
+        check_apt_dhcpd()
+        $tftp_dir   = "/tftpboot"
+        $dhcpd_file = "/etc/dhcp/dhcpd.conf"
+      end
     end
     if $os_name.match(/Darwin/)
       check_osx_tftpd()
@@ -841,7 +848,7 @@ end
 # If given -O (LDoms) make sure we are on T series
 
 if opt["Z"]
-  if !$os_name.match(/SunOS|Linux|CentOS|Ubuntu|RedHat/)
+  if !$os_name.match(/SunOS|Linux/)
     puts "Warning:\tContainers can only be created on Solaris (Zones) or Linux (LXC)"
     exit
   else
@@ -865,6 +872,9 @@ if opt["Z"] or opt["O"] and !opt["S"]
   if opt["O"] and !$os_mach.match(/sun4v/)
     puts "Warning:\tArchitecture does not support LDoms"
     exit
+  end
+  if !$os_arch.match(/sparc/)
+    eval"[check_#{vfunct}_install()]"
   end
   if opt["c"]
     eval"[configure_#{vfunct}(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host)]"

@@ -155,7 +155,6 @@ end
 def create_gdom(client_name)
   memory   = $q_struct["gdom_memory"].value
   vcpu     = $q_struct["gdom_vcpu"].value
-  disk     = $q_struct["gdom_disk"].value
   vds_disk = client_name+"_vdisk0"
   message = "Creating:\tGuest domain "+client_name
   command = "ldm add-domain #{client_name}"
