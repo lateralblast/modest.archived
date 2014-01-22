@@ -15,6 +15,8 @@ BOOTP based install services, eg:
 - Simplify creation of VirtualBox VMs
 - Simplify creation of VMware Fusion VMs
 - Simpllfy creation of Solaris Zones
+- Simplify creation of Solaris VM Server for SPARC Control Domains
+- Simplify creation of Solaris VM Server for SPARC Guest Domains
 
 This script is a wrapper which sits on top of the exisitng tools.
 It changes defaults to be more suitable to customer environments,
@@ -37,6 +39,11 @@ patch repository script (goofball) to install patches, firmware and SRUs.
 
 Features
 ========
+
+Oracle VM Server for SPARC
+
+- Setup Control Domain based on a set of questions
+- Cleate Guest Domains based on a set of questions
 
 VirtualBox and VMware Fusion VM creation
 
