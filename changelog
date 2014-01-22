@@ -223,3 +223,5 @@
 # Fixed bugs with DHCP config check and Solaris ISO processing for jumpstart
 # 1.1.2: Wed 22 Jan 2014 10:34:38 EST
 # Various fixes
+# 1.1.3: Wed 22 Jan 2014 17:16:53 EST
+# Added initial Guest domain support

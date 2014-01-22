@@ -157,6 +157,7 @@ end
 # Configue Linux server
 
 def configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
+  check_dhcpd_config(publisher_host)
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)
       iso_list[0] = iso_file

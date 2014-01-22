@@ -245,6 +245,7 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
   check_default_route()
   # Check that we have a DHCPd config file to write to
   check_dhcpd4_conf()
+  check_dhcpd_config(publisher_host)
   # Check that we have a local repoistory
   publisher_url=get_ai_publisher_url(publisher_host,publisher_port)
   # Get a list of installed services

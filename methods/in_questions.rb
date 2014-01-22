@@ -2,7 +2,6 @@
 # Process questions (array of structs)
 
 def process_questions()
-  puts ""
   $q_order.each do |key|
     correct = 0
     if $q_struct[key].ask.match(/yes/)

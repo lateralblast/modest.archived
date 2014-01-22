@@ -231,6 +231,7 @@ end
 # Configure jumpstart server
 
 def configure_js_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
+  check_dhcpd_config(publisher_host)
   iso_list      = []
   search_string = "\\-ga\\-"
   if iso_file.match(/[A-z]/)

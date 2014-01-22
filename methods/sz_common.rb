@@ -93,7 +93,7 @@ end
 
 # Configure zone
 
-def configure_zone(client_name,client_ip,client_mac,client_arch,client_os,client_rel)
+def configure_zone(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host)
   if client_rel.match(/11/)
     populate_ai_client_profile_questions(client_ip,client_name)
     output_file = $work_dir+"/"+client_name+"_zone_profile.xml"

@@ -140,36 +140,53 @@ def check_dhcpd_config(publisher_host)
   network_address = $default_host.split(/\./)[0..2].join(".")+".0"
   broadcast_address = $default_host.split(/\./)[0..2].join(".")+".255"
   gateway_address = $default_host.split(/\./)[0..2].join(".")+".254"
-  message = "Checking:\tDHCPd config for subnet entry"
-  command = "cat #{$dhcpd_file} | grep 'subnet #{network_address}'"
-  output  = execute_command(message, command)
+  output = ""
+  if File.exists?($dhcpd_file)
+    message = "Checking:\tDHCPd config for subnet entry"
+    command = "cat #{$dhcpd_file} | grep 'subnet #{network_address}'"
+    output  = execute_command(message, command)
+  end
   if !output.match(/subnet/)
-    text = []
-    text.push("\n")
-    text.push("option arch code 93 = unsigned integer 16;\n")
-    text.push("option grubmenu code 150 = text;\n")
-    text.push("\n")
-    text.push("class \"PXEBoot\" {\n")
-    text.push("  match if (substring(option vendor-class-identifier, 0, 9) = \"PXEClient\");\n")
-    text.push("}\n")
-    text.push("\n")
-    text.push("class \"SPARC\" {\n")
-    text.push("  match if not (substring(option vendor-class-identifier, 0, 9) = \"PXEClient\");\n")
-    text.push("  filename \"http://#{publisher_host}:5555/cgi-bin/wanboot-cgi\";\n")
-    text.push("}\n")
-    text.push("\n")
-    text.push("allow booting;\n")
-    text.push("allow bootp;\n")
-    text.push("\n")
-    text.push("subnet #{network_address} {\n")
-    text.push("  option broadcast-address #{broadcast_address};\n")
-    text.push("  option routers #{gateway_address};\n")
-    text.push("  next-server #{$default_host};\n")
-    text.push("}\n")
-    text.push("")
-    text.push("")
-    text.push("")
-    text.push("")
+    tmp_file    = "/tmp/dhcpd"
+    backup_file = $dhcpd_file+".premodest"
+    file = File.open(tmp_file,"w")
+    file.write("\n")
+    file.write("default-lease-time 900;\n")
+    file.write("max-lease-time 86400;\n")
+    file.write("\n")
+    file.write("authoritative;\n")
+    file.write("\n")
+    file.write("option arch code 93 = unsigned integer 16;\n")
+    file.write("option grubmenu code 150 = text;\n")
+    file.write("\n")
+    file.write("log-facility local7;\n")
+    file.write("\n")
+    file.write("class \"PXEBoot\" {\n")
+    file.write("  match if (substring(option vendor-class-identifier, 0, 9) = \"PXEClient\");\n")
+    file.write("}\n")
+    file.write("\n")
+    file.write("class \"SPARC\" {\n")
+    file.write("  match if not (substring(option vendor-class-identifier, 0, 9) = \"PXEClient\");\n")
+    file.write("  filename \"http://#{publisher_host}:5555/cgi-bin/wanboot-cgi\";\n")
+    file.write("}\n")
+    file.write("\n")
+    file.write("allow booting;\n")
+    file.write("allow bootp;\n")
+    file.write("\n")
+    file.write("subnet #{network_address} netmask #{$default_netmask} {\n")
+    file.write("  option broadcast-address #{broadcast_address};\n")
+    file.write("  option routers #{gateway_address};\n")
+    file.write("  next-server #{$default_host};\n")
+    file.write("}\n")
+    file.write("\n")
+    file.close
+    message = "Archiving:\tDHCPd configuration file "+$dhcpd_file+" to "+backup_file
+    command = "cp #{$dhcpd_file} #{backup_file}"
+    execute_command(message,command)
+    message = "Creating:\tDHCPd configuration file "+$dhcpd_file
+    command = "cp #{tmp_file} #{$dhcpd_file}"
+    execute_command(message,command)
+    restart_dhcpd()
   end
   return
 end
@@ -551,7 +568,11 @@ def check_zfs_fs_exists(dir_name)
   if !File.directory?(dir_name)
     if $os_name.match(/SunOS/)
       message     = "Warning:\t"+dir_name+" does not exist"
-      zfs_name    = $default_zpool+dir_name
+      if dir_name.match(/ldoms|zones/)
+        zfs_name    = $default_dpool+dir_name
+      else
+        zfs_name    = $default_zpool+dir_name
+      end
       command     = "zfs create #{zfs_name}"
       output      = execute_command(message,command)
       if dir_name.match(/vmware/)
@@ -578,7 +599,12 @@ def destroy_zfs_fs(dir_name)
   if $destroy_fs == 1
     if File.directory?(dir_name)
       message = "Warning:\tDestroying "+dir_name
-      command = "zfs destroy -r #{$default_zpool}#{dir_name}"
+      if dir_name.match(/ldoms|zones/)
+        zfs_name    = $default_dpool+dir_name
+      else
+        zfs_name    = $default_zpool+dir_name
+      end
+      command = "zfs destroy -r #{zfs_name}"
       output  = execute_command(message,command)
     end
   end
@@ -656,9 +682,25 @@ end
 
 def handle_smf_service(function,smf_service_name)
   uc_function = function.capitalize
-  message     = uc_function+":\tService "+smf_service_name
-  command     = "svcadm #{function} #{smf_service_name} ; sleep 5"
-  output      = execute_command(message,command)
+  if function.match(/enable/)
+    message = "Checking:\tStatus of service "+smf_service_name
+    command = "svcs #{smf_service_name} |grep -v STATE"
+    output  = execute_command(message,command)
+    if output.match(/maintenance/)
+      message     = uc_function+":\tService "+smf_service_name
+      command     = "svcadm clear #{smf_service_name} ; sleep 5"
+      output      = execute_command(message,command)
+    end
+    if !output.match(/online/)
+      message     = uc_function+":\tService "+smf_service_name
+      command     = "svcadm #{function} #{smf_service_name} ; sleep 5"
+      output      = execute_command(message,command)
+    end
+  else
+    message     = uc_function+":\tService "+smf_service_name
+    command     = "svcadm #{function} #{smf_service_name} ; sleep 5"
+    output      = execute_command(message,command)
+  end
   return output
 end
 

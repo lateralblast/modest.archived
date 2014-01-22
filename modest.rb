@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.1.2
+# Version:      1.1.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -93,12 +93,16 @@ $vm_memory_size         = "1024"
 $use_serial             = 0
 $os_name                = ""
 $yes_to_all             = 0
-$ldom_primary_mau       = "1"
-$ldom_primary_vcpu      = "8"
-$ldom_guest_vcpu        = "8"
-$ldom_primary_mem       = "4G"
-$ldom_config_name       = "initial"
-$ldom_zpool             = "dpool"
+$default_cdom_mau       = "1"
+$default_gdom_mau       = "1"
+$default_cdom_vcpu      = "8"
+$default_gdom_mem       = "4G"
+$default_gdom_vcpu      = "8"
+$default_gdom_mem       = "4G"
+$default_gdom_size      = "10G"
+$default_cdom_name      = "initial"
+$default_dpool          = "dpool"
+$default_gdom_vnet      = "vnet0"
 
 # Declare some package versions
 
@@ -273,6 +277,14 @@ def print_examples(examples)
     puts "Halt Zone:\t\t\t"+$script+" -Z -s sol11u01z01"
     puts
   end
+  if examples.match(/ldom/)
+    puts "LDom related examples:"
+    puts
+    puts "Configure Control Domain:\t\t"+$script+" -O -S"
+    puts "List Guest Domains:\t\t\t"+$script+" -O -L"
+    puts "Configure Guest Domain:\t\t\t"+$script+" -O -c sol11u01gd01"
+    puts
+  end
   if examples.match(/client/)
     puts "Client related examples:"
     puts
@@ -365,6 +377,8 @@ def check_local_config(mode)
   $os_mach = $os_mach.chomp
   $os_rel  = %x[uname -r]
   $os_rel  = $os_rel.chomp
+  $os_info = %x[uname -a]
+  $os_info = $os_info.chomp
   if $os_name.match(/SunOS/)
     if $os_rel.match(/5\.11/)
       $default_net = "net0"
@@ -465,7 +479,7 @@ end
 
 if opt["H"]
   $os_name = %x[uname]
-  $os_mach = %x[uname -m]
+  $os_arch = %x[uname -p]
   if opt["M"]
     examples = "maint"
   end
@@ -473,7 +487,7 @@ if opt["H"]
     examples = "server"
   end
   if opt["O"]
-    if $os_mach.match(/sparc/)
+    if $os_arch.match(/sparc/)
       examples = "ldom"
     else
       examples = "vbox"
@@ -517,6 +531,16 @@ end
 
 if opt["h"]
   print_usage()
+end
+
+# If given -y assume yes to all questions
+
+if opt["y"]
+  $yes_to_all = 1
+  $destroy_fs = 1
+  if $verbose_mode == 1
+     puts "Warning:\tDestroying ZFS filesystems"+client_arch
+  end
 end
 
 # Enable test mode
@@ -717,8 +741,10 @@ end
 # Get/set system model
 
 if opt["m"]
-  client_model = opt["m"]
-  client_model = client_model.downcase
+  if !opt["O"] and !$os_name.match(/sparc/)
+    client_model = opt["m"]
+    client_model = client_model.downcase
+  end
 else
   if !opt["S"]
     if opt["J"] and !opt["L"] and !opt["d"]
@@ -743,9 +769,14 @@ if opt["O"]
     $vm_disk_size=$vm_disk_size.gsub(/G/,"000")
     vfunct = "vbox"
   else
-    vfunct = "ldom"
+    if opt["S"]
+      vfunct = "cdom"
+    else
+      vfunct = "gdom"
+    end
   end
 end
+
 if opt["F"]
   vfunct = "fusion"
 end
@@ -783,16 +814,6 @@ if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] 
   exit
 end
 
-# If given -y assume yes to all questions
-
-if opt["y"]
-  $yes_to_all = 1
-  $destroy_fs = 1
-  if $verbose_mode == 1
-     puts "Warning:\tDestroying ZFS filesystems"+client_arch
-  end
-end
-
 # Force architecture to 64 bit for ESX
 
 if opt["E"]
@@ -817,6 +838,7 @@ else
 end
 
 # If given -Z (Zones) make sure we are running on Solaris
+# If given -O (LDoms) make sure we are on T series
 
 if opt["Z"]
   if !$os_name.match(/SunOS|Linux|CentOS|Ubuntu|RedHat/)
@@ -835,8 +857,17 @@ if opt["Z"]
       vfunct = "lxc"
     end
   end
+end
+
+# Handle Zones/Containers and LDoms
+
+if opt["Z"] or opt["O"] and !opt["S"]
+  if opt["O"] and !$os_mach.match(/sun4v/)
+    puts "Warning:\tArchitecture does not support LDoms"
+    exit
+  end
   if opt["c"]
-    eval"[configure_#{vfunct}(client_name,client_ip,client_mac,client_arch,client_os,client_rel)]"
+    eval"[configure_#{vfunct}(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host)]"
   end
   if opt["L"]
     eval"[list_#{vfunct}s()]"
@@ -860,41 +891,9 @@ if opt["Z"]
   exit
 end
 
-# If given -O option and running on sparc handle LDOM routines
-
-if opt["O"] and $os_arch.match(/sparc/)
-  if !$os_mach.match(/sun4v/)
-    puts "Warning:\tArchitecture does not support LDoms"
-    exit
-  end
-  if opt["L"]
-    eval"[list_#{vfunct}s()]"
-  end
-  if opt["b"]
-    client_name = opt["b"]
-    eval"[boot_#{vfunct}(client_name)]"
-  end
-  if opt["s"]
-    client_name = opt["s"]
-    eval"[stop_#{vfunct}(client_name)]"
-  end
-  if opt["d"]
-    eval"[unconfigure_#{vfunct}(client_name)]"
-  end
-  if opt["p"]
-    client_cpus = opt["p"]
-  else
-    client_cpus = $ldom_guest_vcpu
-  end
-  if opt["c"]
-    eval"[configure_ldom(client_name,client_mac,client_arch,client_os,client_rel,client_cpus)]"
-  end
-  exit
-end
-
 # Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE
 
-if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["Y"]
+if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["Y"] or opt["S"]
   # Set function
   if opt["A"]
     funct = "ai"
@@ -917,7 +916,7 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["
   if opt["N"]
     funct = "pe"
   end
-  if opt["O"] or opt["F"]
+  if opt["O"] or opt["F"] and !$os_arch.match(/sparc/)
     if opt["c"]
       check_client_arch(client_arch)
       client_mac = create_client_mac(client_mac)
@@ -930,6 +929,10 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["
   end
   # Handle server related functions
   if opt ["S"]
+    if opt["O"] and $os_arch.match(/sparc/)
+      configure_cdom(publisher_host)
+      exit
+    end
     check_dhcpd_config(publisher_host)
     check_apache_config()
     # List server services
