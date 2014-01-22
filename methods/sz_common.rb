@@ -17,7 +17,7 @@ end
 def create_zone(client_name,zone_dir,output_file,client_rel)
   if $os_rel.match(/11/) and client_rel.match(/10/)
     branded_url = "http://www.oracle.com/technetwork/server-storage/solaris11/vmtemplates-zones-1949718.html"
-    branded_dir = "/export/zones"
+    branded_dir = "/export/isos"
     if $os_arch.match(/i386/)
       branded_file = branded_dir+"solaris-10u11-x86.bin"
     else
