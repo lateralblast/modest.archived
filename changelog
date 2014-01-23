@@ -227,3 +227,5 @@
 # Added initial Guest domain support
 # 1.1.4: Wed 22 Jan 2014 21:24:32 EST
 # Minor updates
+# 1.1.5: Thu 23 Jan 2014 14:13:30 EST
+# Fixed Kickstart and Preseed configuration file creation bugs

@@ -109,7 +109,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "ipaddress"
+  name = "ip"
   config = Ks.new(
     type      = "string",
     question  = "IP address",
@@ -135,7 +135,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  gateway = get_ipv4_default_route(client_ip)
+  gateway = client_ip.split(/\./)[0..2].join(".")+".254"
 
   name = "gateway"
   config = Ks.new(
@@ -144,6 +144,36 @@ def populate_ps_questions(service_name,client_name,client_ip)
     ask       = "yes",
     parameter = "netcfg/get_gateway",
     value     = gateway,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  broadcast = client_ip.split(/\./)[0..2].join(".")+".255"
+
+  name = "broadcast"
+  config = Ks.new(
+    type      = "",
+    question  = "Broadcast",
+    ask       = "yes",
+    parameter = "",
+    value     = broadcast,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  network_address = client_ip.split(/\./)[0..2].join(".")+".0"
+
+  name = "network_address"
+  config = Ks.new(
+    type      = "",
+    question  = "Network Address",
+    ask       = "yes",
+    parameter = "",
+    value     = network_address,
     valid     = "",
     eval      = "no"
     )
@@ -178,6 +208,9 @@ def populate_ps_questions(service_name,client_name,client_ip)
 
   client_domain = %x[domainname]
   client_domain = client_domain.chomp
+  if !client_domain.match(/[0-9]/)
+    client_domain = $default_domain
+  end
 
   name = "domain"
   config = Ks.new(

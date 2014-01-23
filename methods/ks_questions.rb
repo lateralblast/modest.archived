@@ -21,10 +21,7 @@ def get_ks_network()
   if $q_struct["bootproto"].value == "dhcp"
     result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value
   else
-    client_ip = $q_struct["ip"].value
-    client_name = $q_struct["hostname"].value
-    gateway = get_ipv4_default_route(client_ip)
-    result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value+" --ip="+client_ip+" --netmask="+$default_netmask+" --gateway "+gateway+" --nameserver="+$default_nameserver+" --hostname="+client_name
+    result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value+" --ip="+$q_struct["ip"].value+" --netmask="+$q_struct["netmask"].value+" --gateway "+$q_struct["gateway"].value+" --nameserver="+$q_struct["nameserver"].value+" --hostname="+$q_struct["hostname"].value
   end
   return result
 end
@@ -381,6 +378,64 @@ def populate_ks_questions(service_name,client_name,client_ip)
     ask       = "yes",
     parameter = "",
     value     = client_ip,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "netmask"
+  config = Ks.new(
+    type      = "",
+    question  = "Netmask",
+    ask       = "yes",
+    parameter = "",
+    value     = $default_netmask,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  gateway = client_ip.split(/\./)[0..2].join(".")+".254"
+
+  name = "gateway"
+  config = Ks.new(
+    type      = "",
+    question  = "Gateway",
+    ask       = "yes",
+    parameter = "",
+    value     = gateway,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  broadcast = client_ip.split(/\./)[0..2].join(".")+".255"
+
+  name = "broadcast"
+  config = Ks.new(
+    type      = "",
+    question  = "Broadcast",
+    ask       = "yes",
+    parameter = "",
+    value     = broadcast,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  network_address = client_ip.split(/\./)[0..2].join(".")+".0"
+
+  name = "network_address"
+  config = Ks.new(
+    type      = "",
+    question  = "Network Address",
+    ask       = "yes",
+    parameter = "",
+    value     = network_address,
     valid     = "",
     eval      = "no"
     )

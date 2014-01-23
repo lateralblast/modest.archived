@@ -27,6 +27,7 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   tftp_pxe_file = tftp_pxe_file.upcase
   tftp_pxe_file = "01"+tftp_pxe_file+".pxelinux"
   test_file     = $tftp_dir+"/"+tftp_pxe_file
+  tmp_file      = "/tmp/pxecfg"
   if !File.exists?(test_file)
     if service_name.match(/ubuntu/)
       pxelinux_file = service_name+"/images/pxeboot/netboot/pxelinux.0"
@@ -63,7 +64,7 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   ks_url       = "http://"+$default_host+"/"+service_name+"/"+client_name+".cfg"
   autoyast_url = "http://"+$default_host+"/"+service_name+"/"+client_name+".xml"
   install_url  = "http://"+$default_host+"/"+service_name
-  file         = File.open(pxe_cfg_file,"w")
+  file         = File.open(tmp_file,"w")
   file.write("DEFAULT LINUX\n")
   file.write("LABEL LINUX\n")
   file.write("  KERNEL #{vmlinuz_file}\n")
@@ -89,6 +90,9 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   append_string = append_string+"\n"
   file.write(append_string)
   file.close
+  message = "Creating:\tPXE configuration file "+pxe_cfg_file
+  command = "cp #{tmp_file} #{pxe_cfg_file} ; rm #{tmp_file}"
+  execute_command(message,command)
   if $verbose_mode == 1
     puts "Information:\tPXE menu file "+pxe_cfg_file+" contents:"
     puts
@@ -180,7 +184,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
         process_questions
         output_ps_header(output_file)
         output_file = repo_version_dir+"/"+client_name+"_post.sh"
-        post_list   = populate_ks_post_list(service_name)
+        post_list   = populate_ps_post_list(service_name)
         output_ks_post_list(post_list,output_file,service_name)
       end
     end
@@ -202,74 +206,51 @@ end
 
 def populate_ks_post_list(service_name)
   post_list   = []
-  if service_name.match(/centos|rhel|sles/)
-    admin_group = $q_struct["admingroup"].value
-    admin_user  = $q_struct["adminuser"].value
-    admin_crypt = $q_struct["admincrypt"].value
-    admin_home  = $q_struct["adminhome"].value
-    post_list.push("# Add Admin user")
-    post_list.push("groupadd #{admin_group}")
-    post_list.push("groupadd #{admin_user}")
-    post_list.push("# Add admin user")
-    post_list.push("useradd -p '#{admin_crypt}' -g #{admin_user} -G #{admin_group} -d #{admin_home} -m #{admin_user}")
-    post_list.push("# Setup sudoers")
-    post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers")
-    post_list.push("# Install VM tools")
-    post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
-    post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-DSA-KEY.pub")
-    post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub")
-    post_list.push("  ")
-    post_list.push("  OSREL=`lsb_release -r |awk '{print $2}' |cut -f1 -d'.'`")
-    post_list.push("  echo -e \"[vmware-tools]\nname=VMware Tools\nbaseurl=http://packages.vmware.com/tools/esx/latest/rhel$OSREL/#{client_arch}\nenabled=1\ngpgcheck=1\" >> /etc/yum.repos.d/vmware-tools.repo")
-    post_list.push("  yum -y install vmware-tools-esx-kmods vmware-tools-esx")
-    post_list.push("fi")
-    post_list.push("# Enable serial console")
-    post_list.push("sed -i 's/9600/115200/' /etc/inittab")
-    post_list.push("sed -i 's/kernel.*/& console=ttyS0,115200n8/' /etc/grub.conf")
-    if $use_alt_repo == 1
-      post_list.push("mkdir /tmp/rpms")
-      post_list.push("cd /tmp/rpms")
-      alt_url  = "http://"+$default_host
-      rpm_list = build_ks_alt_rpm_list(service_name)
-      alt_dir  = $repo_base_dir+"/"+service_name+"/alt"
-      if $verbose_mode == 1
-        puts "Checking:\tAdditional packages"
-      end
-      if File.directory?(alt_dir)
-        rpm_list.each do |rpm_url|
-          rpm_file = File.basename(rpm_url)
-          rpm_file = alt_dir+"/"+rpm_file
-          rpm_url  = alt_url+"/"+rpm_file
-          if File.exists?(rpm_file)
-            post_list.push("wget #{rpm_url}")
-          end
+  admin_group = $q_struct["admingroup"].value
+  admin_user  = $q_struct["adminuser"].value
+  admin_crypt = $q_struct["admincrypt"].value
+  admin_home  = $q_struct["adminhome"].value
+  post_list.push("# Add Admin user")
+  post_list.push("groupadd #{admin_group}")
+  post_list.push("groupadd #{admin_user}")
+  post_list.push("# Add admin user")
+  post_list.push("useradd -p '#{admin_crypt}' -g #{admin_user} -G #{admin_group} -d #{admin_home} -m #{admin_user}")
+  post_list.push("# Setup sudoers")
+  post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers")
+  post_list.push("# Install VM tools")
+  post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
+  post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-DSA-KEY.pub")
+  post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub")
+  post_list.push("  ")
+  post_list.push("  OSREL=`lsb_release -r |awk '{print $2}' |cut -f1 -d'.'`")
+  post_list.push("  echo -e \"[vmware-tools]\nname=VMware Tools\nbaseurl=http://packages.vmware.com/tools/esx/latest/rhel$OSREL/#{client_arch}\nenabled=1\ngpgcheck=1\" >> /etc/yum.repos.d/vmware-tools.repo")
+  post_list.push("  yum -y install vmware-tools-esx-kmods vmware-tools-esx")
+  post_list.push("fi")
+  post_list.push("# Enable serial console")
+  post_list.push("sed -i 's/9600/115200/' /etc/inittab")
+  post_list.push("sed -i 's/kernel.*/& console=ttyS0,115200n8/' /etc/grub.conf")
+  if $use_alt_repo == 1
+    post_list.push("mkdir /tmp/rpms")
+    post_list.push("cd /tmp/rpms")
+    alt_url  = "http://"+$default_host
+    rpm_list = build_ks_alt_rpm_list(service_name)
+    alt_dir  = $repo_base_dir+"/"+service_name+"/alt"
+    if $verbose_mode == 1
+      puts "Checking:\tAdditional packages"
+    end
+    if File.directory?(alt_dir)
+      rpm_list.each do |rpm_url|
+        rpm_file = File.basename(rpm_url)
+        rpm_file = alt_dir+"/"+rpm_file
+        rpm_url  = alt_url+"/"+rpm_file
+        if File.exists?(rpm_file)
+          post_list.push("wget #{rpm_url}")
         end
       end
-      post_list.push("rpm -i *.rpm")
-      post_list.push("cd /tmp")
-      post_list.push("rm -rf /tmp/rpms")
     end
-  else
-    post_list.push("# Install additional pacakges")
-    post_list.push("apt-get install -y puppet")
-    post_list.push("apt-get install -y nfs-common")
-    post_list.push("apt-get install -y openssh-server")
-    post_list.push("apt-get install -y python-software-properties")
-    post_list.push("apt-get install -y software-properties-common")
-    post_list.push("# Install VM tools")
-    post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
-    post_list.push("  apt-get install -y open-vm-tools")
-    post_list.push("fi")
-    post_list.push("# Setup sudoers")
-    post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers.d/sysadmin")
-    post_list.push("# Enable serial console")
-    post_list.push("echo 'start on stopped rc or RUNLEVEL=[12345]' > /etc/init/ttyS0.conf")
-    post_list.push("echo 'stop on runlevel [!12345]' >> /etc/init/ttyS0.conf")
-    post_list.push("echo 'respawn' >> /etc/init/ttyS0.conf")
-    post_list.push("echo 'exec /sbin/getty -L 115200 ttyS0 vt100' >> /etc/init/ttyS0.conf")
-    post_list.push("start getty")
-    post_list.push("sed -i 's/^#GRUB_TERMINAL/GRUB_TERMINAL=console/' /etc/default/grub")
-    post_list.push("echo 'GRUB_SERIAL_COMMAND=\"serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1\"' >> /etc/default/grub")
+    post_list.push("rpm -i *.rpm")
+    post_list.push("cd /tmp")
+    post_list.push("rm -rf /tmp/rpms")
   end
   post_list.push("")
   return post_list
@@ -291,23 +272,6 @@ def populate_ks_pkg_list(service_name)
 #    pkg_list.push("puppet")
   end
   return pkg_list
-end
-
-# Output the Preseed file contents
-
-def output_ps_header(output_file)
-  if $verbose_mode == 1
-    puts "Creating:\tPreseed file "+output_file
-  end
-  file=File.open(output_file, 'a')
-  $q_order.each do |key|
-    if $q_struct[key].parameter.match(/[A-z]/)
-      output = "d-i "+$q_struct[key].parameter+" "+$q_struct[key].type+" "+$q_struct[key].value+"\n"
-      file.write(output)
-    end
-  end
-  file.close
-  return
 end
 
 # Output the Kickstart file header
@@ -348,11 +312,14 @@ end
 # Output the ks packages list
 
 def output_ks_post_list(post_list,output_file,service_name)
+  tmp_file = "/tmp/postinstall"
   if service_name.match(/centos|rhel/)
-    file=File.open(output_file, 'a')
+    message = "Appending:\tPost install script "+output_file
+    command = "cp #{output_file} #{tmp_file}"
+    file=File.open(tmp_file, 'a')
     output = "\n%post\n"
   else
-    file=File.open(output_file, 'w')
+    file=File.open(tmp_file, 'w')
     output = "#!/bin/sh\n"
   end
   file.write(output)
@@ -361,6 +328,9 @@ def output_ks_post_list(post_list,output_file,service_name)
     file.write(output)
   end
   file.close
+  message = "Creating:\tPost install script "+output_file
+  command = "cp #{tmp_file} #{output_file} ; rm #{tmp_file}"
+  execute_command(message,command)
   if $verbose_mode == 1
     puts "Information:\tInstall file "+output_file+" contents:"
     puts

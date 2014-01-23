@@ -707,9 +707,14 @@ end
 # Restart DHCPd
 
 def restart_dhcpd()
-  function         = "refresh"
-  smf_service_name = "svc:/network/dhcp/server:ipv4"
-  output           = handle_smf_service(function,smf_service_name)
+  if $os_name.match(/SunOS/)
+    function         = "refresh"
+    smf_service_name = "svc:/network/dhcp/server:ipv4"
+    output           = handle_smf_service(function,smf_service_name)
+  else
+    service_name = "dhcp"
+    refresh_service(service_name)
+  end
   return output
 end
 
