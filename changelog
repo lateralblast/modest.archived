@@ -229,3 +229,5 @@
 # Minor updates
 # 1.1.5: Thu 23 Jan 2014 14:13:30 EST
 # Fixed Kickstart and Preseed configuration file creation bugs
+# 1.1.6: Thu 23 Jan 2014 15:47:48 EST
+# Started to add LXC support

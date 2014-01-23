@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.1.5
+# Version:      1.1.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -36,6 +36,8 @@ $ldom_base_dir          = "/ldoms"
 $zone_base_dir          = "/zones"
 $iso_mount_dir          = "/cdrom"
 $ai_base_dir            = "/export/auto_install"
+$lxc_base_dir           = "/lxc"
+$lxc_image_dir          = "/export/images"
 $work_dir               = ""
 $tmp_dir                = ""
 $alt_repo_name          = "alt"
@@ -962,7 +964,7 @@ end
 
 # Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE
 
-if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["Y"] or opt["S"]
+if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"]
   # Set function
   if opt["A"]
     funct = "ai"
@@ -984,6 +986,13 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["
   end
   if opt["N"]
     funct = "pe"
+  end
+  if opt["Z"]
+    if $os_name.match(/SunOS/)
+      funct = "zone"
+    else
+      funct = "lxc"
+    end
   end
   if opt["O"] or opt["F"] and !$os_arch.match(/sparc/)
     if opt["c"]
