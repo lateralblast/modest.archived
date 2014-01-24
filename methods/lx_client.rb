@@ -4,10 +4,300 @@
 
 def list_lxcs()
   puts "Available LXC clients:"
-  client_list = Dir.entries($lxc_base_dir)
+  client_list = %x[lxc-ls]
+  client_list = client_list.xplit(/\n/)
   client_list.each do |client_name|
     client_name = client_name.chomp
     puts client_name
   end
+  return
+end
+
+# Start container
+
+def boot_lxc(client_name)
+  message = "Checking:\tStatus of "+client_name
+  command = "lxc-list |grep '^#{client_name}'"
+  output  = execute_command(message,command)
+  if !output.match(/RUNNING/)
+    message = "Starting:\tClient "+client_name
+    command = "lxc-start -n #{client_name} -d"
+    execute_command(message,command)
+    if $use_serial == 1
+      system("lxc-console -n #{client_name}")
+    end
+  end
+  return
+end
+
+# Stop container
+
+def stop_lxc(client_name)
+  message = "Checking:\tStatus of "+client_name
+  command = "lxc-list |grep '^#{client_name}'"
+  output  = execute_command(message,command)
+  if output.match(/RUNNING/)
+    message = "Stopping:\tClient "+client_name
+    command = "lxc-stop -n #{client_name}"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Create LXC config
+
+def create_lxc_config(client_name,client_ip,client_mac)
+  tmp_file = "/tmp/lxc_"+client_name
+  if $os_info.match(/Ubuntu/)
+    client_dir  = $lxc_base_dir+"/"+client_name
+    config_file = client_dir+"/config"
+    message = "Creating:\tConfiguration for "+client_name
+    command = "cp #{config_file} #{tmp_file}"
+    execute_command(message,command)
+    copy = []
+    info = IO.readlines(config_file)
+    info.each do |line|
+      if line.match(/hwaddr/)
+        if client_mac.match(/[0-9]/)
+          output = "lxc.network.hwaddr = "+client_mac+"\n"
+          copy.push(output)
+          output = "lxc.network.ipv4 = "+client_ip+"\n"
+          copy.push(output)
+        else
+          copy.push(line)
+          output = "lxc.network.ipv4 = "+client_ip+"\n"
+          copy.push(output)
+        end
+      else
+        copy.push(line)
+      end
+    end
+  end
+  copy = copy.join
+  File.open(tmp_file,"w") { |file| file.write(copy) }
+  message = "Creating:\tNetwork configuration file "+config_file
+  command = "cp #{tmp_file} #{config_file} ; rm #{tmp_file}"
+  execute_command(message,command)
+  if $verbose_mode == 1
+    puts "Information:\tFile contents of "+config_file
+    system("cat #{config_file}")
+  end
+  file = File.open(tmp_file,"w")
+  gateway    = $q_struct["gateway"].value
+  broadcast  = $q_struct["broadcast"].value
+  netmask    = $q_struct["netmask"].value
+  network    = $q_struct["network_address"].value
+  nameserver = $q_struct["nameserver"].value
+  file.write("# The loopback network interface\n")
+  file.write("auto lo\n")
+  file.write("iface lo inet loopback\n")
+  file.write("\n")
+  file.write("address #{client_ip}\n")
+  file.write("gateway #{gateway}\n")
+  file.write("netmask #{netmask}\n")
+  file.write("network #{network}\n")
+  file.write("broadcast #{broadcast}\n")
+  file.write("dns-nameservers #{nameserver}\n")
+  file.write("\n")
+  file.close
+  client_dir = client_dir+"/rootfs"
+  net_file   = client_dir+"/etc/network/interfaces"
+  message    = "Creating:\tNetwork interface file "+net_file
+  command    = "cp #{tmp_file} #{net_file} ; rm #{tmp_file}"
+  execute_command(message,command)
+  user_username = $q_struct["user_username"].value
+  user_uid      = $q_struct["user_uid"].value
+  user_gid      = $q_struct["user_gid"].value
+  user_crypt    = $q_struct["user_crypt"].value
+  root_crypt    = $q_struct["root_crypt"].value
+  user_fullname = $q_struct["user_fullname"].value
+  user_home     = $q_struct["user_home"].value
+  user_shell    = $q_struct["user_shell"].value
+  passwd_file   = client_dir+"/etc/passwd"
+  shadow_file   = client_dir+"/etc/shadow"
+  info          = IO.readlines(passwd_file)
+  file          = File.open(tmp_file,"w")
+  info.each do |line|
+    field = line.split(":")
+    if field[0] != "ubuntu"
+      file.write(line)
+    end
+  end
+  output = user_username+":x:"+user_uid+":"+user_gid+":"+user_fullname+":"+user_home+":"+user_shell+"\n"
+  file.write(output)
+  file.close
+  message = "Creating:\tPassword file"
+  command = "cp #{tmp_file} #{passwd_file} ; rm #{tmp_file}"
+  execute_command(message,command)
+  if $verbose_mode == 1
+    puts "Information:\tFile contents of "+passwd_file
+    system("cat #{passwd_file}")
+  end
+  info = IO.readlines(shadow_file)
+  file = File.open(tmp_file,"w")
+  info.each do |line|
+    field = line.split(":")
+    if field[0] != "ubuntu" and field[0] != "root"
+      file.write(line)
+    end
+    if field[0] == "root"
+      field[1] = root_crypt
+      copy = field.join(":")
+      file.write(copy)
+    end
+  end
+  output = user_username+":"+user_crypt+":::99999:7:::\n"
+  file.write(output)
+  file.close
+  message = "Creating:\tShadow file"
+  command = "cp #{tmp_file} #{shadow_file} ; rm #{tmp_file}"
+  execute_command(message,command)
+  if $verbose_mode == 1
+    puts "Information:\tFile contents of "+passwd_file
+    system("cat #{shadow_file}")
+  end
+  client_home = client_dir+user_home
+  message = "Creating:\tSSH directory for "+user_username
+  command = "mkdir -p #{client_home}/.ssh ; cd #{client_dir}/home ; chown -R #{user_uid}:#{user_gid} #{user_username}"
+  execute_command(message,command)
+  # Copy admin user keys
+  rsa_file = user_home+"/.ssh/id_rsa.pub"
+  dsa_file = user_home+"/.ssh/id_dsa.pub"
+  key_file = client_home+"/.ssh/authorized_keys"
+  [rsa_file,dsa_file].each do |pub_file|
+    if File.exists?(pub_file)
+      message = "Copying:\tSSH public key "+pub_file+" to "+key_file
+      command = "cat #{pub_file} >> #{key_file}"
+      execute_command(message,command)
+    end
+  end
+  message = "Creating:\tSSH directory for root"
+  command = "mkdir -p #{client_dir}/root/.ssh ; cd #{client_dir} ; chown -R 0:0 root"
+  execute_command(message,command)
+  # Copy root keys
+  rsa_file = "/root/.ssh/id_rsa.pub"
+  dsa_file = "/root/.ssh/id_dsa.pub"
+  key_file = client_dir+"/root/.ssh/authorized_keys"
+  [rsa_file,dsa_file].each do |pub_file|
+    if File.exists?(pub_file)
+      message = "Copying:\tSSH public key "+pub_file+" to "+key_file
+      command = "cat #{pub_file} >> #{key_file}"
+      execute_command(message,command)
+    end
+  end
+  # Fix permissions
+  message = "Fixing:\tSSH permissions for "+user_username
+  command = "cd #{client_dir}/home ; chown -R #{user_uid}:#{user_gid} #{user_username}"
+  execute_command(message,command)
+  message = "Fixing:\tSSH permissions for root "
+  command = "cd #{client_dir} ; chown -R 0:0 root"
+  execute_command(message,command)
+  # Add sudoers entry
+  sudoers_file = client_dir+"/etc/sudoers.d/sysadmin"
+  message = "Creating:\tSudoers file "+sudoers_file
+  command = "echo 'sysadmin ALL=(ALL) NOPASSWD:ALL' > #{sudoers_file}"
+  execute_command(message,command)
+  # Create post install file
+  post_file = client_dir+"/root/postinstall"
+  File.open(tmp_file,"w")
+  file.write("")
+  file.close
+  return
+end
+
+# Create standard LXC
+
+def create_standard_lxc(client_name)
+  message = "Creating:\tStandard container "+client_name
+  if $os_info.match(/Ubuntu/)
+    command = "lxc-create -t ubuntu -n #{client_name}"
+  end
+  execute_command(message,command)
+  return
+end
+
+# Unconfigure LXC client
+
+def unconfigure_lxc(client_name)
+  stop_lxc(client_name)
+  message = "Deleting:\tClient "+client_name
+  command = "lxc-destroy -n #{client_name}"
+  execute_command(message,command)
+  client_ip = get_client_ip(client_name)
+  remove_hosts_entry(client_name,client_ip)
+  return
+end
+
+# Check LXC exists
+
+def check_lxc_exists(client_name)
+  message = "Checking:\tLXC "+client_name+" exists"
+  command = "lxc-ls |grep '#{client_name}'"
+  output  = execute_command(message,command)
+  if !output.match(/#{client_name}/)
+    puts "Warning:\tClient "+client_name+" doesn't exist"
+    exit
+  end
+  return
+end
+
+# Check LXC doesn't exist
+
+def check_lxc_doesnt_exist(client_name)
+  message = "Checking:\tLXC "+client_name+" doesn't exist"
+  command = "lxc-ls |grep '#{client_name}'"
+  output  = execute_command(message,command)
+  if output.match(/#{client_name}/)
+    puts "Warning:\tClient "+client_name+" already exists"
+    exit
+  end
+  return
+end
+
+# Populate post install list
+
+def populate_lxc_post()
+  post_list = []
+  post_list.push("# Install additional pacakges")
+  post_list.push("apt-get install -y puppet")
+  post_list.push("apt-get install -y nfs-common")
+  post_list.push("apt-get install -y openssh-server")
+  post_list.push("apt-get install -y python-software-properties")
+  post_list.push("apt-get install -y software-properties-common")
+  return post_list
+end
+
+# Post install package on container
+
+def create_lxc_post(client_name,post_list)
+  return
+end
+
+# Configure a container
+
+def configure_lxc(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host,image_file,service_name)
+  check_lxc_doesnt_exist(client_name)
+  if !service_name.match(/[A-z]/) and !image_file.match(/[A-z]/)
+    puts "Warning:\tImage file or Service name not specified"
+    puts "Warning:\tIf this is the first time you have run this command it may take a while"
+    puts "Information:\tCreating standard container"
+    populate_lxc_client_questions(client_ip)
+    process_questions()
+    create_standard_lxc(client_name)
+  end
+  if service_name.match(/[A-z]/)
+    image_file = $lxc_image_dir+"/"+service_name.gsub(/([0-9])_([0-9])/,'\1.\2').gsub(/_/,"-").gsub(/x86.64/,"x86_64")+".tar.gz"
+  end
+  if image_file.match(/[A-z]/)
+    if !File.exists?(image_file)
+      puts "Warning:\tImage file "+image_file+" does not exist"
+      exit
+    end
+  end
+  create_lxc_config(client_name,client_ip,client_mac)
+  add_hosts_entry(client_name,client_ip)
+  boot_lxc(client_name)
+  post_list = populate_lxc_post()
+  create_lxc_post(client_name,post_list)
   return
 end

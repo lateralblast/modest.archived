@@ -73,7 +73,7 @@ def check_cdom_config()
       puts "Warning:\tLDom configuration "+config+" already exists"
       exit
     end
-    if $os_info.match(/T5[1,2,4][2,4]|T3/)
+    if $os_info.match(/T5[0-9]|T3/)
       mau     = $q_struct["cdom_mau"].value
       message = "Allocating:\t"+mau+"Crypto unit(s) to primary domain"
       command = "ldm set-mau #{mau} primary"

@@ -389,6 +389,17 @@ def check_osx_dhcpd()
   return
 end
 
+# Get client IP
+
+def get_client_ip(client_name)
+  hosts_file = "/etc/hosts"
+  message   = "Getting:\tClient IP for "+client_name
+  command   = "cat #{hosts_file} |grep '#{client_name}$' |awk '{print $1}'"
+  output    = execute_command(message,command)
+  client_ip = output.chomp
+  return client_ip
+end
+
 # Add hosts entry
 
 def add_hosts_entry(client_name,client_ip)
@@ -399,7 +410,7 @@ def add_hosts_entry(client_name,client_ip)
   if !output.match(/#{client_name}/)
     backup_file(hosts_file)
     message = "Adding:\tHost "+client_name+" to "+hosts_file
-    command = "echo '#{client_name}\t#{client_ip}' >> #{hosts_file}"
+    command = "echo '#{client_ip} #{client_name}' >> #{hosts_file}"
     output  = execute_command(message,command)
   end
   return
@@ -408,22 +419,26 @@ end
 # Remove hosts entry
 
 def remove_hosts_entry(client_name,client_ip)
-  file_name="/etc/hosts"
-  message = "Checking:\tHosts file for "+client_name
-  command = "cat #{file_name} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
-  output  = execute_command(message,command)
-  copy=[]
+  tmp_file   = "/tmp/hosts"
+  hosts_file = "/etc/hosts"
+  message    = "Checking:\tHosts file for "+client_name
+  command    = "cat #{hosts_file} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
+  output     = execute_command(message,command)
+  copy       = []
   if output.match(/#{client_name}/)
-    file_info=IO.readlines(file_name)
+    file_info=IO.readlines(hosts_file)
     file_info.each do |line|
       if !line.match(/^#{client_ip}/)
-        if !line.mtach(/#{client_name}/)
+        if !line.match(/#{client_name}/)
           copy.push(line)
         end
       end
     end
+    File.open(tmp_file,"w") {|file| file.puts copy}
+    message = "Updating:\tHosts file "+hosts_file
+    command = "cp #{tmp_file} #{hosts_file} ; rm #{tmp_file}"
+    execute_command(message,command)
   end
-  File.open(file_name,"w") {|file| file.puts copy}
   return
 end
 
@@ -674,6 +689,7 @@ end
 def get_password_crypt(password)
   possible = [('a'..'z'),('A'..'Z'),(0..9),'.','/'].inject([]) {|s,r| s+Array(r)}
   salt     = Array.new(8){possible[rand(possible.size)]}
+  salt     = salt.join
   password = password.crypt("$1$#{salt}")
   return password
 end

@@ -78,6 +78,9 @@ $default_admin_group    = "wheel"
 $default_admin_home     = "/home/"+$default_admin_user
 $default_admin_shell    = "/bin/bash"
 $default_admin_uid      = "200"
+$default_admin_gid      = "200"
+$preseed_admin_uid      = "1000"
+$preseed_admin_gid      = "1000"
 $tftp_dir               = "/etc/netboot"
 $default_cluster        = "SUNWCprog"
 $default_install        = "initial_install"
@@ -290,8 +293,8 @@ def print_examples(examples)
   if examples.match(/lxc/)
     puts "Linux Container related examples:"
     puts
-    puts "List Containerss:\t\t\t"+$script+" -O -L"
-    puts "Configure Containers:\t\t\t"+$script+" -O -c sol11u01gd01"
+    puts "List Containerss:\t\t\t"+$script+" -Z -L"
+    puts "Configure Standard Container:\t\t"+$script+" -Z -c ubuntu1310lx01 -i 192.168.1.206"
     puts
   end
   if examples.match(/client|ks/)
@@ -423,6 +426,9 @@ def check_local_config(mode)
     $os_info = %x[lsb_release -i]
     $os_info = $os_info.chomp
   end
+  if $os_info.match(/Ubuntu/)
+    $lxc_base_dir = "/var/lib/lxc"
+  end
   if !$default_host.match(/[0-9]/)
     message = "Determining:\tDefault host IP"
     if $os_name.match(/SunOS/)
@@ -547,6 +553,7 @@ if opt["H"]
     end
   end
   if opt["F"]
+    check_promic_mode()
     examples = "fusion"
   end
   if opt["C"]
@@ -750,12 +757,23 @@ end
 # Get ISO file if given
 
 if opt["f"]
-  iso_file=opt["f"]
-  if $verbose_mode == 1
-     puts "Information:\tUsing ISO "+iso_file
+  if !opt["Z"]
+    iso_file=opt["f"]
+    if $verbose_mode == 1
+      puts "Information:\tUsing ISO "+iso_file
+    end
+  else
+    image_file=opt["f"]
+    if $verbose_mode == 1
+      puts "Information:\tUsing Image "+image_file
+    end
   end
 else
-  iso_file = ""
+  if opt["Z"]
+    image_file = ""
+  else
+    iso_file = ""
+  end
 end
 
 # Get architecture if given
@@ -934,11 +952,8 @@ if opt["Z"] or opt["O"] and !opt["S"]
     puts "Warning:\tArchitecture does not support LDoms"
     exit
   end
-  if !$os_arch.match(/sparc/)
-    eval"[check_#{vfunct}_install()]"
-  end
   if opt["c"]
-    eval"[configure_#{vfunct}(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host)]"
+    eval"[configure_#{vfunct}(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host,image_file,service_name)]"
   end
   if opt["L"]
     eval"[list_#{vfunct}s()]"

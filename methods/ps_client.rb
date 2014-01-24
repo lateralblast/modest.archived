@@ -33,7 +33,7 @@ end
 
 # Populate post commands
 
-def populate_ps_post_list(service_name)
+def populate_ps_post_list()
   post_list        = []
   client_ip        = $q_struct["ip"].value
   client_gateway   = $q_struct["gateway"].value
@@ -52,7 +52,7 @@ def populate_ps_post_list(service_name)
   post_list.push("  apt-get install -y open-vm-tools")
   post_list.push("fi")
   post_list.push("# Setup sudoers")
-  post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers.d/sysadmin")
+  post_list.push("echo \"#{admin_user} ALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers.d/sysadmin")
   post_list.push("# Enable serial console")
   post_list.push("echo 'start on stopped rc or RUNLEVEL=[12345]' > /etc/init/ttyS0.conf")
   post_list.push("echo 'stop on runlevel [!12345]' >> /etc/init/ttyS0.conf")

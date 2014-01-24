@@ -1,5 +1,9 @@
 # Code to manage Linux containers
 
+# Structure for questions
+
+Lx = Struct.new(:question, :ask, :value, :valid, :eval)
+
 # Check LXC install
 
 def check_lxc_install()
@@ -21,11 +25,7 @@ def check_lxc_install()
       execute_command(message,command)
     end
   end
+  check_dir_exists($lxc_base_dir)
   return
 end
 
-# Configure a container
-
-def contfigure_lxc(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host)
-  return
-end
