@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.1.9
+# Version:      1.2.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -53,6 +53,8 @@ $default_net            = "net0"
 $default_timezone       = "Australia/Victoria"
 $default_terminal       = "sun"
 $default_country        = "AU"
+$default_ubuntu_mirror  = $default_country.downcase+"archive.ubuntu.com"
+$local_ubuntu_mirror    = "mirror.aarnet.edu.au"
 $default_timeserver     = "0."+$default_country.downcase+".pool.ntp.org"
 $default_keymap         = "US-English"
 $default_environment    = "en_US.UTF-8"

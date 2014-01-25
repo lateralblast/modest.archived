@@ -237,3 +237,5 @@
 # Ubuntu LXC support
 # 1.1.9: Sat 25 Jan 2014 15:24:53 EST
 # LXC bug fixes
+# 1.2.0: Sat 25 Jan 2014 17:43:43 EST
+# Added code to use local mirror for apt sources
