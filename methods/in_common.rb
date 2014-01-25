@@ -409,7 +409,7 @@ def add_hosts_entry(client_name,client_ip)
   output  = execute_command(message,command)
   if !output.match(/#{client_name}/)
     backup_file(hosts_file)
-    message = "Adding:\tHost "+client_name+" to "+hosts_file
+    message = "Adding:\t\tHost "+client_name+" to "+hosts_file
     command = "echo '#{client_ip} #{client_name}' >> #{hosts_file}"
     output  = execute_command(message,command)
   end

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.1.6
+# Version:      1.1.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -295,6 +295,7 @@ def print_examples(examples)
     puts
     puts "List Containerss:\t\t\t"+$script+" -Z -L"
     puts "Configure Standard Container:\t\t"+$script+" -Z -c ubuntu1310lx01 -i 192.168.1.206"
+    puts "Execute post install script:\t\t"+$script+" -Z -p ubuntu1310lx01"
     puts
   end
   if examples.match(/client|ks/)
@@ -339,7 +340,7 @@ def print_examples(examples)
     puts
   end
   if examples.match(/client|vs/)
-    puts "AutoYast related examples:"
+    puts "ESX/VSphere related examples:"
     puts
     puts "List VS clients:\t\t"+$script+" -E -C -L"
     puts "Create VS client:\t\t"+$script+" -E -C -c vmware55vm01 -e 08:00:27:61:B7:AD -i 192.168.1.195 -n vmware_5_5_0_x86_64"
@@ -414,8 +415,6 @@ def check_local_config(mode)
   $os_arch = $os_arch.chomp
   $os_mach = %x[uname -m]
   $os_mach = $os_mach.chomp
-  $os_rel  = %x[uname -r]
-  $os_rel  = $os_rel.chomp
   if $os_name.match(/SunOS|Darwin/)
     $os_info = %x[uname -a]
     $os_info = $os_info.chomp
@@ -425,6 +424,13 @@ def check_local_config(mode)
   else
     $os_info = %x[lsb_release -i]
     $os_info = $os_info.chomp
+  end
+  if $os_name.match(/Linux/)
+    $os_rel = %x[lsb_release -r |awk '{print $2}']
+    $os_rel = $os_rel.chomp
+  else
+    $os_rel = %x[uname -r]
+    $os_rel = $os_rel.chomp
   end
   if $os_info.match(/Ubuntu/)
     $lxc_base_dir = "/var/lib/lxc"
@@ -914,12 +920,12 @@ end
 if opt["r"]
   client_rel = opt["r"]
   if $verbose_mode == 1
-    puts "Setting:\tSolaris version of zone to "+client_rel
+    puts "Setting:\tOperating System version of container to "+client_rel
   end
 else
   if $verbose_mode == 1
     client_rel = $os_rel
-    puts "Setting:\tSolaris version of zone to same as host ["+$os_rel+"]"
+    puts "Setting:\tOperating System version of container to same as host ["+$os_rel+"]"
   end
 end
 
@@ -970,6 +976,10 @@ if opt["Z"] or opt["O"] and !opt["S"]
     client_name = opt["g"]
     eval"[halt_#{vfunct}(client_name)]"
     exit
+  end
+  if opt["p"]
+    client_name = opt["p"]
+    eval"[execute_#{vfunct}_post(client_name)]"
   end
   if opt["d"]
     eval"[unconfigure_#{vfunct}(client_name)]"
