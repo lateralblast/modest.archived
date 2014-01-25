@@ -17,6 +17,7 @@ BOOTP based install services, eg:
 - Simpllfy creation of Solaris Zones
 - Simplify creation of Solaris VM Server for SPARC Control Domains
 - Simplify creation of Solaris VM Server for SPARC Guest Domains
+- Linux Containers (Currently Ubuntu support only)
 
 This script is a wrapper which sits on top of the exisitng tools.
 It changes defaults to be more suitable to customer environments,
@@ -39,6 +40,12 @@ patch repository script (goofball) to install patches, firmware and SRUs.
 
 Features
 ========
+
+Linux Container Creation
+
+- Installs required packages and sets up network for public facing containers
+  that can be connected to via ssh (Currently Ubuntu support only)
+- Creates containers and sets up network (Currently Ubuntu support only)
 
 Oracle VM Server for SPARC
 

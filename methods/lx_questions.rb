@@ -223,7 +223,7 @@ def populate_lxc_server_questions()
   config = Lx.new(
     question  = "IP address",
     ask       = "yes",
-    value     = client_ip,
+    value     = $default_host,
     valid     = "",
     eval      = "no"
     )

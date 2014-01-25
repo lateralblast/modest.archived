@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.1.8
+# Version:      1.1.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -27,7 +27,7 @@ require 'parseconfig'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPRSTUVWXYZtvy"
+$options                = "a:b:c:d:e:f:g:h:i:m:n:o:p:r:s:t:z:ABCDEFGHIJKLMNOPRSTUVWXYZtvy"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -293,7 +293,8 @@ def print_examples(examples)
   if examples.match(/lxc/)
     puts "Linux Container related examples:"
     puts
-    puts "List Containerss:\t\t\t"+$script+" -Z -L"
+    puts "Configure Container Services:\t\t"+$script+" -Z -S"
+    puts "List Containers:\t\t\t"+$script+" -Z -L"
     puts "Configure Standard Container:\t\t"+$script+" -Z -c ubuntu1310lx01 -i 192.168.1.206"
     puts "Execute post install script:\t\t"+$script+" -Z -p ubuntu1310lx01"
     puts
@@ -447,6 +448,10 @@ def check_local_config(mode)
     if $os_name.match(/Linux/)
       $default_net="eth0"
       command = "ifconfig #{$default_net} |grep 'inet ' |awk '{print $2}'"
+      test_ip = %x[#{command}]
+      if !test_ip.match(/inet/)
+        command = "ifconfig lxcbr0 |grep 'inet ' |awk '{print $2}'"
+      end
     end
     $default_host = execute_command(message,command)
     $default_host = $default_host.chomp
@@ -906,6 +911,14 @@ if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] 
   exit
 end
 
+# Set LXC server type
+
+if opt["t"]
+  server_type = opt["t"]
+else
+  server_type = "public"
+end
+
 # Force architecture to 64 bit for ESX
 
 if opt["E"]
@@ -1053,7 +1066,11 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["
       eval"[unconfigure_#{funct}_server(service_name)]"
       exit
     end
-    eval"[configure_#{funct}_server(client_arch,publisher_host,publisher_port,service_name,iso_file)]"
+    if opt["Z"] and !$os_name.match(/SunOS/)
+      eval"[configure_#{funct}_server(server_type)]"
+    else
+      eval"[configure_#{funct}_server(client_arch,publisher_host,publisher_port,service_name,iso_file)]"
+    end
     exit
   end
   # Perform maintenance related functions
