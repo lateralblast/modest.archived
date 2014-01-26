@@ -44,33 +44,38 @@ def stop_lxc(client_name)
   return
 end
 
-# Create LXC config
+# Create Centos container configuration
 
-def create_lxc_config(client_name,client_ip,client_mac)
+def create_centos_lxc_config(client_name)
   tmp_file = "/tmp/lxc_"+client_name
-  if $os_info.match(/Ubuntu/)
-    client_dir  = $lxc_base_dir+"/"+client_name
-    config_file = client_dir+"/config"
-    message = "Creating:\tConfiguration for "+client_name
-    command = "cp #{config_file} #{tmp_file}"
-    execute_command(message,command)
-    copy = []
-    info = IO.readlines(config_file)
-    info.each do |line|
-      if line.match(/hwaddr/)
-        if client_mac.match(/[0-9]/)
-          output = "lxc.network.hwaddr = "+client_mac+"\n"
-          copy.push(output)
-          output = "lxc.network.ipv4 = "+client_ip+"\n"
-          copy.push(output)
-        else
-          copy.push(line)
-          output = "lxc.network.ipv4 = "+client_ip+"\n"
-          copy.push(output)
-        end
+  return
+end
+
+# Create Ubuntu container config
+
+def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
+  tmp_file = "/tmp/lxc_"+client_name
+  client_dir  = $lxc_base_dir+"/"+client_name
+  config_file = client_dir+"/config"
+  message = "Creating:\tConfiguration for "+client_name
+  command = "cp #{config_file} #{tmp_file}"
+  execute_command(message,command)
+  copy = []
+  info = IO.readlines(config_file)
+  info.each do |line|
+    if line.match(/hwaddr/)
+      if client_mac.match(/[0-9]/)
+        output = "lxc.network.hwaddr = "+client_mac+"\n"
+        copy.push(output)
+        output = "lxc.network.ipv4 = "+client_ip+"\n"
+        copy.push(output)
       else
         copy.push(line)
+        output = "lxc.network.ipv4 = "+client_ip+"\n"
+        copy.push(output)
       end
+    else
+      copy.push(line)
     end
   end
   copy = copy.join
@@ -285,7 +290,7 @@ def populate_lxc_post()
   post_list.push("if [ \"`lsb_release -i |awk '{print $3}'`\" = \"Ubuntu\" ] ; then")
   post_list.push("  dpkg-reconfigure locales")
   post_list.push("  cp /etc/apt/sources.list /etc/apt/sources.list.orig")
-  post_list.push("  sed -i 's,#{$default_ubuntu_mirror},#{local_ubuntu_mirror},g' /etc/apt/sources.list.orig")
+  post_list.push("  sed -i 's,#{$default_ubuntu_mirror},#{$local_ubuntu_mirror},g' /etc/apt/sources.list.orig")
   post_list.push("  apt-get install -y avahi-daemon")
   post_list.push("  apt-get install -y libterm-readkey-perl 2> /dev/null")
   post_list.push("  apt-get install -y puppet 2> /dev/null")
@@ -293,6 +298,18 @@ def populate_lxc_post()
   post_list.push("  apt-get install -y openssh-server 2> /dev/null")
   post_list.push("  apt-get install -y python-software-properties 2> /dev/null")
   post_list.push("  apt-get install -y software-properties-common 2> /dev/null")
+  post_list.push("fi")
+  post_list.push("")
+  repo_file = "/etc/yum.repos.d/CentOS-Base.repo"
+  post_list.push("if [ \"`lsb_release -i |awk '{print $3}'`\" = \"Centos\" ] ; then")
+  post_list.push("  sed -i 's/^mirror./#&/g' #{repo_file}")
+  post_list.push("  sed -i 's/^#\\(baseurl\\)/\\1/g' #{repo_file}")
+  post_list.push("  sed -i 's,#{$default_centos_mirror},#{$local_centos_mirror}' #{repo_file}")
+  post_list.push("  yum -y install avahi-daemon")
+  post_list.push("  chkconfig avahi-daemon on")
+  post_list.push("  service avahi-daemon start")
+  post_list.push("  rpm -i http://fedora.mirror.uber.com.au/epel/5/i386/epel-release-5-4.noarch.rpm")
+  post_list.push("  yum -y install puppet")
   post_list.push("fi")
   post_list.push("")
   return post_list
@@ -344,17 +361,23 @@ def configure_lxc(client_name,client_ip,client_mac,client_arch,client_os,client_
     populate_lxc_client_questions(client_ip)
     process_questions()
     create_standard_lxc(client_name)
-  end
-  if service_name.match(/[A-z]/)
-    image_file = $lxc_image_dir+"/"+service_name.gsub(/([0-9])_([0-9])/,'\1.\2').gsub(/_/,"-").gsub(/x86.64/,"x86_64")+".tar.gz"
-  end
-  if image_file.match(/[A-z]/)
-    if !File.exists?(image_file)
-      puts "Warning:\tImage file "+image_file+" does not exist"
-      exit
+    if $os_info.match(/Ubuntu/)
+      create_ubuntu_lxc_config(client_name,client_ip,client_mac)
+    end
+    if $os_info.match(/RedHat|Centos/)
+      create_centos_lxc_config(client_name,client_ip,client_mac)
+    end
+  else
+    if service_name.match(/[A-z]/)
+      image_file = $lxc_image_dir+"/"+service_name.gsub(/([0-9])_([0-9])/,'\1.\2').gsub(/_/,"-").gsub(/x86.64/,"x86_64")+".tar.gz"
+    end
+    if image_file.match(/[A-z]/)
+      if !File.exists?(image_file)
+        puts "Warning:\tImage file "+image_file+" does not exist"
+        exit
+      end
     end
   end
-  create_lxc_config(client_name,client_ip,client_mac)
   add_hosts_entry(client_name,client_ip)
   boot_lxc(client_name)
   post_list = populate_lxc_post()

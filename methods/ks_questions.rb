@@ -216,18 +216,22 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "support_language"
-  config = Ks.new(
-    type      = "output",
-    question  = "Support Language",
-    ask       = "yes",
-    parameter = "langsupport",
-    value     = get_ks_language(),
-    valid     = "",
-    eval      = "get_ks_language()"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
+  if !service_name.match(/rhel_6|centos_6/)
+
+    name = "support_language"
+    config = Ks.new(
+      type      = "output",
+      question  = "Support Language",
+      ask       = "yes",
+      parameter = "langsupport",
+      value     = get_ks_language(),
+      valid     = "",
+      eval      = "get_ks_language()"
+      )
+    $q_struct[name] = config
+    $q_order.push(name)
+
+  end
 
   name = "keyboard"
   config = Ks.new(
@@ -397,6 +401,19 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
+  name = "nameserver"
+  config = Ks.new(
+    type      = "",
+    question  = "Nameserver(s)",
+    ask       = "yes",
+    parameter = "",
+    value     = $default_nameserver,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
   gateway = client_ip.split(/\./)[0..2].join(".")+".254"
 
   name = "gateway"
@@ -487,7 +504,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Root Password Configuration",
     ask       = "yes",
     parameter = "rootpw",
-    value     = get_ks_password(),
+    value     = "get_ks_password()",
     valid     = "",
     eval      = "get_ks_password()"
     )
@@ -564,7 +581,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Admin User Password",
     ask       = "yes",
     parameter = "",
-    value     = $default_root_password,
+    value     = $default_admin_password,
     valid     = "",
     eval      = "no"
     )
@@ -645,6 +662,19 @@ def populate_ks_questions(service_name,client_name,client_ip)
     value     = get_ks_bootloader(),
     valid     = "",
     eval      = "get_ks_bootloader()"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "zerombr"
+  config = Ks.new(
+    type      = "output",
+    question  = "Zero MBR",
+    ask       = "yes",
+    parameter = "zerombr",
+    value     = "yes",
+    valid     = "",
+    eval      = ""
     )
   $q_struct[name] = config
   $q_order.push(name)
@@ -733,7 +763,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Physical Volume Size",
     ask       = "yes",
     parameter = "",
-    value     = "0",
+    value     = "1",
     valid     = "",
     eval      = "no"
     )

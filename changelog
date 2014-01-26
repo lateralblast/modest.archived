@@ -239,3 +239,5 @@
 # LXC bug fixes
 # 1.2.0: Sat 25 Jan 2014 17:43:43 EST
 # Added code to use local mirror for apt sources
+# 1.2.1: Sun 26 Jan 2014 17:12:29 EST
+# Numerous bug fixes

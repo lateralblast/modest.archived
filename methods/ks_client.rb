@@ -171,7 +171,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     output_ks_header(output_file)
     pkg_list  = populate_ks_pkg_list(service_name)
     output_ks_pkg_list(pkg_list,output_file)
-    post_list = populate_ks_post_list(service_name)
+    post_list = populate_ks_post_list(client_arch,service_name)
     output_ks_post_list(post_list,output_file,service_name)
   else
     if service_name.match(/sles/)
@@ -204,7 +204,7 @@ end
 
 # Populate post commands
 
-def populate_ks_post_list(service_name)
+def populate_ks_post_list(client_arch,service_name)
   post_list   = []
   admin_group = $q_struct["admingroup"].value
   admin_user  = $q_struct["adminuser"].value
@@ -223,14 +223,32 @@ def populate_ks_post_list(service_name)
   post_list.push("")
   post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers")
   post_list.push("")
+  if service_name.match(/centos/)
+    if service_name.match(/centos_5|rhel_5/)
+      epel_url = "http://"+$local_epel_mirror+"/5/i386/epel-release-5-4.noarch.rpm"
+    end
+    if service_name.match(/centos_6|rhel_6/)
+      epel_url = "http://"+$local_epel_mirror+"/6/i386/epel-release-6-8.noarch.rpm"
+    end
+    repo_file = "/etc/yum.repos.d/CentOS-Base.repo"
+  end
+  post_list.push("# Change mirror for yum")
+  post_list.push("")
+  post_list.push("echo 'Changing default mirror for yum'")
+  post_list.push("cp #{repo_file} #{repo_file}.orig")
+  post_list.push("sed -i 's/^mirror./#&/g' #{repo_file}")
+  post_list.push("sed -i 's/^#\\(baseurl\\)/\\1/g' #{repo_file}")
+  post_list.push("sed -i 's,#{$default_centos_mirror},#{$local_centos_mirror},g' #{repo_file}")
+  post_list.push("")
   post_list.push("# Install VM tools")
   post_list.push("")
+  post_list.push("export OSREL=`lsb_release -r |awk '{print $2}' |cut -f1 -d'.'`")
+  post_list.push("export OSARCH=`uname -p`")
   post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
+  post_list.push("  echo 'Installing VMware RPMs'")
   post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-DSA-KEY.pub")
   post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub")
-  post_list.push("  ")
-  post_list.push("  OSREL=`lsb_release -r |awk '{print $2}' |cut -f1 -d'.'`")
-  post_list.push("  echo -e \"[vmware-tools]\nname=VMware Tools\nbaseurl=http://packages.vmware.com/tools/esx/latest/rhel$OSREL/#{client_arch}\nenabled=1\ngpgcheck=1\" >> /etc/yum.repos.d/vmware-tools.repo")
+  post_list.push("  echo -e \"[vmware-tools]\\nname=VMware Tools\\nbaseurl=http://packages.vmware.com/tools/esx/latest/rhel$OSREL/$OSARCH\\nenabled=1\\ngpgcheck=1\" >> /etc/yum.repos.d/vmware-tools.repo")
   post_list.push("  yum -y install vmware-tools-esx-kmods vmware-tools-esx")
   post_list.push("fi")
   post_list.push("")
@@ -241,6 +259,13 @@ def populate_ks_post_list(service_name)
   post_list.push("")
   post_list.push("chkconfig avahi-daemon on")
   post_list.push("service avahi-daemon start")
+  post_list.push("")
+  post_list.push("# Configure Epel repo")
+  post_list.push("")
+  post_list.push("rpm -i #{epel_url}")
+  post_list.push("yum update")
+  post_list.push("yum -y install nss-mdns")
+  post_list.push("yum -y install puppet")
   post_list.push("")
   if $use_alt_repo == 1
     post_list.push("mkdir /tmp/rpms")
@@ -274,7 +299,14 @@ end
 def populate_ks_pkg_list(service_name)
   pkg_list = []
   if service_name.match(/centos|rhel/)
-    pkg_list.push("@ core")
+    pkg_list.push("@base")
+    pkg_list.push("@core")
+    pkg_list.push("@console-internet")
+    pkg_list.push("@network-file-system-client")
+    pkg_list.push("@system-admin-tools")
+    if service_name.match(/centos_6|rhel_6/)
+      pkg_list.push("redhat-lsb-core")
+    end
     pkg_list.push("grub")
     pkg_list.push("e2fsprogs")
     pkg_list.push("lvm2")
@@ -282,9 +314,10 @@ def populate_ks_pkg_list(service_name)
     pkg_list.push("kernel-headers")
     pkg_list.push("libselinux-ruby")
     pkg_list.push("tk")
-    pkg_list.push("nss-mdns")
+    pkg_list.push("lftp")
+    pkg_list.push("dos2unix")
+    pkg_list.push("unix2dos")
     pkg_list.push("avahi")
-#    pkg_list.push("puppet")
   end
   return pkg_list
 end
@@ -333,9 +366,11 @@ def output_ks_post_list(post_list,output_file,service_name)
     command = "cp #{output_file} #{tmp_file}"
     file=File.open(tmp_file, 'a')
     output = "\n%post\n"
+    command = "cat #{tmp_file} >> #{output_file} ; rm #{tmp_file}"
   else
     file=File.open(tmp_file, 'w')
     output = "#!/bin/sh\n"
+    command = "cp #{tmp_file} #{output_file} ; rm #{tmp_file}"
   end
   file.write(output)
   post_list.each do |line|
@@ -344,7 +379,6 @@ def output_ks_post_list(post_list,output_file,service_name)
   end
   file.close
   message = "Creating:\tPost install script "+output_file
-  command = "cp #{tmp_file} #{output_file} ; rm #{tmp_file}"
   execute_command(message,command)
   if $verbose_mode == 1
     puts "Information:\tInstall file "+output_file+" contents:"

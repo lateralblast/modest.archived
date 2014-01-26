@@ -75,6 +75,9 @@ def configure_ks_pxe_boot(service_name,iso_arch)
     if !File.directory?(test_dir)
       if service_name.match(/centos/)
         rpm_dir = $repo_base_dir+"/"+service_name+"/CentOS"
+        if !File.directory?(rpm_dir)
+          rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
+        end
       else
         if service_name.match(/sles/)
           rpm_dir = $repo_base_dir+"/"+service_name+"/suse"
@@ -157,6 +160,7 @@ end
 # Configue Linux server
 
 def configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
+  iso_list = []
   check_dhcpd_config(publisher_host)
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)

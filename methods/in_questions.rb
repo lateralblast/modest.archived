@@ -3,6 +3,9 @@
 
 def process_questions()
   $q_order.each do |key|
+    if $verbose_mode == 1
+      puts "Processing:\tValue for "+key
+    end
     correct = 0
     if $q_struct[key].ask.match(/yes/)
       while correct != 1 do
@@ -18,9 +21,6 @@ def process_questions()
         else
           answer = $q_struct[key].value
           evaluate_answer(key,answer)
-          if $verbose_mode == 1
-            puts "Setting:\t"+key+" to "+answer
-          end
           correct = 1
         end
         if answer != ""

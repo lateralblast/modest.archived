@@ -649,7 +649,9 @@ def execute_command(message,command)
   if execute == 1
     if $id != 0
       if !command.match(/brew|hg|pip/)
-        command = "sudo -s -- \""+command+"\""
+        if $use_sudo != 0
+          command = "sudo -s -- \""+command+"\""
+        end
       end
     end
     output = %x[#{command}]
@@ -1062,7 +1064,7 @@ def mount_iso(iso_file)
     end
   else
     if iso_file.match(/CentOS/)
-      iso_test_dir = $iso_mount_dir+"/CentOS"
+      iso_test_dir = $iso_mount_dir+"/repodata"
     else
       if iso_file.match(/rhel/)
         iso_test_dir = $iso_mount_dir+"/Packages"
