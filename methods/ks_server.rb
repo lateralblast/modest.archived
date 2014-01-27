@@ -4,7 +4,7 @@
 # List available Kiskstart ISOs
 
 def list_ks_isos()
-  search_string = "CentOS|rhel"
+  search_string = "CentOS|rhel|SL"
   list_linux_isos(search_string)
   return
 end
@@ -70,7 +70,7 @@ end
 
 def configure_ks_pxe_boot(service_name,iso_arch)
   pxe_boot_dir = $tftp_dir+"/"+service_name
-  if service_name.match(/centos|rhel|sles/)
+  if service_name.match(/centos|rhel|sles|sl_/)
     test_dir     = pxe_boot_dir+"/usr"
     if !File.directory?(test_dir)
       if service_name.match(/centos/)
@@ -82,17 +82,32 @@ def configure_ks_pxe_boot(service_name,iso_arch)
         if service_name.match(/sles/)
           rpm_dir = $repo_base_dir+"/"+service_name+"/suse"
         else
-          rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
+          rpm_dir = $repo_base_dir+"/"+service_name+"/Scientific"
+          if !File.directory?(rpm_dir)
+            rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
+          end
         end
       end
       if File.directory?(rpm_dir)
-        message  = "Locating:\tSyslinux package"
-        command  = "cd #{rpm_dir} ; find . -name 'syslinux-[0-9]*' |grep '#{iso_arch}'"
-        output   = execute_command(message,command)
-        rpm_file = output.chomp
-        rpm_file = rpm_file.gsub(/\.\//,"")
-        rpm_file = rpm_dir+"/"+rpm_file
-        check_dir_exists(pxe_boot_dir)
+        if !service_name.match(/sl_/)
+          message  = "Locating:\tSyslinux package"
+          command  = "cd #{rpm_dir} ; find . -name 'syslinux-[0-9]*' |grep '#{iso_arch}'"
+          output   = execute_command(message,command)
+          rpm_file = output.chomp
+          rpm_file = rpm_file.gsub(/\.\//,"")
+          rpm_file = rpm_dir+"/"+rpm_file
+          check_dir_exists(pxe_boot_dir)
+        else
+          rpm_dir  = $work_dir+"/rpm"
+          if !File.directory?(rpm_dir)
+            check_dir_exists(rpm_dir)
+          end
+          rpm_url  = "http://"+$local_ubuntu_mirror+"/pub/centos/5/os/i386/CentOS/syslinux-4.02-7.2.el5.i386.rpm"
+          rpm_file = rpm_dir+"/syslinux-4.02-7.2.el5.i386.rpm"
+          if !File.exists?(rpm_file)
+            wget_file(rpm_url,rpm_file)
+          end
+        end
         message = "Copying:\tPXE boot files from "+rpm_file+" to "+pxe_boot_dir
         command = "cd #{pxe_boot_dir} ; #{$rpm2cpio_bin} #{rpm_file} | cpio -iud"
         output  = execute_command(message,command)
@@ -122,8 +137,13 @@ def configure_ks_pxe_boot(service_name,iso_arch)
     check_dir_exists(pxe_image_dir)
     pxe_image_dir = pxe_boot_dir+"/images/pxeboot"
     check_dir_exists(pxe_image_dir)
-    iso_image_dir = $repo_base_dir+"/"+service_name+"/install"
-    if !File.directory?(pxe_image_dir)
+    test_file = pxe_image_dir+"/vmlinuz"
+    if service_name.match(/ubuntu/)
+      iso_image_dir = $repo_base_dir+"/"+service_name+"/install"
+    else
+      iso_image_dir = $repo_base_dir+"/"+service_name+"/isolinux"
+    end
+    if !File.exists?(test_file)
       message = "Copying:\tPXE boot files from "+iso_image_dir+" to "+pxe_image_dir
       command = "cd #{pxe_image_dir} ; cp -r #{iso_image_dir}/* . "
       output  = execute_command(message,command)
@@ -150,8 +170,11 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
     if service_name.downcase.match(/redhat/)
       search_string = "rhel"
     end
+    if service_name.downcase.match(/scientific|sl_/)
+      search_string = "sl"
+    end
   else
-    search_string = "CentOS|rhel"
+    search_string = "CentOS|rhel|SL"
   end
   configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
   return
@@ -196,7 +219,7 @@ def list_ks_services()
   puts "Kickstart services:"
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
-    if service_name.match(/centos|rhel|ubuntu/)
+    if service_name.match(/centos|rhel|sl_/)
       puts service_name
     end
   end

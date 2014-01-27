@@ -241,3 +241,7 @@
 # Added code to use local mirror for apt sources
 # 1.2.1: Sun 26 Jan 2014 17:12:29 EST
 # Numerous bug fixes
+# 1.2.2: Sun 26 Jan 2014 22:02:27 EST
+# Added support for Scientific Linux
+# 1.2.3: Mon 27 Jan 2014 15:16:54 EST
+# Bug fixes for kickstart postinstall script

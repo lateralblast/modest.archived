@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.2.2
+# Version:      1.2.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -55,6 +55,8 @@ $default_terminal       = "sun"
 $default_country        = "AU"
 $default_ubuntu_mirror  = $default_country.downcase+"archive.ubuntu.com"
 $default_centos_mirror  = "mirror.centos.org"
+$default_sl_mirror      = "ftp.scientificlinux.org/linux"
+$local_sl_mirror        = "mirror.aarnet.edu.au/pub"
 $local_ubuntu_mirror    = "mirror.aarnet.edu.au"
 $local_centos_mirror    = "mirror.aarnet.edu.au/pub"
 $local_epel_mirror      = "mirror.aarnet.edu.au/pub/epel"

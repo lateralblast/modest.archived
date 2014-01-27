@@ -81,14 +81,18 @@ def get_linux_version_info(iso_file_name)
   iso_info     = iso_info.split(/-/)
   linux_distro = iso_info[0]
   linux_distro = linux_distro.downcase
-  if linux_distro.match(/centos|ubuntu|sles/)
+  if linux_distro.match(/centos|ubuntu|sles|sl/)
     if linux_distro.match(/sles/)
       iso_version = iso_info[1]+"."+iso_info[2]
       iso_version = iso_version.gsub(/SP/,"")
     else
-      iso_version = iso_info[1]
+      if linux_distro.match(/sl$/)
+        iso_version = iso_info[1].split(//).join(".")
+      else
+        iso_version = iso_info[1]
+      end
     end
-    if linux_distro.match(/centos/)
+    if linux_distro.match(/centos|sl$/)
       iso_arch = iso_info[2]
     else
       if linux_distro.match(/sles/)
@@ -130,6 +134,7 @@ def list_linux_isos(search_string)
     else
       puts "Service Name:\t"+service_name
     end
+    puts
   end
   return
 end
@@ -1063,7 +1068,7 @@ def mount_iso(iso_file)
       iso_test_dir = $iso_mount_dir+"/repo"
     end
   else
-    if iso_file.match(/CentOS/)
+    if iso_file.match(/CentOS|SL/)
       iso_test_dir = $iso_mount_dir+"/repodata"
     else
       if iso_file.match(/rhel/)

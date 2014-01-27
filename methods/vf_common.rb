@@ -222,7 +222,7 @@ def configure_ks_fusion_vm(client_name,client_mac,client_arch,client_os,client_r
     if client_name.match(/ubuntu/)
       client_os = "ubuntu"
     end
-    if client_name.match(/centos|redhat|rhel/)
+    if client_name.match(/centos|redhat|rhel|sl/) or client_os.downcase.match(/centos|redhat|rhel|sl|scientific|suse/)
       client_os = "rhel5"
     end
   end

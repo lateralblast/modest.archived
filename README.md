@@ -8,7 +8,7 @@ BOOTP based install services, eg:
 
 - Solaris 11 Automated Installer (AI) service
 - Solaris 10 (and earlier) Jumpstart services
-- Centos and RedHat Linux Kickstart services
+- Centos, Scientific, and RedHat Linux Kickstart services
 - Ubuntu Linux Preseed services
 - SuSE Linux AutoYast services
 - ESXi Kickstart services
