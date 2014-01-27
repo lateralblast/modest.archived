@@ -4,6 +4,7 @@
 
 def list_lxcs()
   puts "Available LXC clients:"
+  puts
   client_list = %x[lxc-ls]
   client_list = client_list.xplit(/\n/)
   client_list.each do |client_name|

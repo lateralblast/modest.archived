@@ -4,7 +4,7 @@
 # List available ISOs
 
 def list_vs_isos()
-  puts "Available ESX/VSphere ISOs:"
+  puts "Available vSphere ISOs:"
   puts
   search_string = "VMvisor"
   iso_list      = check_iso_base_dir(search_string)

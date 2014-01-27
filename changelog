@@ -245,3 +245,5 @@
 # Added support for Scientific Linux
 # 1.2.3: Mon 27 Jan 2014 15:16:54 EST
 # Bug fixes for kickstart postinstall script
+# 1.2.4: Tue 28 Jan 2014 10:49:00 EST
+# Cleaned up output code

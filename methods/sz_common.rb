@@ -5,6 +5,7 @@
 
 def list_zones()
   puts "Available Zones:"
+  puts
   message = ""
   command = "zoneadm list |grep -v global"
   output  = execute_command(message,command)

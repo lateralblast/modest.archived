@@ -4,7 +4,8 @@
 # List ks clients
 
 def list_vs_clients()
-  puts "VSphere clients:"
+  puts "Available vSphere clients:"
+  puts
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
     if service_name.match(/vmware/)

@@ -4,6 +4,8 @@
 # List available ISOs
 
 def list_js_isos()
+  puts "Available Jumpstart ISOs:"
+  puts
   search_string = "\\-ga\\-"
   iso_list      = check_iso_base_dir(search_string)
   iso_list.each do |iso_file|
@@ -23,6 +25,7 @@ def list_js_isos()
     else
       puts "Service Name:\t"+service_name
     end
+    puts
   end
   return
 end
@@ -191,7 +194,8 @@ end
 # List Jumpstart services
 
 def list_js_services()
-  puts "Jumpstart services:"
+  puts "Available Jumpstart services:"
+  puts
   service_list=Dir.entries($repo_base_dir)
   service_list.each do |service_name|
     if service_name.match(/^sol/) and !service_name.match(/sol_11/)

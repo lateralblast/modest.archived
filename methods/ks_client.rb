@@ -4,7 +4,8 @@
 # List ks clients
 
 def list_ks_clients()
-  puts "Kickstart clients:"
+  puts "Available Kickstart clients:"
+  puts
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
     if service_name.match(/centos|redhat/)
