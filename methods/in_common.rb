@@ -1115,7 +1115,7 @@ def copy_iso(iso_file,repo_version_dir)
       end
     end
   end
-  if !File.directory?(repo_version_dir)
+  if !File.directory?(repo_version_dir) and !File.symlink?(repo_version_dir)
     puts "Warning:\tRepository directory "+repo_version_dir+" does not exist"
     if $test_mode != 1
       exit

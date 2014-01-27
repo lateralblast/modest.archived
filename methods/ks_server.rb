@@ -180,6 +180,34 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
   return
 end
 
+# Configure local VMware repo
+
+def configure_ks_vmware_repo(service_name,client_arch)
+  repo_dir     = $repo_base_dir+"/"+service_name
+  vmware_dir   = repo_dir+"/vmware"
+  repodata_dir = vmware_dir+"/repodata"
+  vmware_url   = "http://packages.vmware.com/tools/esx/latest"
+  if service_name.match(/centos_5|rhel_5|sl_5/)
+    vmware_url   = vmware_url+"/rhel5/"+client_arch+"/"
+    repodata_url = vmware_url+"repodata/"
+  end
+  if service_name.match(/centos_6|rhel_6|sl_6/)
+    vmware_url   = vmware_url+"/rhel6/"+client_arch+"/"
+    repodata_url = vmware_url+"repodata/"
+  end
+  if !File.directory?(vmware_dir)
+    check_dir_exists(vmware_dir)
+    message = "Fetching:\tVMware RPMs"
+    command = "cd #{vmware_dir} ; lftp -e 'mget * ; quit' #{vmware_url}"
+    execute_command(message,command)
+    check_dir_exists(repodata_dir)
+    message = "Fetching:\tVMware RPM repodata"
+    command = "cd #{repodata_dir} ; lftp -e 'mget * ; quit' #{repodata_url}"
+    execute_command(message,command)
+  end
+  return
+end
+
 # Configue Linux server
 
 def configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
@@ -204,6 +232,9 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
       add_apache_alias(service_name)
       configure_ks_repo(iso_file_name,repo_version_dir)
       configure_ks_pxe_boot(service_name,iso_arch)
+      if service_name.match(/centos|rhel|sl_/)
+        configure_ks_vmware_repo(service_name,iso_arch)
+      end
     end
   else
     add_apache_alias(service_name)

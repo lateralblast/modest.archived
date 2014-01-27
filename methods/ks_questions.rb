@@ -59,10 +59,17 @@ def get_ks_bootloader()
   return result
 end
 
-# Construct ks clear  partition line
+# Construct ks clear partition line
 
 def get_ks_clearpart()
   result = "--all --drives="+$q_struct["bootdevice"].value+" --initlabel"
+  return result
+end
+
+# Construct ks services line
+
+def get_ks_services()
+  result = "--enabled="+$q_struct["enabled_services"].value+" --disabled="+$q_struct["disabled_services"].value
   return result
 end
 
@@ -507,6 +514,45 @@ def populate_ks_questions(service_name,client_name,client_ip)
     value     = "get_ks_password()",
     valid     = "",
     eval      = "get_ks_password()"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "enabled_services"
+  config = Ks.new(
+    type      = "",
+    question  = "Enabled Services",
+    ask       = "yes",
+    parameter = "",
+    value     = "avahi-daemon,ntp",
+    valid     = "",
+    eval      = ""
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "disabled_services"
+  config = Ks.new(
+    type      = "",
+    question  = "Disabled Services",
+    ask       = "yes",
+    parameter = "",
+    value     = "",
+    valid     = "",
+    eval      = ""
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "services"
+  config = Ks.new(
+    type      = "output",
+    question  = "Services",
+    ask       = "yes",
+    parameter = "services",
+    value     = "get_ks_services()",
+    valid     = "",
+    eval      = ""
     )
   $q_struct[name] = config
   $q_order.push(name)

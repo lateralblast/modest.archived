@@ -10,7 +10,7 @@ BOOTP based install services, eg:
 - Solaris 10 (and earlier) Jumpstart services
 - Centos, Scientific, and RedHat Linux Kickstart services
 - Ubuntu Linux Preseed services
-- SuSE Linux AutoYast services
+- SuSE Enterprise Linux AutoYast services
 - ESXi Kickstart services
 - Simplify creation of VirtualBox VMs
 - Simplify creation of VMware Fusion VMs

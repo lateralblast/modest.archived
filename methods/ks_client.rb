@@ -171,7 +171,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     output_ks_header(output_file)
     pkg_list  = populate_ks_pkg_list(service_name)
     output_ks_pkg_list(pkg_list,output_file)
-    post_list = populate_ks_post_list(client_arch,service_name)
+    post_list = populate_ks_post_list(client_arch,service_name,publisher_host)
     output_ks_post_list(post_list,output_file,service_name)
   else
     if service_name.match(/sles/)
@@ -204,7 +204,7 @@ end
 
 # Populate post commands
 
-def populate_ks_post_list(client_arch,service_name)
+def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list   = []
   admin_group = $q_struct["admingroup"].value
   admin_user  = $q_struct["adminuser"].value
@@ -254,7 +254,9 @@ def populate_ks_post_list(client_arch,service_name)
   post_list.push("")
   post_list.push("rpm -i #{epel_url}")
   post_list.push("yum -y update")
-  post_list.push("yum -y redhat-lsb-core")
+  if service_name.match(/sl_/)
+    post_list.push("yum -y install redhat-lsb-core")
+  end
   post_list.push("yum -y install nss-mdns")
   post_list.push("yum -y install puppet")
   post_list.push("")
@@ -267,10 +269,8 @@ def populate_ks_post_list(client_arch,service_name)
   post_list.push("export OSARCH=`uname -p`")
   post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
   post_list.push("  echo 'Installing VMware RPMs'")
-  post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-DSA-KEY.pub")
-  post_list.push("  rpm --import http://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub")
-  post_list.push("  echo -e \"[vmware-tools]\\nname=VMware Tools\\nbaseurl=http://packages.vmware.com/tools/esx/latest/rhel$OSREL/$OSARCH\\nenabled=1\\ngpgcheck=1\" >> /etc/yum.repos.d/vmware-tools.repo")
-  post_list.push("  yum -y install vmware-tools-esx-kmods vmware-tools-esx")
+  post_list.push("  echo -e \"[vmware-tools]\\nname=VMware Tools\\nbaseurl=http://#{publisher_host}/vmware\\nenabled=1\\ngpgcheck=0\" >> /etc/yum.repos.d/vmware-tools.repo")
+  post_list.push("  yum -y install vmware-tools-core")
   post_list.push("fi")
   post_list.push("")
   post_list.push("# Enable serial console")
@@ -331,6 +331,8 @@ def populate_ks_pkg_list(service_name)
     pkg_list.push("dos2unix")
     pkg_list.push("unix2dos")
     pkg_list.push("avahi")
+    pkg_list.push("ntp")
+    pkg_list.push("rsync")
     if service_name.match(/sl_6/)
       pkg_list.push("-samba-client")
     end

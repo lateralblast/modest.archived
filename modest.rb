@@ -365,6 +365,16 @@ def check_local_config(mode)
     execute_command(message,command)
     system("chmod +x #{$rpm2cpio_bin}")
   end
+  if $os_name.match(/SunOS/)
+    message = "Checking:\tPackage lftp installed"
+    command = "which lftp"
+    output  = execute_command(message,command)
+    if !output.match(/lftp/)
+      message = "Installing:\tPackage lftp"
+      command = "pkg install lftp"
+      execute_command(message,command)
+    end
+  end
   return
 end
 

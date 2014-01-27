@@ -82,9 +82,10 @@ def print_examples(examples)
     puts "Kickstart server related examples:"
     puts
     puts "List KS services:\t\t"+$script+" -K -S -L"
-    puts "List KS ISOs:\t\t"+$script+" -K -S -I"
+    puts "List KS ISOs:\t\t\t"+$script+" -K -S -I"
     puts "Configure KS services:\t\t"+$script+" -K -S"
-    puts "Unconfigure KS service:\t\t"+$script+" -K -S -z centos_5_9"
+    puts "Unconfigure KS service:\t\t"+$script+" -K -S -z centos_5_10_i386"
+    puts "Delete KS service:\t\t"+$script+" -K -S -z centos_5_10_i386 -y"
     puts
   end
   if examples.match(/server|ay/)

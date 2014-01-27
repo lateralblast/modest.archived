@@ -4,6 +4,8 @@
 # List available ISOs
 
 def list_vs_isos()
+  puts "Available ESX/VSphere ISOs:"
+  puts
   search_string = "VMvisor"
   iso_list      = check_iso_base_dir(search_string)
   iso_list.each do |iso_file|
@@ -28,6 +30,7 @@ def list_vs_isos()
     else
       puts "Service Name:\t"+service_name
     end
+    puts
   end
   return
 end
@@ -60,12 +63,23 @@ def unconfigure_vs_repo(service_name)
   remove_apache_alias(service_name)
   repo_version_dir = $repo_base_dir+"/"+service_name
   destroy_zfs_fs(repo_version_dir)
+  if File.symlink?(repo_version_dir)
+    message = "Removing:\tSymlink "+repo_version_dir
+    command = "rm #{repo_version_dir}"
+    execute_command(message,command)
+  end
+  netboot_repo_dir = $tftp_dir+"/"+service_name
+  if File.directory?(netboot_repo_dir)
+    message = "Removing:\tDirectory "+netboot_repo_dir
+    command = "rmdir #{netboot_repo_dir}"
+    execute_command(message,command)
+  end
   return
 end
 
 # Copy Linux ISO contents to
 
-def configure_vs_repo(iso_file,repo_version_dir)
+def configure_vs_repo(iso_file,repo_version_dir,service_name)
   check_zfs_fs_exists(repo_version_dir)
   check_dir = repo_version_dir+"/upgrade"
   if $verbose_mode == 1
@@ -73,6 +87,7 @@ def configure_vs_repo(iso_file,repo_version_dir)
   end
   if !File.directory?(check_dir)
     mount_iso(iso_file)
+    repo_version_dir = $tftp_dir+"/"+service_name
     copy_iso(iso_file,repo_version_dir)
     umount_iso()
   end
@@ -91,7 +106,7 @@ def configure_vs_pxe_boot(service_name)
   pxe_boot_dir = $tftp_dir+"/"+service_name
   test_dir     = pxe_boot_dir+"/usr"
   if !File.directory?(test_dir)
-    rpm_dir=$work_dir+"/rpms"
+    rpm_dir = $work_dir+"/rpms"
     check_dir_exists(rpm_dir)
     if File.directory?(rpm_dir)
       message  = "Locating:\tSyslinux package"
@@ -99,9 +114,9 @@ def configure_vs_pxe_boot(service_name)
       output   = execute_command(message,command)
       rpm_file = output.chomp
       if !rpm_file.match(/syslinux/)
-        rpm_file="syslinux-4.02-7.2.el5.i386.rpm"
+        rpm_file = "syslinux-4.02-7.2.el5.i386.rpm"
         rpm_file = rpm_dir+"/"+rpm_file
-        rpm_url="http://mirror.centos.org/centos/5/os/i386/CentOS/syslinux-4.02-7.2.el5.i386.rpm"
+        rpm_url  = "http://mirror.centos.org/centos/5/os/i386/CentOS/syslinux-4.02-7.2.el5.i386.rpm"
         wget_file(rpm_url,rpm_file)
       else
         rpm_file = rpm_dir+"/"+rpm_file
@@ -115,12 +130,14 @@ def configure_vs_pxe_boot(service_name)
       exit
     end
   end
-  pxe_image_dir=pxe_boot_dir+"/images"
-  if !File.directory?(pxe_image_dir)
-    iso_image_dir = $repo_base_dir+"/"+service_name+"/images"
-    message       = "Copying:\tPXE boot images from "+iso_image_dir+" to "+pxe_image_dir
-    command       = "cp -r #{iso_image_dir} #{pxe_boot_dir}"
-    output        = execute_command(message,command)
+  if !service_name.match(/vmware/)
+    pxe_image_dir=pxe_boot_dir+"/images"
+    if !File.directory?(pxe_image_dir)
+      iso_image_dir = $repo_base_dir+"/"+service_name+"/images"
+      message       = "Copying:\tPXE boot images from "+iso_image_dir+" to "+pxe_image_dir
+      command       = "cp -r #{iso_image_dir} #{pxe_boot_dir}"
+      output        = execute_command(message,command)
+    end
   end
   pxe_cfg_dir = $tftp_dir+"/pxelinux.cfg"
   check_dir_exists(pxe_cfg_dir)
@@ -137,6 +154,7 @@ end
 
 def configure_vs_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
   search_string = "VMvisor"
+  iso_list      = []
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)
       iso_list[0] = iso_file
@@ -144,7 +162,7 @@ def configure_vs_server(client_arch,publisher_host,publisher_port,service_name,i
       puts "Warning:\tISO file "+is_file+" does not exist"
     end
   else
-    iso_list=check_iso_base_dir(search_string)
+    iso_list = check_iso_base_dir(search_string)
   end
   if iso_list[0]
     iso_list.each do |iso_file_name|
@@ -159,7 +177,7 @@ def configure_vs_server(client_arch,publisher_host,publisher_port,service_name,i
       service_name     = vs_distro+"_"+iso_version+"_"+iso_arch
       repo_version_dir = $repo_base_dir+"/"+service_name
       add_apache_alias(service_name)
-      configure_vs_repo(iso_file_name,repo_version_dir)
+      configure_vs_repo(iso_file_name,repo_version_dir,service_name)
       configure_vs_pxe_boot(service_name)
     end
   else
@@ -174,6 +192,7 @@ end
 
 def list_vs_services()
   puts "VSphere services:"
+  puts
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
     if service_name.match(/vmware/)
