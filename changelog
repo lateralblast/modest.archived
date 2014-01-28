@@ -255,3 +255,5 @@
 # Update epel.repo to use local mirror
 # 1.2.8: Tue 28 Jan 2014 18:31:45 EST
 # Increased default /boot size
+# 1.2.9: Tue 28 Jan 2014 22:35:45 EST
+# Added dtrace install to OEL 6.5 Kickstart
