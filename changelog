@@ -251,3 +251,5 @@
 # Initial OEL support
 # 1.2.6: Tue 28 Jan 2014 17:55:35 EST
 # Fixed OEL support
+# 1.2.7: Tue 28 Jan 2014 18:19:05 EST
+# Update epel.repo to use local mirror

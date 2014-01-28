@@ -211,6 +211,7 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   admin_user  = $q_struct["adminuser"].value
   admin_crypt = $q_struct["admincrypt"].value
   admin_home  = $q_struct["adminhome"].value
+  epel_file   = "/etc/yum.repos.d/epel.repo"
   post_list.push("# Add Admin user")
   post_list.push("")
   post_list.push("groupadd #{admin_group}")
@@ -225,11 +226,11 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers")
   post_list.push("")
   if service_name.match(/centos|rhel|sl_|oel/)
-    if service_name.match(/centos_5|rhel_5|sl_5|oel_6/)
-      epel_url = "http://"+$local_epel_mirror+"/5/i386/epel-release-5-4.noarch.rpm"
+    if service_name.match(/centos_5|rhel_5|sl_5|oel_5/)
+      epel_url = "http://"+$local_epel_mirror+"/pub/epel/5/i386/epel-release-5-4.noarch.rpm"
     end
     if service_name.match(/centos_6|rhel_6|sl_6|oel_6/)
-      epel_url = "http://"+$local_epel_mirror+"/6/i386/epel-release-6-8.noarch.rpm"
+      epel_url = "http://"+$local_epel_mirror+"/pub/epel/6/i386/epel-release-6-8.noarch.rpm"
     end
     if service_name.match(/centos/)
       repo_file = "/etc/yum.repos.d/CentOS-Base.repo"
@@ -254,6 +255,9 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("# Configure Epel repo")
   post_list.push("")
   post_list.push("rpm -i #{epel_url}")
+  post_list.push("sed -i 's/^mirror./#&/g' #{epel_file}")
+  post_list.push("sed -i 's/^#\\(baseurl\\)/\\1/g' #{epel_file}")
+  post_list.push("sed -i 's,#{$default_epel_mirror},#{$local_epel_mirror},g' #{epel_file}")
   post_list.push("yum -y update")
   if service_name.match(/sl_/)
     post_list.push("yum -y install redhat-lsb-core")
