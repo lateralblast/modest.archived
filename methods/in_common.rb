@@ -81,7 +81,10 @@ def get_linux_version_info(iso_file_name)
   iso_info     = iso_info.split(/-/)
   linux_distro = iso_info[0]
   linux_distro = linux_distro.downcase
-  if linux_distro.match(/centos|ubuntu|sles|sl/)
+  if linux_distro.match(/oraclelinux/)
+    linux_distro = "oel"
+  end
+  if linux_distro.match(/centos|ubuntu|sles|sl|oel/)
     if linux_distro.match(/sles/)
       iso_version = iso_info[1]+"."+iso_info[2]
       iso_version = iso_version.gsub(/SP/,"")
@@ -89,13 +92,18 @@ def get_linux_version_info(iso_file_name)
       if linux_distro.match(/sl$/)
         iso_version = iso_info[1].split(//).join(".")
       else
-        iso_version = iso_info[1]
+        if linux_distro.match(/oel/)
+          iso_version = iso_info[1]+"."+iso_info[2]
+          iso_version = iso_version.gsub(/[A-z]/,"")
+        else
+          iso_version = iso_info[1]
+        end
       end
     end
     if linux_distro.match(/centos|sl$/)
       iso_arch = iso_info[2]
     else
-      if linux_distro.match(/sles/)
+      if linux_distro.match(/sles|oel/)
         iso_arch  = iso_info[4]
       else
         iso_arch = iso_info[3]
@@ -882,7 +890,9 @@ end
 
 def check_iso_base_dir(search_string)
   iso_list = []
-  puts "Checking:\t"+$iso_base_dir
+  if $verbose_mode == 1
+    puts "Checking:\t"+$iso_base_dir
+  end
   check_zfs_fs_exists($iso_base_dir)
   message  = "Getting:\t"+$iso_base_dir+" contents"
   command  = "ls #{$iso_base_dir}/*.iso |egrep '#{search_string}'"
@@ -1071,7 +1081,7 @@ def mount_iso(iso_file)
     if iso_file.match(/CentOS|SL/)
       iso_test_dir = $iso_mount_dir+"/repodata"
     else
-      if iso_file.match(/rhel/)
+      if iso_file.match(/rhel|OracleLinux/)
         iso_test_dir = $iso_mount_dir+"/Packages"
       else
         if iso_file.match(/VM/)
@@ -1105,7 +1115,7 @@ def copy_iso(iso_file,repo_version_dir)
     test_dir     = repo_version_dir+"/publisher"
   else
     iso_repo_dir = $iso_mount_dir
-    if iso_file.match(/CentOS|rhel/)
+    if iso_file.match(/CentOS|rhel|OracleLinux/)
       test_dir     = repo_version_dir+"/isolinux"
     else
       if iso_file.match(/VM/)

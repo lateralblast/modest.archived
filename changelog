@@ -247,3 +247,5 @@
 # Bug fixes for kickstart postinstall script
 # 1.2.4: Tue 28 Jan 2014 10:49:00 EST
 # Cleaned up output code
+# 1.2.5: Tue 28 Jan 2014 12:09:07 EST
+# Initial OEL support

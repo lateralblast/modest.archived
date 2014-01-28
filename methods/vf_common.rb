@@ -11,10 +11,25 @@ end
 # List Linux KS VMware Fusion VMs
 
 def list_ks_fusion_vms()
-  search_string = "rhel|centos|ubuntu"
+  search_string = "rhel|centos|oel"
   list_fusion_vms(search_string)
   return
 end
+
+# List Linux Preseed VMware Fusion VMs
+
+def list_ps_fusion_vms()
+  search_string = "ubuntu"
+  list_fusion_vms(search_string)
+  return
+end
+
+# List Linux AutoYast VMware Fusion VMs
+
+def list_ay_fusion_vms()
+  search_string = "sles|suse"
+  list_fusion_vms(search_string)
+  return
 
 # List Solaris Kickstart VMware Fusion VMs
 
@@ -222,7 +237,7 @@ def configure_ks_fusion_vm(client_name,client_mac,client_arch,client_os,client_r
     if client_name.match(/ubuntu/)
       client_os = "ubuntu"
     end
-    if client_name.match(/centos|redhat|rhel|sl/) or client_os.downcase.match(/centos|redhat|rhel|sl|scientific|suse/)
+    if client_name.match(/centos|redhat|rhel|sl|scientific|oel|suse/) or client_os.downcase.match(/centos|redhat|rhel|sl|scientific|oel|suse/)
       client_os = "rhel5"
     end
   end
