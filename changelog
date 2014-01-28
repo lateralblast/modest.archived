@@ -253,3 +253,5 @@
 # Fixed OEL support
 # 1.2.7: Tue 28 Jan 2014 18:19:05 EST
 # Update epel.repo to use local mirror
+# 1.2.8: Tue 28 Jan 2014 18:31:45 EST
+# Increased default /boot size

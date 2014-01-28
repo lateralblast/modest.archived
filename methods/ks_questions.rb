@@ -800,7 +800,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Boot Size",
     ask       = "yes",
     parameter = "",
-    value     = "100",
+    value     = "200",
     valid     = "",
     eval      = "no"
     )
