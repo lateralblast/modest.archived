@@ -30,6 +30,7 @@ def list_ay_fusion_vms()
   search_string = "sles|suse"
   list_fusion_vms(search_string)
   return
+end
 
 # List Solaris Kickstart VMware Fusion VMs
 
