@@ -1014,7 +1014,11 @@ def add_apache_alias(service_base_name)
     execute_command(message,command)
     output = File.open(tmp_file,"a")
     output.write("<Directory #{repo_version_dir}>\n")
-    output.write("Options Indexes\n")
+    if service_base_name.match(/oel/)
+      output.write("Options Indexes FollowSymLinks\n")
+    else
+      output.write("Options Indexes\n")
+    end
     output.write("Allow from #{$default_apache_allow}\n")
     output.write("</Directory>\n")
     output.write("Alias /#{service_base_name} #{repo_version_dir}\n")

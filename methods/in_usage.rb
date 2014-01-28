@@ -39,11 +39,16 @@ def print_examples(examples)
     puts
   end
   if examples.match(/fusion/)
-    puts "Creating VMware Fusion VM examples:"
+    puts "Creating Kickstart VMware Fusion VM examples:"
     puts
     puts "Create KS (Linux) VM:\t\t\t"+$script+" -K -F -c centos59vm01 -a x86_64 -e 00:50:56:34:4E:7A"
     puts "Create KS (Linxu) VM:\t\t\t"+$script+" -K -F -c centos65vm01 -e 00:50:56:34:4E:7B -a x86_64"
     puts "Create KS (Linxu) VM:\t\t\t"+$script+" -K -F -c sl64vm01 -e 00:50:56:34:4E:FB -a x86_64"
+    puts "Create KS (Linxu) VM:\t\t\t"+$script+" -K -F -c oel65vm01 -e 00:50:56:34:4E:BB -a x86_64"
+    puts "Create KS (Linxu) VM:\t\t\t"+$script+" -K -F -c rhel63vm01 -e 00:50:56:34:4E:AA -a x86_64"
+    puts
+    puts "Creating other VMware Fusion VM examples:"
+    puts
     puts "Create PS (Linux) VM:\t\t\t"+$script+" -U -F -c ubuntu1310vm01 -a x86_64 -e 08:00:27:BA:34:7C"
     puts "Create AY (Linux) VM:\t\t\t"+$script+" -Y -F -c sles11sp2vm01 -a x86_64 -e 08:00:27:BA:34:7D"
     puts "Create JS (Solaris 10) VM:\t\t"+$script+" -J -F -c sol10u11vm01 -a i386 -e 00:0C:29:FA:0C:7F"
@@ -56,6 +61,7 @@ def print_examples(examples)
     puts "Delete KS (Linux) VM:\t\t\t"+$script+" -F -d centos59vm01"
     puts "Delete KS (Linux) VM:\t\t\t"+$script+" -F -d centos65vm01"
     puts "Delete KS (Linux) VM:\t\t\t"+$script+" -F -d sl64vm01"
+    puts "Delete KS (Linux) VM:\t\t\t"+$script+" -F -d rhel63vm01"
     puts "Delete JS (Solaris 10) VM:\t\t"+$script+" -F -d sol10u11vm01"
     puts "Delete AI (Solaris 11) VM:\t\t"+$script+" -F -d sol11u01vm03"
     puts "Delete VS (ESXi) VM:\t\t\t"+$script+" -F -d vmware55vm01"
@@ -156,16 +162,22 @@ def print_examples(examples)
     puts
   end
   if examples.match(/client|ks/)
-    puts "Kickstart client related examples:"
+    puts "Kickstart client creation related examples:"
     puts
     puts "List KS clients:\t\t"+$script+" -K -C -L"
     puts "Create KS client:\t\t"+$script+" -K -C -c centos59vm01 -e 00:50:56:34:4E:7A -a x86_64 -i 192.168.1.194 -n centos_5_9_x86_64"
     puts "Create KS client:\t\t"+$script+" -K -C -c centos65vm01 -e 00:50:56:34:4E:7B -a x86_64 -i 192.168.1.184 -n centos_6_5_x86_64"
     puts "Create KS client:\t\t"+$script+" -K -C -c sl64vm01 -e 00:50:56:34:4E:FB -a x86_64 -i 192.168.1.185 -n sl_6_4_x86_64"
+    puts "Create KS client:\t\t"+$script+" -K -C -c oel65vm01 -e 00:50:56:34:4E:BB -a x86_64 -i 192.168.1.186 -n oel_6_5_x86_64"
+    puts "Create KS client:\t\t"+$script+" -K -C -c rhel63vm01 -e 00:50:56:34:4E:AA -a x86_64 -i 192.168.1.187 -n rhel_6_3_x86_64"
+    puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
+    puts
+    puts "Kickstart client deletion related examples:"
+    puts
     puts "Delete KS client:\t\t"+$script+" -K -C -d centos59vm01"
     puts "Delete KS client:\t\t"+$script+" -K -C -d centos65vm01"
     puts "Delete KS client:\t\t"+$script+" -K -C -d sl64vm01"
-    puts "Configure KS client PXE:\t"+$script+" -K -P -c centos59vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_9_x86_64"
+    puts "Delete KS client:\t\t"+$script+" -K -C -d oel65vm01"
     puts
   end
   if examples.match(/client|ai/)

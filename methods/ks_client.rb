@@ -166,7 +166,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
   if File.exists?(output_file)
     File.delete(output_file)
   end
-  if service_name.match(/rhel|centos|sl_/)
+  if service_name.match(/rhel|centos|sl_|oel/)
     populate_ks_questions(service_name,client_name,client_ip)
     process_questions()
     output_ks_header(output_file)
@@ -224,11 +224,11 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("")
   post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers")
   post_list.push("")
-  if service_name.match(/centos|rhel|sl_/)
-    if service_name.match(/centos_5|rhel_5|sl_5/)
+  if service_name.match(/centos|rhel|sl_|oel/)
+    if service_name.match(/centos_5|rhel_5|sl_5|oel_6/)
       epel_url = "http://"+$local_epel_mirror+"/5/i386/epel-release-5-4.noarch.rpm"
     end
-    if service_name.match(/centos_6|rhel_6|sl_6/)
+    if service_name.match(/centos_6|rhel_6|sl_6|oel_6/)
       epel_url = "http://"+$local_epel_mirror+"/6/i386/epel-release-6-8.noarch.rpm"
     end
     if service_name.match(/centos/)
@@ -310,7 +310,7 @@ end
 
 def populate_ks_pkg_list(service_name)
   pkg_list = []
-  if service_name.match(/centos|rhel|sl_/)
+  if service_name.match(/centos|rhel|sl_|oel/)
     pkg_list.push("@base")
     pkg_list.push("@core")
     pkg_list.push("@console-internet")
@@ -318,7 +318,7 @@ def populate_ks_pkg_list(service_name)
       pkg_list.push("@network-file-system-client")
     end
     pkg_list.push("@system-admin-tools")
-    if service_name.match(/centos_6|rhel_6/)
+    if service_name.match(/centos_6|rhel_6|oel_6/)
       pkg_list.push("redhat-lsb-core")
     end
     pkg_list.push("grub")
@@ -380,7 +380,7 @@ end
 
 def output_ks_post_list(post_list,output_file,service_name)
   tmp_file = "/tmp/postinstall"
-  if service_name.match(/centos|rhel|sl_/)
+  if service_name.match(/centos|rhel|sl_|oel/)
     message = "Appending:\tPost install script "+output_file
     command = "cp #{output_file} #{tmp_file}"
     file=File.open(tmp_file, 'a')

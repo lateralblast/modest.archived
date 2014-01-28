@@ -23,6 +23,9 @@ def get_ks_network()
   else
     result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value+" --ip="+$q_struct["ip"].value+" --netmask="+$q_struct["netmask"].value+" --gateway "+$q_struct["gateway"].value+" --nameserver="+$q_struct["nameserver"].value+" --hostname="+$q_struct["hostname"].value
   end
+  if $q_struct["service_name"].value.match(/oel/)
+    result = result+" --onboot=on"
+  end
   return result
 end
 
@@ -144,6 +147,19 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct = {}
   $q_order  = []
 
+  name = "service_name"
+  config = Ks.new(
+    type      = "",
+    question  = "Service Name",
+    ask       = "yes",
+    parameter = "",
+    value     = service_name,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
   name = "ks_header"
   config = Ks.new(
     type      = "output",
@@ -156,6 +172,20 @@ def populate_ks_questions(service_name,client_name,client_ip)
     )
   $q_struct[name] = config
   $q_order.push(name)
+
+  name = "firewall"
+  config = Ks.new(
+    type      = "output",
+    question  = "Firewall",
+    ask       = "yes",
+    parameter = "firewall",
+    value     = "--enabled --ssh",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
 
   name = "console"
   config = Ks.new(
@@ -223,7 +253,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  if !service_name.match(/rhel_6|centos_6|sl_6/)
+  if !service_name.match(/rhel_6|centos_6|sl_6|oel_6/)
 
     name = "support_language"
     config = Ks.new(
