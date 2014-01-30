@@ -138,9 +138,11 @@ def print_examples(examples)
     puts
     puts "List Zones:\t\t\t"+$script+" -Z -L"
     puts "Configure Zone:\t\t\t"+$script+" -Z -c sol11u01z01 -i 192.168.1.181"
+    puts "Configure Branded Zone:\t\t"+$script+" -Z -c sol10u11z01 -i 192.168.1.171 -f /export/isos/solaris-10u11-x86.bin"
+    puts "Configure Branded Zone:\t\t"+$script+" -Z -c sol10u11z02 -i 192.168.1.172 -n sol_10_11_i386"
     puts "Delete Zone:\t\t\t"+$script+" -Z -d sol11u01z01"
     puts "Boot Zone:\t\t\t"+$script+" -Z -b sol11u01z01"
-    puts "Boot Zone and connect to console:\t"+$script+" -Z -b sol11u01z01 -B"
+    puts "Boot Zone (connect to console):\t"+$script+" -Z -b sol11u01z01 -B"
     puts "Halt Zone:\t\t\t"+$script+" -Z -s sol11u01z01"
     puts
   end

@@ -128,7 +128,7 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   file          = File.open(tmp_file,"w")
   info.each do |line|
     field = line.split(":")
-    if field[0] != "ubuntu"
+    if field[0] != "ubuntu" and field[0] != "#{user_username}"
       file.write(line)
     end
   end
@@ -136,7 +136,7 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   file.write(output)
   file.close
   message = "Creating:\tPassword file"
-  command = "cp #{tmp_file} #{passwd_file} ; rm #{tmp_file}"
+  command = "cat #{tmp_file} > #{passwd_file} ; rm #{tmp_file}"
   execute_command(message,command)
   if $verbose_mode == 1
     puts "Information:\tFile contents of "+passwd_file
@@ -146,7 +146,7 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   file = File.open(tmp_file,"w")
   info.each do |line|
     field = line.split(":")
-    if field[0] != "ubuntu" and field[0] != "root"
+    if field[0] != "ubuntu" and field[0] != "root" and field[0] != "#{user_username}"
       file.write(line)
     end
     if field[0] == "root"
@@ -159,10 +159,10 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   file.write(output)
   file.close
   message = "Creating:\tShadow file"
-  command = "cp #{tmp_file} #{shadow_file} ; rm #{tmp_file}"
+  command = "cat #{tmp_file} > #{shadow_file} ; rm #{tmp_file}"
   execute_command(message,command)
   if $verbose_mode == 1
-    puts "Information:\tFile contents of "+passwd_file
+    puts "Information:\tFile contents of "+shadow_file
     system("cat #{shadow_file}")
   end
   client_home = client_dir+user_home
@@ -173,6 +173,9 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   rsa_file = user_home+"/.ssh/id_rsa.pub"
   dsa_file = user_home+"/.ssh/id_dsa.pub"
   key_file = client_home+"/.ssh/authorized_keys"
+  if File.exists?(key_file)
+    system("rm #{key_file}")
+  end
   [rsa_file,dsa_file].each do |pub_file|
     if File.exists?(pub_file)
       message = "Copying:\tSSH public key "+pub_file+" to "+key_file
@@ -187,6 +190,9 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   rsa_file = "/root/.ssh/id_rsa.pub"
   dsa_file = "/root/.ssh/id_dsa.pub"
   key_file = client_dir+"/root/.ssh/authorized_keys"
+  if File.exists?(key_file)
+    system("rm #{key_file}")
+  end
   [rsa_file,dsa_file].each do |pub_file|
     if File.exists?(pub_file)
       message = "Copying:\tSSH public key "+pub_file+" to "+key_file
@@ -202,7 +208,7 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   command = "cd #{client_dir} ; chown -R 0:0 root"
   execute_command(message,command)
   # Add sudoers entry
-  sudoers_file = client_dir+"/etc/sudoers.d/sysadmin"
+  sudoers_file = client_dir+"/etc/sudoers.d/"+user_username
   message = "Creating:\tSudoers file "+sudoers_file
   command = "echo 'sysadmin ALL=(ALL) NOPASSWD:ALL' > #{sudoers_file}"
   execute_command(message,command)

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.2.9
+# Version:      1.3.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -32,6 +32,7 @@ $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
 $repo_base_dir          = "/export/repo"
+$image_base_dir         = "/export/images"
 $ldom_base_dir          = "/ldoms"
 $zone_base_dir          = "/zones"
 $iso_mount_dir          = "/cdrom"
@@ -53,6 +54,8 @@ $default_net            = "net0"
 $default_timezone       = "Australia/Victoria"
 $default_terminal       = "sun"
 $default_country        = "AU"
+$local_opencsw_mirror   = "http://192.168.1.250/pub/Software/OpenCSW"
+$default_opencsw        = "testing"
 $default_ubuntu_mirror  = $default_country.downcase+"archive.ubuntu.com"
 $default_centos_mirror  = "mirror.centos.org"
 $default_sl_mirror      = "ftp.scientificlinux.org/linux"

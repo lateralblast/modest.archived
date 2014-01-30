@@ -184,6 +184,17 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
+  name="account_home"
+  config=Ai.new(
+    question  = "Account Home",
+    ask       = "yes",
+    value     = "/export/home/"+$default_admin_user,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name]=config
+  $q_order.push(name)
+
   name="account_shell"
   vaild_shells=get_valid_shells()
   config=Ai.new(

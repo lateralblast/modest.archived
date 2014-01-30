@@ -1,6 +1,16 @@
 
 # Code common to all services
 
+# Check we are running on the right architecture
+
+def check_same_arch(client_arch)
+  if !$os_arch.match(/#{client_arch}/)
+    puts "Warning:\tSystem and Zone Architecture do not match"
+    exit
+  end
+  return
+end
+
 # Get root password crypt
 
 def get_root_password_crypt()
