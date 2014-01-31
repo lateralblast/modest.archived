@@ -11,6 +11,16 @@ def check_same_arch(client_arch)
   return
 end
 
+# Delete file
+
+def delete_file(file_name)
+  if File.exist?(file_name)
+    message = "Removing:\tFile "+file_name
+    command = "rm #{file_name}"
+    execute_command(message,command)
+  end
+end
+
 # Get root password crypt
 
 def get_root_password_crypt()
@@ -25,6 +35,19 @@ def get_account_pssword_crypt()
   password = $q_struct["account_crpyt"].value
   result = get_password_crypt(password)
   return result
+end
+
+# Check SSH keys
+
+def check_ssh_keys()
+  ssh_key = $home_dir+"/.ssh/id_rsa.pub"
+  if !File.exist?(ssh_key)
+    if $verbose_mode == 1
+      puts "Generating:\tPublic SSH key file "+ssh_key
+    end
+    system("ssh-keygen -t rsa")
+  end
+  return
 end
 
 # Check IPS tools installed on OS other than Solaris
@@ -59,13 +82,13 @@ def check_osx_ips()
   pkg_dest_dir = module_dir+"/pkg"
   check_dir_exists(pkg_dest_dir)
   hg_bin = "/usr/local/bin/hg"
-  if !File.exists(hg_bin)
+  if !File.exist?(hg_bin)
     message = "Installing:\tMercurial"
     command = "brew install mercurial"
     execute_command(message,command)
   end
   pkgrepo_bin="/usr/local/bin/pkgrepo"
-  if !file.exists?(pkgrepo_bin)
+  if !File.exist?(pkgrepo_bin)
     ips_url = "https://hg.java.net/hg/ips~pkg-gate"
     message = "Downloading:\tIPS source code"
     command = "cd #{$work_dir} ; hg clone #{ips_url} ips"
@@ -164,7 +187,7 @@ def check_dhcpd_config(publisher_host)
   broadcast_address = $default_host.split(/\./)[0..2].join(".")+".255"
   gateway_address = $default_host.split(/\./)[0..2].join(".")+".254"
   output = ""
-  if File.exists?($dhcpd_file)
+  if File.exist?($dhcpd_file)
     message = "Checking:\tDHCPd config for subnet entry"
     command = "cat #{$dhcpd_file} | grep 'subnet #{network_address}'"
     output  = execute_command(message, command)
@@ -262,7 +285,7 @@ def check_apt_tftpd()
     command = "apt-get -y install tftpd"
     execute_command(message,command)
     check_dir_exists($tftp_dir)
-    if !File.exists?(tftpd_file)
+    if !File.exist?(tftpd_file)
       file=File.open(tmp_file,"w")
       file.write("service tftp\n")
       file.write("{\n")
@@ -308,16 +331,16 @@ end
 def check_osx_service_is_enabled(service)
   service     = get_service_name(service)
   plist_file  = "/Library/LaunchDaemons/"+service+".plist"
-  if !File.exists?(plist_file)
+  if !File.exist?(plist_file)
     plist_file = "/System"+plist_file
   end
-  if !File.exists?(plist_file)
+  if !File.exist?(plist_file)
     puts "Warning:\tLaunch Agent not found for "+service
     exit
   end
   tmp_file    = "/tmp/tmp.plist"
   message     = "Checking:\tService "+service+" is enabled"
-  command     = "cat #{plist_file} | grep -C1 Disabled |grep true"
+  command     = "cat #{plist_file} | grep Disabled |grep true"
   output      = execute_command(message,command)
   if !output.match(/true/)
     if $verbose_mode == 1
@@ -363,6 +386,15 @@ def check_osx_tftpd()
   return
 end
 
+# Check OSX brew package
+
+def check_brew_pkg(pkg_name)
+  message = "Checking:\tBrew package "+pkg_name
+  command = "brew info #{pkg_name}"
+  output  = execute_command(message,command)
+  return output
+end
+
 # Check ISC DHCP installed on OS X
 
 def check_osx_dhcpd()
@@ -380,7 +412,7 @@ def check_osx_dhcpd()
     command = "sw_vers |grep ProductVersion |awk '{print $2}'"
     output  = execute_command(message,command)
     if output.match(/10\.9/)
-      if File.exists?(brew_file)
+      if File.exist?(brew_file)
         message = "Checking:\tVersion of ISC DHCPd"
         command = "cat #{brew_file} | grep url"
         output  = execute_command(message,command)
@@ -389,15 +421,18 @@ def check_osx_dhcpd()
           command = "cp #{brew_file} #{backup_file}"
           execute_command(message,command)
           message = "Fixing:\tBrew configuration file "+brew_file
-          command = "cat #{backup_file} | grep -v sha1 | sed 's/4\.2\.5\-P1/4\.3\.0a1/g' > #{brew_file}"
+          command = "cat #{backup_file} | grep -v sha1 | sed 's/4\.2\.5\-P1/4\.3\.0rc1/g' > #{brew_file}"
           execute_command(message,command)
         end
+        message = "Installing:\tDHCPd server"
+        command = "brew install isc-dhcp"
+        execute_command(message,command)
       end
     end
     message = "Creating:\tLaunchd service for ISC DHCPd"
     command = "cp -fv /usr/local/opt/isc-dhcp/*.plist /Library/LaunchDaemons"
     execute_command(message,command)
-    if !File.exists?($dhcpd_file)
+    if !File.exist?($dhcpd_file)
       message = "Creating:\tDHCPd configuration file "+$dhcpd_file
       command = "touch #{$dhcpd_file}"
       execute_command(message,command)
@@ -468,6 +503,7 @@ end
 # Add host to DHCP config
 
 def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
+  tmp_file = "/tmp/dhcp_"+client_name
   if !client_arch.match(/sparc/)
     tftp_pxe_file = client_mac.gsub(/:/,"")
     tftp_pxe_file = tftp_pxe_file.upcase
@@ -485,7 +521,11 @@ def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   output     = execute_command(message,command)
   if !output.match(/#{client_name}/)
     backup_file($dhcpd_file)
-    file=File.open($dhcpd_file,"a")
+    file = File.open(tmp_file,"w")
+    file_info=IO.readlines($dhcpd_file)
+    file_info.each do |line|
+      file.write(line)
+    end
     file.write("\n")
     file.write("host #{client_name} {\n")
     file.write("  fixed-address #{client_ip};\n")
@@ -493,6 +533,9 @@ def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
     file.write("  filename \"#{tftp_pxe_file}\";\n")
     file.write("}\n")
     file.close
+    message = "Updating:\tDHCPd file "+$dhcpd_file
+    command = "cp #{tmp_file} #{$dhcpd_file} ; rm #{tmp_file}"
+    execute_command(message,command)
     restart_dhcpd()
   end
   return
@@ -548,7 +591,7 @@ def get_client_mac(client_name)
   ethers_file = "/etc/ethers"
   output      = ""
   found       = 0
-  if File.exists?(ethers_file)
+  if File.exist?(ethers_file)
     message    = "Checking:\tFile "+ethers_file+" for "+client_name+" MAC address"
     command    = "cat #{ethers_file} |grep '#{client_name} '|awk '{print $2}'"
     client_mac = execute_command(message,command)
@@ -578,10 +621,10 @@ end
 
 def check_dir_exists(dir_name)
   output  = ""
-  if !File.directory?(dir_name)
-  message = "Creating:\t"+dir_name
-  command = "mkdir -p '#{dir_name}'"
-  output  = execute_command(message,command)
+  if !File.directory?(dir_name) and !File.symlink?(dir_name)
+    message = "Creating:\t"+dir_name
+    command = "mkdir -p '#{dir_name}'"
+    output  = execute_command(message,command)
   end
   return output
 end
@@ -988,7 +1031,7 @@ def remove_apache_proxy(service_base_name)
   apache_check = execute_command(message,command)
   if apache_check.match(/#{service_base_name}/)
     restore_file = apache_config_file+".no_"+service_base_name
-    if File.exists?(restore_file)
+    if File.exist?(restore_file)
       message = "Restoring:\t"+restore_file+" to "+apache_config_file
       command = "cp #{restore_file} #{apache_config_file}"
       execute_command(message,command)

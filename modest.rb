@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.3.1
+# Version:      1.3.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -27,7 +27,7 @@ require 'parseconfig'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:m:n:o:p:r:s:t:z:ABCDEFGHIJKLMNOPRSTUVWXYZtvy"
+$options                = "a:b:c:d:e:f:g:h:i:m:n:o:p:r:s:t:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvy"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -120,6 +120,7 @@ $default_cdom_name      = "initial"
 $default_dpool          = "dpool"
 $default_gdom_vnet      = "vnet0"
 $use_sudo               = 1
+$do_ssh_keys            = 0
 
 # Declare some package versions
 
@@ -187,6 +188,7 @@ def print_usage()
   puts "-X: X Windows based install (default is text based)"
   puts "    or run VM in GUI mode (default is headless)"
   puts "-H: Provide detailed examples"
+  puts "-Q: Copy SSH keys"
   puts
   exit
   return
@@ -226,6 +228,9 @@ end
 # Useful for generating client config files
 
 def check_local_config(mode)
+  if $do_ssh_keys == 1
+    check_ssh_keys()
+  end
   if $verbose_mode == 1
     puts "Information:\tHome directory "+$home_dir
   end
@@ -454,6 +459,12 @@ if opt["H"]
     print_examples(examples)
   end
   exit
+end
+
+# If given -Q copy SSH keys
+
+if opt["Q"]
+  $do_ssh_keys = 1
 end
 
 # Print version

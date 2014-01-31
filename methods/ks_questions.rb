@@ -651,6 +651,19 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
+  name = "admingid"
+  config = Ks.new(
+    type      = "",
+    question  = "Admin Group ID",
+    ask       = "yes",
+    parameter = "",
+    value     = $default_admin_gid,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
   name = "adminpassword"
   config = Ks.new(
     type      = "",

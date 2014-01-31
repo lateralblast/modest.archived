@@ -24,7 +24,7 @@ def configure_ks_alt_repo(service_name,client_arch)
   rpm_list.each do |rpm_url|
     rpm_file = File.basename(rpm_url)
     rpm_file = alt_dir+"/"+rpm_file
-    if !File.exists?(rpm_file)
+    if !File.exist?(rpm_file)
       wget_file(rpm_url,rpm_file)
     end
   end
@@ -107,7 +107,7 @@ def configure_ks_pxe_boot(service_name,iso_arch)
           end
           rpm_url  = "http://"+$local_ubuntu_mirror+"/pub/centos/5/os/i386/CentOS/syslinux-4.02-7.2.el5.i386.rpm"
           rpm_file = rpm_dir+"/syslinux-4.02-7.2.el5.i386.rpm"
-          if !File.exists?(rpm_file)
+          if !File.exist?(rpm_file)
             wget_file(rpm_url,rpm_file)
           end
         end
@@ -146,7 +146,7 @@ def configure_ks_pxe_boot(service_name,iso_arch)
     else
       iso_image_dir = $repo_base_dir+"/"+service_name+"/isolinux"
     end
-    if !File.exists?(test_file)
+    if !File.exist?(test_file)
       message = "Copying:\tPXE boot files from "+iso_image_dir+" to "+pxe_image_dir
       command = "cd #{pxe_image_dir} ; cp -r #{iso_image_dir}/* . "
       output  = execute_command(message,command)
@@ -220,7 +220,7 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
   iso_list = []
   check_dhcpd_config(publisher_host)
   if iso_file.match(/[A-z]/)
-    if File.exists?(iso_file)
+    if File.exist?(iso_file)
       iso_list[0] = iso_file
     else
       puts "Warning:\tISO file "+is_file+" does not exist"

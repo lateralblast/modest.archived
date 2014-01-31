@@ -122,6 +122,40 @@ All:
   services (DHCP etc)
 - Post installation scripting to perform tasks such as patching and security
 
+Requirements
+============
+
+All:
+
+- Ruby
+
+Kickstart, AutoYast, and Preseed Services:
+
+- Solaris 11, Linux (In progress), or OS X
+
+AI Services:
+
+- Solaris 11
+
+Jumpstart Services:
+
+- Solaris 11 (OS S and Linux to be added)
+
+Linux Containers:
+
+- Linux (Currently only Ubuntu supported)
+
+Solaris Containers:
+
+- Solaris 10 or 11
+
+VM Client Services:
+
+- VMware Fusion or VirtualBox
+
+VirtualBox bridged networking on OS X has been severly broken for quite
+sometime, therefore it is recommended to use VMware Fusion is available.
+
 Background
 ==========
 

@@ -261,3 +261,5 @@
 # Cleaned up Solaris Zone code
 # 1.3.1: Fri 31 Jan 2014 12:01:37 EST
 # Fixed warnings
+# 1.3.2: Fri 31 Jan 2014 15:59:34 EST
+# Cleaned up OS X support

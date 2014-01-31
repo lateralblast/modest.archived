@@ -29,7 +29,7 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   tftp_pxe_file = "01"+tftp_pxe_file+".pxelinux"
   test_file     = $tftp_dir+"/"+tftp_pxe_file
   tmp_file      = "/tmp/pxecfg"
-  if !File.exists?(test_file)
+  if !File.exist?(test_file)
     if service_name.match(/ubuntu/)
       pxelinux_file = service_name+"/images/pxeboot/netboot/pxelinux.0"
     else
@@ -61,6 +61,10 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
     else
       initrd_file  = "/"+service_name+"/images/pxeboot/initrd.img"
     end
+  end
+  if $os_name.match(/Darwin/)
+    vmlinuz_file = vmlinuz_file.gsub(/^\//,"")
+    initrd_file  = initrd_file.gsub(/^\//,"")
   end
   ks_url       = "http://"+$default_host+"/"+service_name+"/"+client_name+".cfg"
   autoyast_url = "http://"+$default_host+"/"+service_name+"/"+client_name+".xml"
@@ -115,7 +119,7 @@ def unconfigure_ks_pxe_client(client_name)
   tftp_pxe_file = tftp_pxe_file.upcase
   tftp_pxe_file = "01"+tftp_pxe_file+".pxelinux"
   tftp_pxe_file = $tftp_dir+"/"+tftp_pxe_file
-  if File.exists?(tftp_pxe_file)
+  if File.exist?(tftp_pxe_file)
     message = "Removing:\tPXE boot file "+tftp_pxe_file+" for "+client_name
     command = "rm #{tftp_pxe_file}"
     output  = execute_command(message,command)
@@ -125,7 +129,7 @@ def unconfigure_ks_pxe_client(client_name)
   pxe_cfg_file = "01-"+pxe_cfg_file
   pxe_cfg_file = pxe_cfg_file.downcase
   pxe_cfg_file = pxe_cfg_dir+"/"+pxe_cfg_file
-  if File.exists?(pxe_cfg_file)
+  if File.exist?(pxe_cfg_file)
     message = "Removing:\tPXE boot config file "+pxe_cfg_file+" for "+client_name
     command = "rm #{pxe_cfg_file}"
     output  = execute_command(message,command)
@@ -163,17 +167,15 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
   else
     output_file = repo_version_dir+"/"+client_name+".cfg"
   end
-  if File.exists?(output_file)
-    File.delete(output_file)
-  end
+  delete_file(output_file)
   if service_name.match(/rhel|centos|sl_|oel/)
     populate_ks_questions(service_name,client_name,client_ip)
     process_questions()
-    output_ks_header(output_file)
+    output_ks_header(client_name,output_file)
     pkg_list  = populate_ks_pkg_list(service_name)
-    output_ks_pkg_list(pkg_list,output_file)
+    output_ks_pkg_list(client_name,pkg_list,output_file)
     post_list = populate_ks_post_list(client_arch,service_name,publisher_host)
-    output_ks_post_list(post_list,output_file,service_name)
+    output_ks_post_list(client_name,post_list,output_file,service_name)
   else
     if service_name.match(/sles/)
       populate_ks_questions(service_name,client_name,client_ip)
@@ -183,15 +185,16 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
       if service_name.match(/ubuntu/)
         populate_ps_questions(service_name,client_name,client_ip)
         process_questions
-        output_ps_header(output_file)
+        output_ps_header(client_name,output_file)
         output_file = repo_version_dir+"/"+client_name+"_post.sh"
         post_list   = populate_ps_post_list()
-        output_ks_post_list(post_list,output_file,service_name)
+        output_ks_post_list(client_name,post_list,output_file,service_name)
       end
     end
   end
   configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   configure_ks_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
+  add_hosts_entry(client_name,client_ip)
   return
 end
 
@@ -211,6 +214,8 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   admin_user  = $q_struct["adminuser"].value
   admin_crypt = $q_struct["admincrypt"].value
   admin_home  = $q_struct["adminhome"].value
+  admin_uid   = $q_struct["adminuid"].value
+  admin_gid   = $q_struct["admingid"].value
   epel_file   = "/etc/yum.repos.d/epel.repo"
   beta_file   = "/etc/yum.repos.d/public-yum-ol6-beta.repo"
   post_list.push("# Add Admin user")
@@ -308,6 +313,26 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
     post_list.push("chmod 755 /etc/rc.modules")
     post_list.push("")
   end
+  if $do_ssh_keys == 1
+    post_list.push("# Copy SSH keys")
+    post_list.push("")
+    ssh_key = $home_dir+"/.ssh/id_rsa.pub"
+    key_dir = service_name+"/keys"
+    check_dir_exists(key_dir)
+    auth_file = key_dir+"/authorized_keys"
+    message   = "Copying:\tSSH keys"
+    command   = "cp #{ssh_key} #{auth_file}"
+    execute_command(message,command)
+    ssh_dir   = admin_home+"/.ssh"
+    ssh_url   = "http://#{publisher_host}/#{service_name}/keys/authorized_keys"
+    auth_file = ssh_dir+"/authorized_keys"
+    post_list.push("mkdir #{ssh_dir}/.ssh")
+    post_list.push("chown #{admin_uid}:#{admin_gid} #{ssh_dir}")
+    post_list.push("cd #{ssh_dir} ; wget #{ssh_url} -O #{auth_file}")
+    post_list.push("chown #{admin_uid}:#{admin_gid} #{auth_file}")
+    post_list.push("chmod 644 #{auth_file}")
+    post_list.push("")
+  end
   if $use_alt_repo == 1
     post_list.push("mkdir /tmp/rpms")
     post_list.push("cd /tmp/rpms")
@@ -322,7 +347,7 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
         rpm_file = File.basename(rpm_url)
         rpm_file = alt_dir+"/"+rpm_file
         rpm_url  = alt_url+"/"+rpm_file
-        if File.exists?(rpm_file)
+        if File.exist?(rpm_file)
           post_list.push("wget #{rpm_url}")
         end
       end
@@ -372,11 +397,9 @@ end
 
 # Output the Kickstart file header
 
-def output_ks_header(output_file)
-  if $verbose_mode == 1
-    puts "Creating:\tKickstart file "+output_file
-  end
-  file=File.open(output_file, 'a')
+def output_ks_header(client_name,output_file)
+  tmp_file = "/tmp/ks_"+client_name
+  file=File.open(tmp_file, 'w')
   $q_order.each do |key|
     if $q_struct[key].type == "output"
       if !$q_struct[key].parameter.match(/[A-z]/)
@@ -388,27 +411,34 @@ def output_ks_header(output_file)
     end
   end
   file.close
+  message = "Creating:\tKickstart file "+output_file
+  command = "cp #{tmp_file} #{output_file} ; rm #{tmp_file}"
+  execute_command(message,command)
   return
 end
 
 # Output the ks packages list
 
-def output_ks_pkg_list(pkg_list,output_file)
-  file   = File.open(output_file, 'a')
-  output = "\n%packages\n"
+def output_ks_pkg_list(client_name,pkg_list,output_file)
+  tmp_file = "/tmp/ks_pkg_"+client_name
+  file     = File.open(tmp_file, 'w')
+  output   = "\n%packages\n"
   file.write(output)
   pkg_list.each do |pkg_name|
     output = pkg_name+"\n"
     file.write(output)
   end
   file.close
+  message = "Updating:\tKickstart file "+output_file
+  command = "cat #{tmp_file} >> #{output_file} ; rm #{tmp_file}"
+  execute_command(message,command)
   return
 end
 
 # Output the ks packages list
 
-def output_ks_post_list(post_list,output_file,service_name)
-  tmp_file = "/tmp/postinstall"
+def output_ks_post_list(client_name,post_list,output_file,service_name)
+  tmp_file = "/tmp/postinstall_"+client_name
   if service_name.match(/centos|rhel|sl_|oel/)
     message = "Appending:\tPost install script "+output_file
     command = "cp #{output_file} #{tmp_file}"
