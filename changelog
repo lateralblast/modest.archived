@@ -259,3 +259,5 @@
 # Added dtrace install to OEL 6.5 Kickstart
 # 1.3.0: Thu 30 Jan 2014 21:16:01 EST
 # Cleaned up Solaris Zone code
+# 1.3.1: Fri 31 Jan 2014 12:01:37 EST
+# Fixed warnings

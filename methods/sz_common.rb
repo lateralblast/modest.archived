@@ -230,13 +230,17 @@ def branded_zone_post_install(client_name,client_rel)
     wget_file(pkg_url,pkg_file)
     file = File.open(tmp_file,"w")
     file.write("#!/usr/bin/bash\n")
+    file.write("\n")
+    file.write("# Post install script\n")
+    file.write("\n")
     file.write("cd #{var_dir} ; echo y |pkgadd -d pkgutil.pkg CSWpkgutil\n")
     file.write("export PATH=/opt/csw/bin:$PATH\n")
     file.write("pkutil -i CSWwget\n")
     file.write("\n")
-    file.write("\n")
-    file.write("\n")
     file.close
+    message = "Creating:\tPost install script "+post_file
+    command = "cp #{tmp_file} #{post_file} ; rm #{tmp_file}"
+    execute_command(message,command)
   else
     puts "Warning:\tZone "+client_name+" doesn't exist"
     exit

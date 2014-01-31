@@ -49,6 +49,9 @@ end
 
 def create_centos_lxc_config(client_name)
   tmp_file = "/tmp/lxc_"+client_name
+  file = File.open(tmp_file,"w")
+  file.write("\n")
+  file.close
   return
 end
 
