@@ -24,16 +24,16 @@ end
 # Get root password crypt
 
 def get_root_password_crypt()
-  password = $q_struct["root_crpyt"].value
-  result = get_password_crypt(password)
+  password = $q_struct["root_password"].value
+  result   = get_password_crypt(password)
   return result
 end
 
-# Get root password crypt
+# Get account password crypt
 
-def get_account_pssword_crypt()
-  password = $q_struct["account_crpyt"].value
-  result = get_password_crypt(password)
+def get_admin_password_crypt()
+  password = $q_struct["admin_password"].value
+  result   = get_password_crypt(password)
   return result
 end
 
@@ -52,17 +52,19 @@ end
 
 # Check IPS tools installed on OS other than Solaris
 
-def check_ips ()
+def check_ips()
   if $os_name.match(/Darwin/)
     check_osx_ips()
   end
   return
 end
 
+# Check OS X IPS
+
 def check_osx_ips()
   python_bin = "/usr/bin/python"
-  pip_bin = "/usr/bin/pip"
-  setup_url = "https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py"
+  pip_bin    = "/usr/bin/pip"
+  setup_url  = "https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py"
   if !File.symlink?(pip_bin)
     message = "Installing:\tPip"
     command = "/usr/bin/easy_install --prefix=/usr pip"
@@ -87,7 +89,7 @@ def check_osx_ips()
     command = "brew install mercurial"
     execute_command(message,command)
   end
-  pkgrepo_bin="/usr/local/bin/pkgrepo"
+  pkgrepo_bin = "/usr/local/bin/pkgrepo"
   if !File.exist?(pkgrepo_bin)
     ips_url = "https://hg.java.net/hg/ips~pkg-gate"
     message = "Downloading:\tIPS source code"
@@ -137,14 +139,14 @@ def get_linux_version_info(iso_file_name)
       iso_arch = iso_info[2]
     else
       if linux_distro.match(/sles|oel/)
-        iso_arch  = iso_info[4]
+        iso_arch = iso_info[4]
       else
         iso_arch = iso_info[3]
         iso_arch = iso_arch.split(/\./)[0]
         if iso_arch.match(/amd64/)
-          iso_arch  = "x86_64"
+          iso_arch = "x86_64"
         else
-          iso_arch  = "i386"
+          iso_arch = "i386"
         end
       end
     end
@@ -183,9 +185,9 @@ end
 # Check DHCPd config
 
 def check_dhcpd_config(publisher_host)
-  network_address = $default_host.split(/\./)[0..2].join(".")+".0"
+  network_address   = $default_host.split(/\./)[0..2].join(".")+".0"
   broadcast_address = $default_host.split(/\./)[0..2].join(".")+".255"
-  gateway_address = $default_host.split(/\./)[0..2].join(".")+".254"
+  gateway_address   = $default_host.split(/\./)[0..2].join(".")+".254"
   output = ""
   if File.exist?($dhcpd_file)
     message = "Checking:\tDHCPd config for subnet entry"
@@ -276,10 +278,10 @@ end
 
 def check_apt_tftpd()
   tftpd_file = "/etc/xinetd.d/tftp"
-  tmp_file = "/tmp/tftp"
-  message = "Checking:\tTFTPd is installed"
-  command = "dpkg -l tftpd |grep '^ii'"
-  output  = execute_command(message,command)
+  tmp_file   = "/tmp/tftp"
+  message    = "Checking:\tTFTPd is installed"
+  command    = "dpkg -l tftpd |grep '^ii'"
+  output     = execute_command(message,command)
   if !output.match(/tftp/)
     message = "installing:\tTFTPd"
     command = "apt-get -y install tftpd"
@@ -338,10 +340,10 @@ def check_osx_service_is_enabled(service)
     puts "Warning:\tLaunch Agent not found for "+service
     exit
   end
-  tmp_file    = "/tmp/tmp.plist"
-  message     = "Checking:\tService "+service+" is enabled"
-  command     = "cat #{plist_file} | grep Disabled |grep true"
-  output      = execute_command(message,command)
+  tmp_file  = "/tmp/tmp.plist"
+  message   = "Checking:\tService "+service+" is enabled"
+  command   = "cat #{plist_file} | grep Disabled |grep true"
+  output    = execute_command(message,command)
   if !output.match(/true/)
     if $verbose_mode == 1
       puts "Information:\t"+service+" enabled"
@@ -400,7 +402,7 @@ end
 def check_osx_dhcpd()
   brew_file   = "/usr/local/Library/Formula/isc-dhcp.rb"
   backup_file = brew_file+".orig"
-  dhcpd_bin = "/usr/local/sbin/dhcpd"
+  dhcpd_bin   = "/usr/local/sbin/dhcpd"
   if !File.symlink?(dhcpd_bin)
     message = "Installing:\tBind (required for ISC DHCPd server)"
     command = "brew install bind"
@@ -451,20 +453,20 @@ end
 
 def get_client_ip(client_name)
   hosts_file = "/etc/hosts"
-  message   = "Getting:\tClient IP for "+client_name
-  command   = "cat #{hosts_file} |grep '#{client_name}$' |awk '{print $1}'"
-  output    = execute_command(message,command)
-  client_ip = output.chomp
+  message    = "Getting:\tClient IP for "+client_name
+  command    = "cat #{hosts_file} |grep '#{client_name}$' |awk '{print $1}'"
+  output     = execute_command(message,command)
+  client_ip  = output.chomp
   return client_ip
 end
 
 # Add hosts entry
 
 def add_hosts_entry(client_name,client_ip)
-  hosts_file="/etc/hosts"
-  message = "Checking:\tHosts file for "+client_name
-  command = "cat #{hosts_file} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
-  output  = execute_command(message,command)
+  hosts_file = "/etc/hosts"
+  message    = "Checking:\tHosts file for "+client_name
+  command    = "cat #{hosts_file} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
+  output     = execute_command(message,command)
   if !output.match(/#{client_name}/)
     backup_file(hosts_file)
     message = "Adding:\t\tHost "+client_name+" to "+hosts_file
@@ -516,9 +518,9 @@ def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   else
     tftp_pxe_file = "http://#{$default_host}:5555/cgi-bin/wanboot-cgi"
   end
-  message    = "Checking:\fIf DHCPd configuration contains "+client_name
-  command    = "cat #{$dhcpd_file} | grep '#{client_name}'"
-  output     = execute_command(message,command)
+  message = "Checking:\fIf DHCPd configuration contains "+client_name
+  command = "cat #{$dhcpd_file} | grep '#{client_name}'"
+  output  = execute_command(message,command)
   if !output.match(/#{client_name}/)
     backup_file($dhcpd_file)
     file = File.open(tmp_file,"w")
@@ -606,8 +608,8 @@ def get_client_mac(client_name)
       end
       if found == 1
         if line.match(/ethernet/)
-          client_mac=line.split(/ ethernet /)[1]
-          client_mac=client_mac.gsub(/\;/,"")
+          client_mac = line.split(/ ethernet /)[1]
+          client_mac = client_mac.gsub(/\;/,"")
           return client_mac
         end
       end
@@ -645,17 +647,17 @@ end
 # If not create it
 
 def check_zfs_fs_exists(dir_name)
-  output=""
+  output = ""
   if !File.directory?(dir_name)
     if $os_name.match(/SunOS/)
-      message     = "Warning:\t"+dir_name+" does not exist"
+      message = "Warning:\t"+dir_name+" does not exist"
       if dir_name.match(/ldoms|zones/)
-        zfs_name    = $default_dpool+dir_name
+        zfs_name = $default_dpool+dir_name
       else
-        zfs_name    = $default_zpool+dir_name
+        zfs_name = $default_zpool+dir_name
       end
-      command     = "zfs create #{zfs_name}"
-      output      = execute_command(message,command)
+      command = "zfs create #{zfs_name}"
+      output  = execute_command(message,command)
       if dir_name.match(/vmware/)
         service_name = File.basename(dir_name)
         mount_dir    = $tftp_dir+"/"+service_name
@@ -676,14 +678,14 @@ end
 # Destroy a ZFS filesystem
 
 def destroy_zfs_fs(dir_name)
-  output=""
+  output = ""
   if $destroy_fs == 1
     if File.directory?(dir_name)
       message = "Warning:\tDestroying "+dir_name
       if dir_name.match(/ldoms|zones/)
-        zfs_name    = $default_dpool+dir_name
+        zfs_name = $default_dpool+dir_name
       else
-        zfs_name    = $default_zpool+dir_name
+        zfs_name = $default_zpool+dir_name
       end
       command = "zfs destroy -r #{zfs_name}"
       output  = execute_command(message,command)
@@ -755,11 +757,8 @@ end
 # Create an encrypted password field entry for a give password
 
 def get_password_crypt(password)
-  possible = [('a'..'z'),('A'..'Z'),(0..9),'.','/'].inject([]) {|s,r| s+Array(r)}
-  salt     = Array.new(8){possible[rand(possible.size)]}
-  salt     = salt.join
-  password = password.crypt("$1$#{salt}")
-  return password
+  crypt = UnixCrypt::MD5.build(password)
+  return crypt
 end
 
 # Handle SMF service
@@ -771,19 +770,19 @@ def handle_smf_service(function,smf_service_name)
     command = "svcs #{smf_service_name} |grep -v STATE"
     output  = execute_command(message,command)
     if output.match(/maintenance/)
-      message     = uc_function+":\tService "+smf_service_name
-      command     = "svcadm clear #{smf_service_name} ; sleep 5"
-      output      = execute_command(message,command)
+      message = uc_function+":\tService "+smf_service_name
+      command = "svcadm clear #{smf_service_name} ; sleep 5"
+      output  = execute_command(message,command)
     end
     if !output.match(/online/)
-      message     = uc_function+":\tService "+smf_service_name
-      command     = "svcadm #{function} #{smf_service_name} ; sleep 5"
-      output      = execute_command(message,command)
+      message = uc_function+":\tService "+smf_service_name
+      command = "svcadm #{function} #{smf_service_name} ; sleep 5"
+      output  = execute_command(message,command)
     end
   else
-    message     = uc_function+":\tService "+smf_service_name
-    command     = "svcadm #{function} #{smf_service_name} ; sleep 5"
-    output      = execute_command(message,command)
+    message = uc_function+":\tService "+smf_service_name
+    command = "svcadm #{function} #{smf_service_name} ; sleep 5"
+    output  = execute_command(message,command)
   end
   return output
 end
@@ -1002,7 +1001,7 @@ def add_apache_proxy(publisher_host,publisher_port,service_base_name)
   if $os_name.match(/Darwin/)
     apache_config_file = "/etc/apache2/httpd.conf"
   end
-  apache_check=%x[cat #{apache_config_file} |grep #{service_base_name}]
+  apache_check = %x[cat #{apache_config_file} |grep #{service_base_name}]
   if !apache_check.match(/#{service_base_name}/)
     message = "Archiving:\t"+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
     command = "cp #{apache_config_file} #{apache_config_file}.no_#{service_base_name}"
@@ -1044,7 +1043,7 @@ end
 # Add apache alias
 
 def add_apache_alias(service_base_name)
-  repo_version_dir=$repo_base_dir+"/"+service_base_name
+  repo_version_dir = $repo_base_dir+"/"+service_base_name
   if $os_name.match(/SunOS/)
     apache_config_file = "/etc/apache2/2.2/httpd.conf"
   end
@@ -1127,7 +1126,7 @@ def mount_iso(iso_file)
   if $os_name.match(/CentOS|RedHat|Ubuntu/)
     command = "mount -t iso9660 "+iso_file+" "+$iso_mount_dir
   end
-  output  = execute_command(message,command)
+  output = execute_command(message,command)
   if iso_file.match(/sol/)
     if iso_file.match(/\-ga\-/)
       iso_test_dir = $iso_mount_dir+"/boot"
@@ -1173,12 +1172,12 @@ def copy_iso(iso_file,repo_version_dir)
   else
     iso_repo_dir = $iso_mount_dir
     if iso_file.match(/CentOS|rhel|OracleLinux/)
-      test_dir     = repo_version_dir+"/isolinux"
+      test_dir = repo_version_dir+"/isolinux"
     else
       if iso_file.match(/VM/)
-        test_dir     = repo_version_dir+"/upgrade"
+        test_dir = repo_version_dir+"/upgrade"
       else
-        test_dir     = repo_version_dir+"/install"
+        test_dir = repo_version_dir+"/install"
       end
     end
   end

@@ -101,22 +101,22 @@ def standard_zone_post_install(client_name,client_rel)
   if File.directory?(zone_dir)
     client_dir    = zone_dir+"/root"
     tmp_file      = "/tmp/zone_"+client_name
-    user_username = $q_struct["account_login"].value
-    user_uid      = $q_struct["account_uid"].value
-    user_gid      = $q_struct["account_gid"].value
-    user_crypt    = $q_struct["account_crypt"].value
+    admin_username = $q_struct["admin_login"].value
+    admin_uid      = $q_struct["admin_uid"].value
+    admin_gid      = $q_struct["admin_gid"].value
+    admin_crypt    = $q_struct["admin_crypt"].value
     root_crypt    = $q_struct["root_crypt"].value
-    user_fullname = $q_struct["account_description"].value
-    user_home     = $q_struct["account_home"].value
-    user_shell    = $q_struct["account_shell"].value
+    admin_fullname = $q_struct["admin_description"].value
+    admin_home     = $q_struct["admin_home"].value
+    admin_shell    = $q_struct["admin_shell"].value
     passwd_file   = client_dir+"/etc/passwd"
     shadow_file   = client_dir+"/etc/shadow"
-    message = "Checking:\tUser "+user_username+" doesn't exist"
-    command = "cat #{passwd_file} | grep -v '#{user_username}' > #{tmp_file}"
+    message = "Checking:\tUser "+admin_username+" doesn't exist"
+    command = "cat #{passwd_file} | grep -v '#{admin_username}' > #{tmp_file}"
     execute_command(message,command)
-    message   = "Adding:\tUser "+user_username+" to "+passwd_file
-    user_info = user_username+":x:"+user_uid+":"+user_gid+":"+user_fullname+":"+user_home+":"+user_shell
-    command = "echo '#{user_info}' >> #{tmp_file} ; cat #{tmp_file} > #{passwd_file} ; rm #{tmp_file}"
+    message   = "Adding:\tUser "+admin_username+" to "+passwd_file
+    admin_info = admin_username+":x:"+admin_uid+":"+admin_gid+":"+admin_fullname+":"+admin_home+":"+admin_shell
+    command = "echo '#{admin_info}' >> #{tmp_file} ; cat #{tmp_file} > #{passwd_file} ; rm #{tmp_file}"
     execute_command(message,command)
     if $verbose_mode == 1
       puts
@@ -129,7 +129,7 @@ def standard_zone_post_install(client_name,client_rel)
     file = File.open(tmp_file,"w")
     info.each do |line|
       field = line.split(":")
-      if field[0] != "root" and field[0] != "#{user_username}"
+      if field[0] != "root" and field[0] != "#{admin_username}"
         file.write(line)
       end
       if field[0] == "root"
@@ -138,7 +138,7 @@ def standard_zone_post_install(client_name,client_rel)
         file.write(copy)
       end
     end
-    output = user_username+":"+user_crypt+":::99999:7:::\n"
+    output = admin_username+":"+admin_crypt+":::99999:7:::\n"
     file.write(output)
     file.close
     message = "Creating:\tShadow file"
@@ -151,13 +151,13 @@ def standard_zone_post_install(client_name,client_rel)
       system("cat #{shadow_file}")
       puts
     end
-    client_home = client_dir+user_home
-    message = "Creating:\tSSH directory for "+user_username
-    command = "mkdir -p #{client_home}/.ssh ; cd #{client_dir}/export/home ; chown -R #{user_uid}:#{user_gid} #{user_username}"
+    client_home = client_dir+admin_home
+    message = "Creating:\tSSH directory for "+admin_username
+    command = "mkdir -p #{client_home}/.ssh ; cd #{client_dir}/export/home ; chown -R #{admin_uid}:#{admin_gid} #{admin_username}"
     execute_command(message,command)
     # Copy admin user keys
-    rsa_file = user_home+"/.ssh/id_rsa.pub"
-    dsa_file = user_home+"/.ssh/id_dsa.pub"
+    rsa_file = admin_home+"/.ssh/id_rsa.pub"
+    dsa_file = admin_home+"/.ssh/id_dsa.pub"
     key_file = client_home+"/.ssh/authorized_keys"
     if File.exists?(key_file)
       system("rm #{key_file}")
@@ -187,8 +187,8 @@ def standard_zone_post_install(client_name,client_rel)
       end
     end
     # Fix permissions
-    message = "Fixing:\t\tSSH permissions for "+user_username
-    command = "cd #{client_dir}/export/home ; chown -R #{user_uid}:#{user_gid} #{user_username}"
+    message = "Fixing:\t\tSSH permissions for "+admin_username
+    command = "cd #{client_dir}/export/home ; chown -R #{admin_uid}:#{admin_gid} #{admin_username}"
     execute_command(message,command)
     message = "Fixing:\t\tSSH permissions for root "
     command = "cd #{client_dir} ; chown -R 0:0 root"
@@ -203,9 +203,9 @@ def standard_zone_post_install(client_name,client_rel)
     execute_command(message,command)
     sudoers_dir  = client_dir+"/etc/sudoers.d"
     check_dir_exists(sudoers_dir)
-    sudoers_file = sudoers_dir+"/"+user_username
+    sudoers_file = sudoers_dir+"/"+admin_username
     message = "Creating:\tSudoers file "+sudoers_file
-    command = "echo '#{user_username} ALL=(ALL) NOPASSWD:ALL' > #{sudoers_file}"
+    command = "echo '#{admin_username} ALL=(ALL) NOPASSWD:ALL' > #{sudoers_file}"
     execute_command(message,command)
   else
     puts "Warning:\tZone "+client_name+" doesn't exist"

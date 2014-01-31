@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.3.2
+# Version:      1.3.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -23,6 +23,7 @@ require 'getopt/std'
 require 'builder'
 require 'socket'
 require 'parseconfig'
+require 'unix_crypt'
 
 # Set up some global variables/defaults
 
@@ -131,9 +132,9 @@ $puppet_version = "3.4.1"
 # Load methods
 
 if File.directory?("./methods")
-  file_list=Dir.entries("./methods")
+  file_list = Dir.entries("./methods")
   for file in file_list
-    if file =~/rb$/
+    if file =~ /rb$/
       require "./methods/#{file}"
     end
   end
@@ -197,17 +198,17 @@ end
 # Get version
 
 def get_version()
-  file_array=IO.readlines $0
-  version  = file_array.grep(/^# Version/)[0].split(":")[1].gsub(/^\s+/,'').chomp
-  packager = file_array.grep(/^# Packager/)[0].split(":")[1].gsub(/^\s+/,'').chomp
-  name     = file_array.grep(/^# Name/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  file_array = IO.readlines $0
+  version    = file_array.grep(/^# Version/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  packager   = file_array.grep(/^# Packager/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  name       = file_array.grep(/^# Name/)[0].split(":")[1].gsub(/^\s+/,'').chomp
   return version,packager,name
 end
 
 # Print script version information
 
 def print_version()
-  (version,packager,name)=get_version()
+  (version,packager,name) = get_version()
   puts name+" v. "+version+" "+packager
   exit
 end
@@ -237,7 +238,7 @@ def check_local_config(mode)
   $id=%x[/usr/bin/id -u]
   $id=Integer($id)
   if !$work_dir.match(/[A-z]/)
-    dir_name=File.basename($script,".*")
+    dir_name = File.basename($script,".*")
     if $id == 0
       $work_dir = "/opt/"+dir_name
     else
@@ -395,7 +396,7 @@ if !ARGV[0]
 end
 
 begin
-  opt=Getopt::Std.getopts($options)
+  opt = Getopt::Std.getopts($options)
 rescue
   print_usage()
 end
@@ -461,6 +462,14 @@ if opt["H"]
   exit
 end
 
+# Get password crypt
+if opt["p"] and !opt["S"] and !opt["C"]
+  password = opt["p"]
+  crypt    = get_password_crypt(password)
+  puts crypt
+  exit
+end
+
 # If given -Q copy SSH keys
 
 if opt["Q"]
@@ -507,9 +516,9 @@ end
 # Get OS type
 
 if opt["o"]
-  client_os=opt["o"]
+  client_os = opt["o"]
 else
-  client_os=""
+  client_os = ""
 end
 
 # Check local configuration
@@ -558,7 +567,7 @@ end
 # Get MAC address if given
 
 if opt["e"]
-  client_mac=opt["e"]
+  client_mac = opt["e"]
   if $verbose_mode == 1
      puts "Information:\tClient ethernet MAC address is "+client_mac
   end
@@ -569,12 +578,12 @@ end
 # Get/set X based installer
 
 if opt["X"]
-  $text_install=0
+  $text_install = 0
   if $verbose_mode == 1
     puts "Information:\tSetting install type to X based"
   end
 else
-  $text_install=1
+  $text_install = 1
   if $verbose_mode == 1
     puts "Information:\tSetting install type to text based"
   end
@@ -594,9 +603,9 @@ end
 # Get/set publisher host
 
 if opt["h"]
-  publisher_host=opt["h"]
+  publisher_host = opt["h"]
 else
-  publisher_host=$default_host
+  publisher_host = $default_host
 end
 if $verbose_mode == 1
    puts "Information:\tSetting publisher host to "+publisher_port
@@ -605,7 +614,7 @@ end
 # Get IP address if given
 
 if opt["i"]
-  client_ip=opt["i"]
+  client_ip = opt["i"]
   if $verbose_mode == 1
      puts "Information:\tClient IP address is "+client_ip
   end
@@ -616,7 +625,7 @@ end
 # Get/set service name
 
 if opt["n"]
-  service_name=opt["n"]
+  service_name = opt["n"]
   if !service_name.match(/^[A-z]/)
     puts "Warning:\tService name must start with letter"
   end
@@ -630,12 +639,12 @@ end
 
 if opt["f"]
   if !opt["Z"]
-    iso_file=opt["f"]
+    iso_file = opt["f"]
     if $verbose_mode == 1
       puts "Information:\tUsing ISO "+iso_file
     end
   else
-    image_file=opt["f"]
+    image_file = opt["f"]
     if $verbose_mode == 1
       puts "Information:\tUsing Image "+image_file
     end
@@ -791,7 +800,7 @@ end
 # Force architecture to 64 bit for ESX
 
 if opt["E"]
-  client_arch="x86_64"
+  client_arch = "x86_64"
   if $verbose_mode == 1
     puts "Setting:\tArchitecture to "+client_arch
   end

@@ -30,7 +30,7 @@ end
 # Construct ks password line
 
 def get_vs_password()
-  result = "--iscrypted "+$q_struct["crypt"].value.to_s
+  result = "--iscrypted "+$q_struct["root_crypt"].value.to_s
   return result
 end
 
@@ -94,19 +94,6 @@ def populate_vs_questions(service_name,client_name,client_ip)
     )
   $q_struct[name] = config
   $q_order.push(name)
-
-#  name = "install"
-#  config = Vs.new(
-#    type      = "output",
-#    question  = "Install type",
-#    ask       = "yes",
-#    parameter = "install",
-#    value     = get_vs_install_url(service_name),
-#    valid     = "",
-#    eval      = "no"
-#    )
-#  $q_struct[name] = config
-#  $q_order.push(name)
 
   name = "nic"
   config = Vs.new(
@@ -173,7 +160,7 @@ def populate_vs_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "password"
+  name = "root_password"
   config = Vs.new(
     type      = "",
     question  = "Root Password",
@@ -186,15 +173,15 @@ def populate_vs_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "crypt"
+  name = "root_crypt"
   config = Vs.new(
     type      = "",
     question  = "Root Password Crypt",
     ask       = "yes",
     parameter = "",
-    value     = get_password_crypt($default_root_password),
+    value     = "get_root_password_crypt()",
     valid     = "",
-    eval      = "get_password_crypt(answer)"
+    eval      = "get_password_crypt()"
     )
   $q_struct[name] = config
   $q_order.push(name)

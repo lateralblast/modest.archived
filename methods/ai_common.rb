@@ -115,18 +115,3 @@ def unconfigure_ai_pkg_repo(service_name)
   return
 end
 
-# Get root password crypt
-
-def get_ai_root_password_crypt()
-  password = $q_struct["root_password"].value
-  result = get_password_crypt(password)
-  return result
-end
-
-# Get root password crypt
-
-def get_ai_account_password_crypt()
-  password = $q_struct["account_password"].value
-  result = get_password_crypt(password)
-  return result
-end

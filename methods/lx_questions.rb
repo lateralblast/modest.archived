@@ -20,14 +20,14 @@ def populate_lxc_client_questions(client_ip)
   config = Lx.new(
     question  = "Root Password Crypt",
     ask       = "yes",
-    value     = get_password_crypt($default_root_password),
+    value     = "get_root_password_crypt()",
     valid     = "",
-    eval      = "get_password_crypt(answer)"
+    eval      = "get_root_password_crypt()"
     )
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_fullname"
+  name = "admin_fullname"
   config = Lx.new(
     question  = "User full name",
     ask       = "yes",
@@ -38,7 +38,7 @@ def populate_lxc_client_questions(client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_username"
+  name = "admin_username"
   config = Lx.new(
     question  = "Username",
     ask       = "yes",
@@ -49,7 +49,7 @@ def populate_lxc_client_questions(client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_uid"
+  name = "admin_uid"
   config = Lx.new(
     question  = "User UID",
     ask       = "yes",
@@ -60,7 +60,7 @@ def populate_lxc_client_questions(client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_group"
+  name = "admin_group"
   config = Lx.new(
     question  = "User Group",
     ask       = "yes",
@@ -71,7 +71,7 @@ def populate_lxc_client_questions(client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_gid"
+  name = "admin_gid"
   config = Lx.new(
     question  = "User GID",
     ask       = "yes",
@@ -82,7 +82,7 @@ def populate_lxc_client_questions(client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_home"
+  name = "admin_home"
   config = Lx.new(
     question  = "User Home Directory",
     ask       = "yes",
@@ -93,7 +93,7 @@ def populate_lxc_client_questions(client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_shell"
+  name = "admin_shell"
   config = Lx.new(
     question  = "User Shell",
     ask       = "yes",
@@ -104,7 +104,7 @@ def populate_lxc_client_questions(client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_password"
+  name = "admin_password"
   config = Lx.new(
     question  = "User password",
     ask       = "yes",
@@ -115,13 +115,13 @@ def populate_lxc_client_questions(client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_crypt"
+  name = "admin_crypt"
   config = Lx.new(
     question  = "User Password Crypt",
     ask       = "yes",
-    value     = get_password_crypt($default_admin_password),
+    value     = "get_admin_password_crypt()",
     valid     = "",
-    eval      = "get_password_crypt(answer)"
+    eval      = "get_admin_password_crypt()"
     )
   $q_struct[name] = config
   $q_order.push(name)

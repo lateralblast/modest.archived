@@ -43,15 +43,15 @@ end
 
 # Construct ks password line
 
-def get_ks_password()
-  result = "--iscrypted "+$q_struct["crypt"].value.to_s
+def get_ks_root_password()
+  result = "--iscrypted "+$q_struct["root_crypt"].value.to_s
   return result
 end
 
 # Construct admin ks password line
 
 def get_ks_admin_password()
-  result = "--name="+$q_struct["adminuser"].value+" --groups="+$q_struct["admingroup"].value+" --homedir="+$q_struct["adminhome"].value+" --password="+$q_struct["admincrypt"].value.to_s+" --iscrypted --shell="+$q_struct["adminshell"].value+" --uid="+$q_struct["adminuid"].value
+  result = "--name="+$q_struct["admin_user"].value+" --groups="+$q_struct["admin_group"].value+" --homedir="+$q_struct["admin_home"].value+" --password="+$q_struct["admin_crypt"].value.to_s+" --iscrypted --shell="+$q_struct["admin_shell"].value+" --uid="+$q_struct["admin_uid"].value
   return result
 end
 
@@ -509,7 +509,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "password"
+  name = "root_password"
   config = Ks.new(
     type      = "",
     question  = "Root Password",
@@ -522,13 +522,13 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "crypt"
+  name = "root_crypt"
   config = Ks.new(
     type      = "",
     question  = "Root Password Crypt",
     ask       = "yes",
     parameter = "",
-    value     = "get_ks_root_password_crypt()",
+    value     = "get_root_password_crypt()",
     valid     = "",
     eval      = "no"
     )
@@ -541,9 +541,9 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Root Password Configuration",
     ask       = "yes",
     parameter = "rootpw",
-    value     = "get_ks_password()",
+    value     = "get_ks_root_password()",
     valid     = "",
-    eval      = "get_ks_password()"
+    eval      = "get_ks_root_password()"
     )
   $q_struct[name] = config
   $q_order.push(name)
@@ -587,7 +587,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "adminuser"
+  name = "admin_user"
   config = Ks.new(
     type      = "",
     question  = "Admin Username",
@@ -600,7 +600,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "adminuid"
+  name = "admin_uid"
   config = Ks.new(
     type      = "",
     question  = "Admin User ID",
@@ -613,7 +613,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "adminshell"
+  name = "admin_shell"
   config = Ks.new(
     type      = "",
     question  = "Admin User Shell",
@@ -625,7 +625,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "adminhome"
+  name = "admin_home"
   config = Ks.new(
     type      = "",
     question  = "Admin User Home Directory",
@@ -638,7 +638,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "admingroup"
+  name = "admin_group"
   config = Ks.new(
     type      = "",
     question  = "Admin User Group",
@@ -651,7 +651,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "admingid"
+  name = "admin_gid"
   config = Ks.new(
     type      = "",
     question  = "Admin Group ID",
@@ -664,7 +664,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "adminpassword"
+  name = "admin_password"
   config = Ks.new(
     type      = "",
     question  = "Admin User Password",
@@ -677,13 +677,13 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "admincrypt"
+  name = "admin_crypt"
   config = Ks.new(
     type      = "",
     question  = "Admin User Password Crypt",
     ask       = "yes",
     parameter = "",
-    value     = "get_ks_account_password_crypt()",
+    value     = "get_admin_password_crypt()",
     valid     = "",
     eval      = "no"
     )

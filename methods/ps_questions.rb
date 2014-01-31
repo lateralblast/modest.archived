@@ -446,7 +446,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_fullname"
+  name = "admin_fullname"
   config = Ks.new(
     type      = "string",
     question  = "User full name",
@@ -459,7 +459,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_username"
+  name = "admin_username"
   config = Ks.new(
     type      = "string",
     question  = "Username",
@@ -472,7 +472,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_password"
+  name = "admin_password"
   config = Ks.new(
     type      = "",
     question  = "User password",
@@ -485,7 +485,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_crypt"
+  name = "admin_crypt"
   config = Ks.new(
     type      = "password",
     question  = "User Password Crypt",
@@ -498,7 +498,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_groups"
+  name = "admin_groups"
   config = Ks.new(
     type      = "string",
     question  = "User groups",
@@ -511,7 +511,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "user_home_encrypt"
+  name = "admin_home_encrypt"
   config = Ks.new(
     type      = "boolean",
     question  = "Encrypt user home directory",

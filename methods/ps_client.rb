@@ -40,7 +40,7 @@ def populate_ps_post_list()
   client_netmask   = $q_struct["netmask"].value
   client_network   = $q_struct["network_address"].value
   client_broadcast = $q_struct["broadcast"].value
-  admin_user       = $q_struct["user_username"].value
+  admin_user       = $q_struct["admin_username"].value
   post_list.push("# Install additional pacakges")
   post_list.push("")
   post_list.push("export TERM=vt100")

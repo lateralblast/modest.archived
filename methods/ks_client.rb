@@ -210,12 +210,12 @@ end
 
 def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list   = []
-  admin_group = $q_struct["admingroup"].value
-  admin_user  = $q_struct["adminuser"].value
-  admin_crypt = $q_struct["admincrypt"].value
-  admin_home  = $q_struct["adminhome"].value
-  admin_uid   = $q_struct["adminuid"].value
-  admin_gid   = $q_struct["admingid"].value
+  admin_group = $q_struct["admin_group"].value
+  admin_user  = $q_struct["admin_user"].value
+  admin_crypt = $q_struct["admin_crypt"].value
+  admin_home  = $q_struct["admin_home"].value
+  admin_uid   = $q_struct["admin_uid"].value
+  admin_gid   = $q_struct["admin_gid"].value
   epel_file   = "/etc/yum.repos.d/epel.repo"
   beta_file   = "/etc/yum.repos.d/public-yum-ol6-beta.repo"
   post_list.push("# Add Admin user")
@@ -261,6 +261,7 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("# Configure Epel repo")
   post_list.push("")
   post_list.push("rpm -i #{epel_url}")
+  post_list.push("cp #{epel_file} #{epel_file}.orig")
   post_list.push("sed -i 's/^mirror./#&/g' #{epel_file}")
   post_list.push("sed -i 's/^#\\(baseurl\\)/\\1/g' #{epel_file}")
   post_list.push("sed -i 's,#{$default_epel_mirror},#{$local_epel_mirror},g' #{epel_file}")

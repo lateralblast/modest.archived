@@ -111,7 +111,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   config = Ai.new(
     question  = "Root Password Crypt",
     ask       = "yes",
-    value     = "get_ai_root_password_crypt()",
+    value     = "get_root_password_crypt()",
     valid     = "",
     eval      = "no"
     )
@@ -140,7 +140,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_login"
+  name="admin_login"
   config=Ai.new(
     question  = "Account login name",
     ask       = "yes",
@@ -151,7 +151,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_password"
+  name="admin_password"
   config=Ai.new(
     question  = "Admin Account Password",
     ask       = "yes",
@@ -162,18 +162,18 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name = "account_crypt"
+  name = "admin_crypt"
   config = Ai.new(
     question  = "Admin Account Password Crypt",
     ask       = "yes",
-    value     = "get_ai_account_password_crypt()",
+    value     = "get_admin_password_crypt()",
     valid     = "",
     eval      = "no"
     )
   $q_struct[name] = config
   $q_order.push(name)
 
-  name="account_description"
+  name="admin_description"
   config=Ai.new(
     question  = "Account Description",
     ask       = "yes",
@@ -184,7 +184,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_home"
+  name="admin_home"
   config=Ai.new(
     question  = "Account Home",
     ask       = "yes",
@@ -195,7 +195,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_shell"
+  name="admin_shell"
   vaild_shells=get_valid_shells()
   config=Ai.new(
     question  = "Account Shell",
@@ -207,7 +207,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_uid"
+  name="admin_uid"
   config=Ai.new(
     question  = "Account UID",
     ask       = "yes",
@@ -218,7 +218,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_gid"
+  name="admin_gid"
   config=Ai.new(
     question  = "Account GID",
     ask       = "yes",
@@ -229,7 +229,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_type"
+  name="admin_type"
   config=Ai.new(
     question  = "Account type",
     ask       = "yes",
@@ -240,7 +240,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_roles"
+  name="admin_roles"
   config=Ai.new(
     question  = "Account roles",
     ask       = "yes",
@@ -251,7 +251,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_profiles"
+  name="admin_profiles"
   config=Ai.new(
     question  = "Account Profiles",
     ask       = "yes",
@@ -262,7 +262,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_sudoers"
+  name="admin_sudoers"
   config=Ai.new(
     question  = "Account Sudoers Entry",
     ask       = "yes",
@@ -273,7 +273,7 @@ def populate_ai_client_profile_questions(client_ip,client_name)
   $q_struct[name]=config
   $q_order.push(name)
 
-  name="account_expire"
+  name="admin_expire"
   config=Ai.new(
     question  = "Password Expiry Date (0 = next login)",
     ask       = "yes",
