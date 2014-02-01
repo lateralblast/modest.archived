@@ -35,12 +35,53 @@ end
 def configure_js_nfs_service(service_name,publisher_host)
   repo_version_dir = $repo_base_dir+"/"+service_name
   network_address  = publisher_host.split(/\./)[0..2].join(".")+".0"
-  message          = "Enabling:\tNFS share on "+repo_version_dir
-  command          = "zfs set sharenfs=on #{$default_zpool}#{repo_version_dir}"
-  output           = execute_command(message,command)
-  message          = "Setting:\tNFS access rights on "+repo_version_dir
-  command          = "zfs set share=name=#{service_name},path=#{repo_version_dir},prot=nfs,anon=0,sec=sys,ro=@#{network_address}/24 #{$default_zpool}#{repo_version_dir}"
-  output           = execute_command(message,command)
+  if $os_name.match(/SunOS/)
+    if $os_rel.match(/11/)
+      message  = "Enabling:\tNFS share on "+repo_version_dir
+      command  = "zfs set sharenfs=on #{$default_zpool}#{repo_version_dir}"
+      output   = execute_command(message,command)
+      message  = "Setting:\tNFS access rights on "+repo_version_dir
+      command  = "zfs set share=name=#{service_name},path=#{repo_version_dir},prot=nfs,anon=0,sec=sys,ro=@#{network_address}/24 #{$default_zpool}#{repo_version_dir}"
+      output   = execute_command(message,command)
+    else
+      dfs_file = "/etc/dfs/dfstab"
+      message  = "Checking:\tCurrent NFS exports"
+      command  = "cat #{dfs_file} |grep '#{repo_version_dir}' |grep -v '^#'"
+      output   = execute_command(message,command)
+      if !output.match(/#{repo_version_dir}/)
+        backup_file(dfs_file)
+        export  = "share -F nfs -o ro=@#{network_address},anon=0 #{repo_version_dir}"
+        message = "Adding:\tNFS export for "+repo_version_dir
+        command = "echo '#{export}' >> #{dfs_file}"
+        execute_command(message,command)
+        message = "Refreshing:\tNFS exports"
+        command = "shareall -F nfs"
+        execute_command(message,command)
+      end
+    end
+  else
+    dfs_file = "/etc/exports"
+    message  = "Checking:\tCurrent NFS exports"
+    command  = "cat #{dfs_file} |grep '#{repo_version_dir}' |grep -v '^#'"
+    output   = execute_command(message,command)
+    if !output.match(/#{repo_version_dir}/)
+      if $os_name.match(/Darwin/)
+        export = "#{repo_version_dir} -maproot=root:wheel -network #{network_address} -mask #{$default_netmask}"
+      else
+        export = "#{repo_version_dir} #{network_address}/24(ro,no_root_squash,async,no_subtree_check)"
+      end
+      message = "Adding:\tNFS export for "+repo_version_dir
+      command = "echo '#{export}' >> #{dfs_file}"
+      execute_command(message,command)
+      message = "Refreshing:\tNFS exports"
+      if $os_name.match(/Darwin/)
+        command = "sysctl -w kern.aiomax=64 kern.aioprocmax=32 kern.aiothreads=4 ; nfsd enable ; nfsd start"
+      else
+        command = "/sbin/exportfs -a"
+      end
+      execute_command(message,command)
+    end
+  end
   return
 end
 
@@ -48,50 +89,70 @@ end
 
 def unconfigure_js_nfs_service(service_name)
   repo_version_dir = $repo_base_dir+"/"+service_name
-  message          = "Disabling:\tNFS share on "+repo_version_dir
-  command          = "zfs set sharenfs=off #{$default_zpool}#{repo_version_dir}"
-  execute_command(message,command)
+  if $os_name.match(/SunOS/)
+    message = "Disabling:\tNFS share on "+repo_version_dir
+    command = "zfs set sharenfs=off #{$default_zpool}#{repo_version_dir}"
+    execute_command(message,command)
+  else
+    dfs_file = "/etc/exports"
+    backup_file(dfs_file)
+    tmp_file = "/tmp/dfs_file"
+    message  = "Removing:\tExport "+repo_version_dir
+    command  = "cat #{dfs_file} |grep -v '#{repo_version_dir}' > #{tmp_file} ; cat #{tmp_file} > #{dfs_file} ; rm #{tmp_file}"
+    execute_command(message,command)
+    message  = "Restarting:\tNFS daemons"
+    command  = "nfsd restart"
+    execute_command(message,command)
+  end
 end
 
 # Configure tftpboot services
 
 def configure_js_tftp_service(client_arch,service_name,repo_version_dir,os_version)
-  pkg_name = "system/boot/network"
-  message  = "Checking:\tBoot server package is installed"
-  command  = "pkg info #{pkg_name} |grep Name |awk '{print $2}'"
-  output   = execute_command(message,command)
-  if !output.match(/#{pkg_name}/)
-    message = "Installing:\tBoot server package"
-    command = "pkg install #{pkg_name}"
-    output  = execute_command(message,command)
+  boot_dir=$tftp_dir+"/"+service_name+"/boot"
+  source_dir = repo_version_dir+"/boot"
+  if $os_name.match(/SunOS/)
+    if $os_rel.match(/11/)
+      pkg_name = "system/boot/network"
+      message  = "Checking:\tBoot server package is installed"
+      command  = "pkg info #{pkg_name} |grep Name |awk '{print $2}'"
+      output   = execute_command(message,command)
+      if !output.match(/#{pkg_name}/)
+        message = "Installing:\tBoot server package"
+        command = "pkg install #{pkg_name}"
+        output  = execute_command(message,command)
+      end
+      old_tftp_dir="/tftpboot"
+      if !File.symlink?(tftp_dir)
+        message = "Symlinking:\tDirectory "+old_tftp_dir+" to "+$tftp_dir
+        command = "ln -s #{old_tftp_dir} #{$tftp_dir}"
+        output  = execute_command(message,command)
+      end
+      smf_service_name="svc:/network/tftp/udp6:default"
+      message = "Checking:\tTFTP service is installed"
+      command = "svcs -a |grep '#{smf_service_name}'"
+      output  = execute_command(message,command)
+      if !output.match(/#{smf_service_name}/)
+        message = "Creating:\tTFTP service information"
+        command = "echo 'tftp  dgram  udp6  wait  root  /usr/sbin/in.tftpd  in.tftpd -s /tftpboot' >> /tmp/tftp"
+        output  = execute_command(message,command)
+        message = "Creating:\tTFTP service manifest"
+        command = "inetconv -i /tmp/tftp"
+        output  = execute_command(message,command)
+      end
+      enable_smf_service(smf_service_name)
+    end
   end
-  tftp_dir="/tftpboot"
-  netboot_dir="/etc/netboot"
-  if !File.symlink?(tftp_dir)
-    message = "Symlinking:\tDirectory "+tftp_dir+" to "+netboot_dir
-    command = "ln -s #{tftp_dir} #{netboot_dir}"
-    output  = execute_command(message,command)
+  if $os_name.match(/Darwin/)
+    check_osx_tftpd()
   end
-  smf_service_name="svc:/network/tftp/udp6:default"
-  message="Checking:\tTFTP service is installed"
-  command="svcs -a |grep '#{smf_service_name}'"
-  output=execute_command(message,command)
-  if !output.match(/#{smf_service_name}/)
-    message = "Creating:\tTFTP service information"
-    command = "echo 'tftp  dgram  udp6  wait  root  /usr/sbin/in.tftpd  in.tftpd -s /tftpboot' >> /tmp/tftp"
-    output  = execute_command(message,command)
-    message = "Creating:\tTFTP service manifest"
-    command = "inetconv -i /tmp/tftp"
-    output  = execute_command(message,command)
+  if $os_name.match(/Linux/)
   end
-  enable_smf_service(smf_service_name)
-  boot_dir=netboot_dir+"/"+service_name+"/boot"
   if !File.directory?(boot_dir)
     check_dir_exists(boot_dir)
-    source_dir = repo_version_dir+"/boot"
-    message    = "Copying:\tBoot files from "+source_dir+" to "+boot_dir
-    command    = "cp -r #{source_dir}/* #{boot_dir}"
-    output     = execute_command(message,command)
+    message = "Copying:\tBoot files from "+source_dir+" to "+boot_dir
+    command = "cp -r #{source_dir}/* #{boot_dir}"
+    output  = execute_command(message,command)
   end
   return
 end
@@ -114,7 +175,7 @@ def copy_js_sparc_boot_images(repo_version_dir,os_version,os_update)
   boot_list.each do |boot_arch|
     boot_file = repo_version_dir+"/Solaris_"+os_version+"/Tools/Boot/platform/"+boot_arch+"/inetboot"
     tftp_file = tftp_dir+"/"+boot_arch+".inetboot.sol_"+os_version+"_"+os_update
-    if !File.exists?(boot_file)
+    if !File.exist?(boot_file)
       message = "Copying:\tBoot image "+boot_file+" to "+tftp_file
       command = "cp #{boot_file} #{tftp_file}"
       execute_command(message,command)
@@ -154,7 +215,11 @@ def configure_js_repo(iso_file,repo_version_dir,os_version,os_update)
         exit
       end
       message = "Copying:\tISO file "+iso_file+" contents to "+repo_version_dir
-      command = "cd /cdrom/Solaris_#{os_version}/Tools ; ./setup_install_server #{repo_version_dir}"
+      if $os_name.match(/SunOS/)
+        command = "cd /cdrom/Solaris_#{os_version}/Tools ; ./setup_install_server #{repo_version_dir}"
+      else
+        command = "(cd /cdrom ; tar -cpf - . ) | (cd #{repo_version_dir} ; tar -xpf - )"
+      end
       execute_command(message,command)
     else
       puts "Warning:\tISO "+iso_file+" is not mounted"
@@ -171,12 +236,12 @@ def fix_js_rm_client(repo_version_dir,os_version)
   file_name   = "rm_install_client"
   rm_script   = repo_version_dir+"/Solaris_"+os_version+"/Tools/"+file_name
   backup_file = rm_script+".modest"
-  if !File.exists?(backup_file)
+  if !File.exist?(backup_file)
     message = "Archiving:\tRemove install script "+rm_script+" to "+backup_file
     command = "cp #{rm_script} #{backup_file}"
     execute_command(message,command)
-    text    = File.read(rm_script)
-    copy    = []
+    text = File.read(rm_script)
+    copy = []
     text.each do |line|
       if line.match(/ANS/) and line.match(/sed/) and !line.match(/\{/)
         line=line.gsub(/#/,' #')
@@ -211,14 +276,18 @@ def fix_js_check(repo_version_dir,os_version)
   file_name    = "check"
   check_script = repo_version_dir+"/Solaris_"+os_version+"/Misc/jumpstart_sample/"+file_name
   backup_file  = check_script+".modest"
-  if !File.exists?(backup_file)
+  if !File.exist?(backup_file)
     message = "Archiving:\tCheck script "+check_script+" to "+backup_file
     command = "cp #{check_script} #{backup_file}"
     execute_command(message,command)
-    text    = File.read(check_script)
-    copy    = text
-    copy[0] = "#!/usr/sbin/sh\n"
-    File.open(check_script,"w") {|file| file.puts copy}
+    text     = File.read(check_script)
+    copy     = text
+    copy[0]  = "#!/usr/sbin/sh\n"
+    tmp_file = "/tmp/check_script"
+    File.open(tmp_file,"w") {|file| file.puts copy}
+    message  = "Updating:\tCheck script"
+    command  = "cp #{tmp_file} #{check_script} ; chmod +x #{check_script} ; rm #{tmp_file}"
+    execute_command(message,command)
   end
   return
 end
@@ -239,7 +308,7 @@ def configure_js_server(client_arch,publisher_host,publisher_port,service_name,i
   iso_list      = []
   search_string = "\\-ga\\-"
   if iso_file.match(/[A-z]/)
-    if File.exists?(iso_file)
+    if File.exist?(iso_file)
       iso_list[0] = iso_file
     else
       puts "Warning:\tISO file "+is_file+" does not exist"
