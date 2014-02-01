@@ -4,11 +4,8 @@
 # Create sysid file
 
 def create_js_sysid_file(client_name,sysid_file)
-  if $verbose_mode == 1
-    puts
-    puts "Creating:\tSysid file "+sysid_file+" for "+client_name
-  end
-  file=File.open(sysid_file,"w")
+  tmp_file = "/tmp/sysid_"+client_name
+  file=File.open(tmp_file,"w")
   $q_order.each do |key|
     if $q_struct[key].type == "output"
       if $q_struct[key].parameter == ""
@@ -19,17 +16,17 @@ def create_js_sysid_file(client_name,sysid_file)
     end
     file.write(output)
   end
+  message = "Creating:\tConfiguration file "+sysid_file+" for "+client_name
+  command = "cp #{tmp_file} #{sysid_file} ; rm #{tmp_file}"
+  execute_command(message,command)
   return
 end
 
 # Create machine file
 
 def create_js_machine_file(client_name,machine_file)
-  if $verbose_mode == 1
-    puts
-    puts "Creating:\tMachine file "+machine_file+" for "+client_name
-  end
-  file=File.open(machine_file,"w")
+  tmp_file = "/tmp/machine_"+client_name
+  file=File.open(tmp_file,"w")
   $q_order.each do |key|
     if $q_struct[key].type == "output"
       if $q_struct[key].parameter == ""
@@ -40,22 +37,25 @@ def create_js_machine_file(client_name,machine_file)
     end
     file.write(output)
   end
+  message = "Creating:\tConfiguration file "+machine_file+" for "+client_name
+  command = "cp #{tmp_file} #{machine_file} ; rm #{tmp_file}"
+  execute_command(message,command)
   return
 end
 
 # Get rules karch line
 
 def create_js_rules_file(client_name,client_karch,rules_file)
-  if $verbose_mode == 1
-    puts
-    puts "Creating:\tRules file "+rules_file+" for "+client_name
-  end
+  tmp_file = "/tmp/rule_"+client_name
   client_karch = %x[uname -m]
   client_karch = client_karch.chomp
   karch_line   = "karch "+client_karch+" - machine."+client_name+" -"
-  file         = File.open(rules_file,"w")
+  file         = File.open(tmp_file,"w")
   file.write("#{karch_line}\n")
   file.close
+  message = "Creating:\tConfiguration file "+rules_file+" for "+client_name
+  command = "cp #{tmp_file} #{rules_file} ; rm #{tmp_file}"
+  execute_command(message,command)
   return karch_line
 end
 
@@ -87,26 +87,27 @@ def check_js_config(client_name,client_dir,repo_version_dir,os_version)
   file_name     = "check"
   check_script  = repo_version_dir+"/Solaris_"+os_version+"/Misc/jumpstart_sample/"+file_name
   rules_ok_file = client_dir+"/rules.ok"
-  if File.exists?(rules_ok_file)
+  if File.exist?(rules_ok_file)
     message = "Removing:\tExisting rules.ok file for client "+client_name
     command = "rm #{rules_ok_file}"
     output  = execute_command(message,command)
   end
-  if !File.exists?("#{client_dir}/check")
+  if !File.exist?("#{client_dir}/check")
     message = "Copying:\tCheck script "+check_script+" to "+client_dir
     command = "cd #{client_dir} ; cp -p #{check_script} ."
     output  = execute_command(message,command)
   end
-  message    = "Checking:\tSum for rules file for "+client_name
-  command    = "cd #{client_dir} ; sum rules |awk '{print $1}'"
-  output     = execute_command(message,command)
-  rules_sum  = output.chomp
-  message    = "Copying:\tRules file"
-  command    = "cd #{client_dir}; cp rules rules.ok"
-  output     = execute_command(message,command)
-  file       = File.open(rules_ok_file,"a")
-  file.write("# version = 2 checksum=#{rules_sum}\n")
-  file.close
+  message   = "Checking:\tSum for rules file for "+client_name
+  command   = "cd #{client_dir} ; sum rules |awk '{print $1}'"
+  output    = execute_command(message,command)
+  rules_sum = output.chomp
+  message   = "Copying:\tRules file"
+  command   = "cd #{client_dir}; cp rules rules.ok"
+  execute_command(message,command)
+  output    = "# version = 2 checksum=#{rules_sum}"
+  message   = "Creating:\tRules file "+rules_ok_file
+  command   = "echo '#{output}' >> #{rules_ok_file}"
+  execute_command(message,command)
   return
 end
 
@@ -125,7 +126,7 @@ def configure_js_pxe_client(client_name,client_mac,client_arch,service_name,repo
     tftp_pxe_file = tftp_pxe_file.upcase
     tftp_pxe_file = "01"+tftp_pxe_file+".bios"
     test_file     = $tftp_dir+"/"+tftp_pxe_file
-    if !File.exists?(test_file)
+    if !File.exist?(test_file)
       pxegrub_file = service_name+"/boot/grub/pxegrub"
       message      = "Creating:\tPXE boot file for "+client_name+" with MAC address "+client_mac
       command      = "cd #{$tftp_dir} ; ln -s #{pxegrub_file} #{tftp_pxe_file}"
@@ -138,7 +139,8 @@ def configure_js_pxe_client(client_name,client_mac,client_arch,service_name,repo
     sysid_dir    = repo_version_dir+"/clients/"+client_name
     install_url  = publisher_host+":"+repo_version_dir
     sysid_url    = publisher_host+":"+sysid_dir
-    file         = File.open(pxe_cfg_file,"w")
+    tmp_file     = "/tmp/pxe_"+client_name
+    file         = File.open(tmp_file,"w")
     file.write("default 0\n")
     file.write("timeout 3\n")
     file.write("title Oracle Solaris\n")
@@ -153,9 +155,14 @@ def configure_js_pxe_client(client_name,client_mac,client_arch,service_name,repo
     end
     file.write("\tmodule$ #{service_name}/boot/$ISADIR/x86.miniroot\n")
     file.close
+    message = "Creating:\tPXE boot config file "+pxe_cfg_file
+    command = "cp #{tmp_file} #{pxe_cfg_file} ; rm #{tmp_file}"
+    execute_command(message,command)
     if $verbose_mode == 1
-      puts "Created:\tPXE menu file "+pxe_cfg_file+":"
+      puts "information:\tPXE menu file "+pxe_cfg_file+" contents:"
+      puts
       system("cat #{pxe_cfg_file}")
+      puts
     end
   end
   return
@@ -202,6 +209,8 @@ def unconfigure_js_client(client_name,client_mac,service_name)
       end
     end
   end
+  client_ip = get_client_ip(client_name)
+  remove_hosts_entry(client_name,client_ip)
   return
 end
 
@@ -254,5 +263,6 @@ def configure_js_client(client_name,client_arch,client_mac,client_ip,client_mode
   configure_js_pxe_client(client_name,client_mac,client_arch,service_name,repo_version_dir,publisher_host)
   configure_js_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   check_js_config(client_name,client_dir,repo_version_dir,os_version)
+  add_hosts_entry(client_name,client_ip)
   return
 end

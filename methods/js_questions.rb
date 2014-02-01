@@ -4,11 +4,16 @@
 
 # Get system architecture for sparc (sun4u/sun4v)
 
-def get_js_system_karch(client_model)
-  if client_model.downcase.match(/^t/)
-    system_karch = "sun4v"
+def get_js_system_karch()
+  system_model = $q_struct["system_model"].value
+  if !system_model.match(/vmware/)
+    if system_model.downcase.match(/^t/)
+      system_karch = "sun4v"
+    else
+      system_karch = "sun4u"
+    end
   else
-    system_karch = "sun4u"
+    system_karch = "i86"
   end
   return system_karch
 end
@@ -48,20 +53,24 @@ end
 # Get mirror disk id
 
 def get_js_mirror_disk_id()
-  root_disk_id         = $q_struct["root_disk_id"].value
-  mirror_controller_id = root_disk_id.split(/t/)[0].gsub(/^c/,"")
-  mirror_target_id     = root_disk_id.split(/t/)[1].split(/d/)[0]
-  mirror_disk_id       = root_disk_id.split(/d/)[1]
-  system_model         = $q_struct["system_model"].value.downcase
-  case system_model
-  when /^v8/
-    mirror_target_id = Integer(mirror_target_id)+3
-  when /^e6/
-    mirror_controller_id = Integer(mirror_controller_id)+1
+  root_disk_id = $q_struct["root_disk_id"].value
+  if !root_disk_id.match(/any/)
+    mirror_controller_id = root_disk_id.split(/t/)[0].gsub(/^c/,"")
+    mirror_target_id     = root_disk_id.split(/t/)[1].split(/d/)[0]
+    mirror_disk_id       = root_disk_id.split(/d/)[1]
+    system_model         = $q_struct["system_model"].value.downcase
+    case system_model
+    when /^v8/
+      mirror_target_id = Integer(mirror_target_id)+3
+    when /^e6/
+      mirror_controller_id = Integer(mirror_controller_id)+1
+    else
+      mirror_target_id = Integer(mirror_target_id)+1
+    end
+    mirror_disk_id = "c"+mirror_controller_id+"t"+mirror_target_id+"d"+mirror_disk_id
   else
-    mirror_target_id = Integer(mirror_target_id)+1
+    mirror_disk_id = "any"
   end
-  mirror_disk_id = "c"+mirror_controller_id+"t"+mirror_target_id+"d"+mirror_disk_id
   return mirror_disk_id
 end
 
@@ -101,8 +110,10 @@ def set_js_fs()
       $q_struct[key].ask  = "no"
       $q_struct[key].type = ""
     end
+  else
+    $q_struct["zfs_layout"].ask  = "no"
+    $q_struct["zfs_bootenv"].ask = "no"
     (f_struct,f_order)=populate_js_fs_list()
-    f_struct=""
     f_order.each do |fs_name|
       key                 = fs_name+"_filesys"
       $q_struct[key].ask  = "no"
@@ -111,9 +122,6 @@ def set_js_fs()
       $q_struct[key].ask  = "no"
       $q_struct[key].type = ""
     end
-  else
-    $q_struct["zfs_layout"].ask  = "no"
-    $q_struct["zfs_bootenv"].ask = "no"
   end
   return $q_struct
 end
@@ -134,7 +142,7 @@ end
 
 def set_js_install_type()
   if $q_struct["install_type"].value == "flash"
-    $q_struct["install_cluster"].ask  =" no"
+    $q_struct["install_cluster"].ask  = "no"
     $q_struct["install_cluster"].type = ""
   else
     ["flash_location","flash_file","flash_host","flash_method"].each do |key|
@@ -194,35 +202,43 @@ def get_js_ufs_filesys(fs_mount,fs_slice,fs_mirror,fs_size)
 end
 
 def get_js_filesys(fsname)
-  (f_struct,f_order) = populate_js_fs_list()
-  f_order            = ""
-  fs_mount           = f_struct[fs_name].mount
-  fs_slice           = f_struct[fs_name].slice
-  key_name           = fs_name+"_size"
-  fs_size            = $q_struct[key_name].value
-  fs_mirror          = f_struct[fs_name].mirror
-  filesys_entry      = get_js_ufs_filesys(fs_mount,fs_slice,fs_mirror,fs_size)
+  if !$q_struct["root_fs"].value.downcase.match(/zfs/)
+    (f_struct,f_order) = populate_js_fs_list()
+    f_order            = ""
+    fs_mount           = f_struct[fs_name].mount
+    fs_slice           = f_struct[fs_name].slice
+    key_name           = fs_name+"_size"
+    fs_size            = $q_struct[key_name].value
+    fs_mirror          = f_struct[fs_name].mirror
+    filesys_entry      = get_js_ufs_filesys(fs_mount,fs_slice,fs_mirror,fs_size)
+  end
   return filesys_entry
 end
 
 # Get metadb entry
 
 def get_js_metadb()
-  metadb_entry = $q_struct["root_disk_id"].value+"s7 size "+$q_struct["metadb_size"]+" count "+$q_struct["metadb_count"].size
+  if !$q_struct["root_fs"].value.downcase.match(/zfs/)
+    metadb_entry = $q_struct["root_disk_id"].value+"s7 size "+$q_struct["metadb_size"]+" count "+$q_struct["metadb_count"].size
+  end
   return metadb_entry
 end
 
 # Get root metadb entry
 
 def get_js_root_metadb()
-  metadb_entry = $q_struct["root_disk_id"].value+"s7 size "+$q_struct["metadb_size"]+" count "+$q_struct["metadb_count"].size
+  if !$q_struct["root_fs"].value.downcase.match(/zfs/)
+    metadb_entry = $q_struct["root_disk_id"].value+"s7 size "+$q_struct["metadb_size"]+" count "+$q_struct["metadb_count"].size
+  end
   return metadb_entry
 end
 
 # Get mirror metadb entry
 
 def get_js_mirror_metadb()
-  metadb_entry = $q_struct["mirror_disk_id"].value+"s7"
+  if !$q_struct["root_fs"].value.downcase.match(/zfs/)
+    metadb_entry = $q_struct["mirror_disk_id"].value+"s7"
+  end
   return metadb_entry
 end
 
@@ -271,6 +287,7 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
     eval      = "no"
     )
   $q_struct[name] = config
+  $q_order.push(name)
 
   name = "root_disk_id"
   config = Js.new(
@@ -304,7 +321,6 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
   $q_struct[name] = config
   $q_order.push(name)
 
-
   name = "mirror_disk_id"
   config = Js.new(
     type      = "",
@@ -329,6 +345,7 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
     eval      = "no"
     )
   $q_struct[name] = config
+  $q_order.push(name)
 
   name = "memory_size"
   config = Js.new(
@@ -519,6 +536,7 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
   $q_order.push(name)
 
   zfs_bootenv=get_js_zfs_bootenv(service_name)
+
   name = "zfs_bootenv"
   config = Js.new(
     type      = "output",
@@ -618,14 +636,14 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
   $q_struct[name] = config
   $q_order.push(name)
 
-  return $q_struct,$q_order
+  return
 end
 
 # Populate Jumpstart sysidcfg questions
 
 def populate_js_sysid_questions(client_name,client_ip,client_arch,client_model,os_version,os_update)
-  $q_struct={}
-  $q_order=[]
+  $q_struct = {}
+  $q_order  = []
 
   name = "hostname"
   config = Js.new(
@@ -932,5 +950,5 @@ def populate_js_sysid_questions(client_name,client_ip,client_arch,client_model,o
     end
   end
 
-  return $q_struct,$q_order
+  return
 end
