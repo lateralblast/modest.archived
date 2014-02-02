@@ -128,7 +128,7 @@ end
 # Create VMware Fusion VM disk
 
 def create_fusion_vm_disk(client_name,fusion_vm_dir,fusion_disk_file)
-  if File.exists?(fusion_disk_file)
+  if File.exist?(fusion_disk_file)
     puts "Warning:\tVMware Fusion VM disk '"+fusion_disk_file+"' already exists for "+client_name
     exit
   end
@@ -146,7 +146,7 @@ end
 def check_fusion_vm_exists(client_name)
   fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
   fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
-  if !File.exists?(fusion_vmx_file)
+  if !File.exist?(fusion_vmx_file)
     puts "Information:\tVMware Fusion VM "+client_name+" does not exist"
     exit
   end
@@ -158,7 +158,7 @@ def check_fusion_vm_doesnt_exist(client_name)
   fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
   fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
   fusion_disk_file = fusion_vm_dir+"/"+client_name+".vmdk"
-  if File.exists?(fusion_vmx_file)
+  if File.exist?(fusion_vmx_file)
     puts "Information:\tVMware Fusion VM "+client_name+" already exists"
     exit
   end

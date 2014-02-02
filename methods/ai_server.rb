@@ -278,7 +278,12 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
       search_string = "repo-full"
       if !iso_file.match(/[A-z|0-9]/)
         if File.exists?(iso_file)
-          iso_list[0] = iso_file
+          if !iso_file.match(/repo-full/)
+            puts "Warning:\tISO "+iso_file+" does not appear to be a valid Solaris distribution"
+            exit
+          else
+            iso_list[0] = iso_file
+          end
         else
           iso_list = check_iso_base_dir(search_string)
         end

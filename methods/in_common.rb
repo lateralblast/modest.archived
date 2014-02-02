@@ -1,6 +1,92 @@
 
 # Code common to all services
 
+# Add NFS export
+
+def add_nfs_export(export_name,export_dir,publisher_host)
+  network_address  = publisher_host.split(/\./)[0..2].join(".")+".0"
+  if $os_name.match(/SunOS/)
+    if $os_rel.match(/11/)
+      message  = "Enabling:\tNFS share on "+export_dir
+      command  = "zfs set sharenfs=on #{$default_zpool}#{export_dir}"
+      output   = execute_command(message,command)
+      message  = "Setting:\tNFS access rights on "+export_dir
+      command  = "zfs set share=name=#{export_name},path=#{export_dir},prot=nfs,anon=0,sec=sys,ro=@#{network_address}/24 #{$default_zpool}#{export_dir}"
+      output   = execute_command(message,command)
+    else
+      dfs_file = "/etc/dfs/dfstab"
+      message  = "Checking:\tCurrent NFS exports for "+export_dir
+      command  = "cat #{dfs_file} |grep '#{export_dir}' |grep -v '^#'"
+      output   = execute_command(message,command)
+      if !output.match(/#{export_dir}/)
+        backup_file(dfs_file)
+        export  = "share -F nfs -o ro=@#{network_address},anon=0 #{export_dir}"
+        message = "Adding:\tNFS export for "+export_dir
+        command = "echo '#{export}' >> #{dfs_file}"
+        execute_command(message,command)
+        message = "Refreshing:\tNFS exports"
+        command = "shareall -F nfs"
+        execute_command(message,command)
+      end
+    end
+  else
+    dfs_file = "/etc/exports"
+    message  = "Checking:\tCurrent NFS exports for "+export_dir
+    command  = "cat #{dfs_file} |grep '#{export_dir}' |grep -v '^#'"
+    output   = execute_command(message,command)
+    if !output.match(/#{export_dir}/)
+      if $os_name.match(/Darwin/)
+        export = "#{export_dir} -alldirs -maproot=root -network #{network_address} -mask #{$default_netmask}"
+      else
+        export = "#{export_dir} #{network_address}/24(ro,no_root_squash,async,no_subtree_check)"
+      end
+      message = "Adding:\tNFS export for "+export_dir
+      command = "echo '#{export}' >> #{dfs_file}"
+      execute_command(message,command)
+      message = "Refreshing:\tNFS exports"
+      if $os_name.match(/Darwin/)
+        command = "nfsd stop ; nfsd start"
+      else
+        command = "/sbin/exportfs -a"
+      end
+      execute_command(message,command)
+    end
+  end
+  return
+end
+
+# Remove NFS export
+
+def remove_nfs_export(export_dir)
+  if $os_name.match(/SunOS/)
+    message = "Disabling:\tNFS share on "+export_dir
+    command = "zfs set sharenfs=off #{$default_zpool}#{export_dir}"
+    execute_command(message,command)
+  else
+    dfs_file = "/etc/exports"
+    message  = "Checking:\tCurrent NFS exports for "+export_dir
+    command  = "cat #{dfs_file} |grep '#{export_dir}' |grep -v '^#'"
+    output   = execute_command(message,command)
+    if output.match(/#{export_dir}/)
+      backup_file(dfs_file)
+      tmp_file = "/tmp/dfs_file"
+      message  = "Removing:\tExport "+export_dir
+      command  = "cat #{dfs_file} |grep -v '#{export_dir}' > #{tmp_file} ; cat #{tmp_file} > #{dfs_file} ; rm #{tmp_file}"
+      execute_command(message,command)
+      if $os_name.match(/Darwin/)
+        message  = "Restarting:\tNFS daemons"
+        command  = "nfsd stop ; nfsd start"
+        execute_command(message,command)
+      else
+        message  = "Restarting:\tNFS daemons"
+        command  = "service nfsd restart"
+        execute_command(message,command)
+      end
+    end
+  end
+  return
+end
+
 # Check we are running on the right architecture
 
 def check_same_arch(client_arch)
@@ -328,6 +414,21 @@ def check_apt_dhcpd()
   return
 end
 
+def restart_tftpd()
+  service = "tftp"
+  service = get_service_name(service)
+  refresh_service(service)
+end
+
+# Check tftpd
+
+def check_tftpd()
+  if $os_name.match(/Darwin/)
+    check_osx_tftpd()
+  end
+  return
+end
+
 # Check OSX service is enabled
 
 def check_osx_service_is_enabled(service)
@@ -342,17 +443,18 @@ def check_osx_service_is_enabled(service)
   end
   tmp_file  = "/tmp/tmp.plist"
   message   = "Checking:\tService "+service+" is enabled"
-  command   = "cat #{plist_file} | grep Disabled |grep true"
+  if service.match(/dhcp/)
+    command   = "cat #{plist_file} | grep Disabled |grep true"
+  else
+    command   = "cat #{plist_file} | grep -C1 Disabled |grep true"
+  end
   output    = execute_command(message,command)
   if !output.match(/true/)
     if $verbose_mode == 1
       puts "Information:\t"+service+" enabled"
     end
   else
-    backup_file = plist_file + ".orig"
-    message     = "Archiving:\tFile "+plist_file+" to "+backup_file
-    command     = "cp #{plist_file} #{backup_file}"
-    execute_command(message,command)
+    backup_file(plist_file)
     copy      = []
     check     = 0
     file_info = IO.readlines(plist_file)
@@ -370,11 +472,11 @@ def check_osx_service_is_enabled(service)
       end
     end
     File.open(tmp_file,"w") {|file| file.puts copy}
-    message = "Enablbline:\t"+service
+    message = "Enabling:\t"+service
     command = "cp #{tmp_file} #{plist_file} ; rm #{tmp_file}"
     execute_command(message,command)
     message = "Loading:\t"+service+" profile"
-    command = "launchctl load -F #{plist_file}"
+    command = "launchctl load -w #{plist_file}"
     execute_command(message,command)
   end
   return
@@ -440,7 +542,7 @@ def check_osx_dhcpd()
       execute_command(message,command)
     end
     message = "Loading:\tISC DHCPd service profile"
-    command = "launchctl load /Library/LaunchDaemons/homebrew.mxcl.isc-dhcp.plist"
+    command = "launchctl load -w /Library/LaunchDaemons/homebrew.mxcl.isc-dhcp.plist"
     execute_command(message,command)
   else
     service = "dhcp"
@@ -540,6 +642,7 @@ def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
     execute_command(message,command)
     restart_dhcpd()
   end
+  check_dhcpd()
   return
 end
 
@@ -705,7 +808,6 @@ def execute_command(message,command)
     if message.match(/[A-z|0-9]/)
       puts message
     end
-    puts "Executing:\t"+command
   end
   if $test_mode == 1
     if !command.match(/create|update|import|delete|svccfg|rsync|cp|touch|svcadm|VBoxManage|vmrun/)
@@ -716,12 +818,13 @@ def execute_command(message,command)
   end
   if execute == 1
     if $id != 0
-      if !command.match(/brew|hg|pip/)
+      if !command.match(/brew |hg|pip/)
         if $use_sudo != 0
           command = "sudo -s -- \""+command+"\""
         end
       end
     end
+    puts "Executing:\t"+command
     output = %x[#{command}]
   end
   if $verbose_mode == 1
@@ -801,6 +904,33 @@ def restart_dhcpd()
   return output
 end
 
+# Check DHPCPd is running
+
+def check_dhcpd()
+  message = "Checking:\tDHCPd is running"
+  if $os_name.match(/SunOS/)
+    command = "svcs -l svc:/network/dhcp/server:ipv4"
+    output  = execute_command(message,command)
+    if output.match(/maintenance/)
+      function         = "refresh"
+      smf_service_name = "svc:/network/dhcp/server:ipv4"
+      output           = handle_smf_service(function,smf_service_name)
+    end
+  end
+  if $os_name.match(/Darwin/)
+    command = "ps aux |grep '/usr/local/bin/dhcpd'"
+    output  = execute_command(message,command)
+    if !output.match(/dhcp/)
+      service = "dhcp"
+      check_osx_service_is_enabled(service)
+      service_name = "dhcp"
+      refresh_service(service_name)
+    end
+    check_osx_tftpd()
+  end
+  return output
+end
+
 # Disable SMF service
 
 def disable_smf_service(smf_service_name)
@@ -837,6 +967,13 @@ end
 # Enable OS X service
 
 def refresh_osx_service(service_name)
+  if !service_name.match(/\./)
+    if service_name.match(/dhcp/)
+      service_name = "homebrew.mxcl.isc-"+service_name
+    else
+      service_name = "com.apple."+service_name+"d"
+    end
+  end
   disable_osx_service(service_name)
   enable_osx_service(service_name)
   return

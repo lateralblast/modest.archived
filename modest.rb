@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.3.5
+# Version:      1.3.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -38,6 +38,7 @@ $ldom_base_dir          = "/ldoms"
 $zone_base_dir          = "/zones"
 $iso_mount_dir          = "/cdrom"
 $ai_base_dir            = "/export/auto_install"
+$client_base_dir        = "/export/repo/clients"
 $lxc_base_dir           = "/lxc"
 $lxc_image_dir          = "/export/images"
 $work_dir               = ""
@@ -530,7 +531,7 @@ else
 end
 check_local_config(mode)
 
-if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"] and !opt["F"] and !opt["Z"]
+if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"] and !opt["F"] and !opt["Z"] and !opt["M"]
   puts "Warning:\tClient name not given"
   exit
 else
@@ -880,7 +881,7 @@ end
 
 # Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE
 
-if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"]
+if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["M"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"]
   # Set function
   if opt["A"]
     funct = "ai"
@@ -953,6 +954,16 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["N"] or opt["U"] or opt["
   end
   # Perform maintenance related functions
   if opt["M"]
+    if opt["T"]
+      check_tftpd()
+      restart_tftpd()
+      exit
+    end
+    if opt["D"]
+      check_dhcpd()
+      restart_dhcpd()
+      exit
+    end
     # Handle PXE services
     if opt["P"]
       if opt["d"]

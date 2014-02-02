@@ -157,7 +157,12 @@ def configure_vs_server(client_arch,publisher_host,publisher_port,service_name,i
   iso_list      = []
   if iso_file.match(/[A-z]/)
     if File.exists?(iso_file)
-      iso_list[0] = iso_file
+      if !iso_file.match(/VM/)
+        puts "Warning:\tISO "+iso_file+" does not appear to be VMware distribution"
+        exit
+      else
+        iso_list[0] = iso_file
+      end
     else
       puts "Warning:\tISO file "+is_file+" does not exist"
     end

@@ -23,7 +23,7 @@ def list_ps_services()
   puts "Kickstart services:"
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
-    if service_name.match(/sles/)
+    if service_name.match(/ubuntu/)
       puts service_name
     end
   end

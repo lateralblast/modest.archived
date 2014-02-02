@@ -269,3 +269,5 @@
 # Added initial OS X Jumpstart server support
 # 1.3.5: Sat Feb  1 17:48:41 EST 2014
 # Initial Jumpstart client creation support on OS X
+# 1.3.6: Mon  3 Feb 2014 09:04:46 EST
+# Cleaned up jumpstart client support

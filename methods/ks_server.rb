@@ -221,7 +221,12 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
   check_dhcpd_config(publisher_host)
   if iso_file.match(/[A-z]/)
     if File.exist?(iso_file)
-      iso_list[0] = iso_file
+      if !iso_file.match(/CentOS|rhel|SL|OracleLinux|ubuntu/)
+        puts "Warning:\tISO "+iso_file+" does not appear to be a valid Linux distribution"
+        exit
+      else
+        iso_list[0] = iso_file
+      end
     else
       puts "Warning:\tISO file "+is_file+" does not exist"
     end

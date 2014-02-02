@@ -34,53 +34,23 @@ end
 
 def configure_js_nfs_service(service_name,publisher_host)
   repo_version_dir = $repo_base_dir+"/"+service_name
-  network_address  = publisher_host.split(/\./)[0..2].join(".")+".0"
   if $os_name.match(/SunOS/)
     if $os_rel.match(/11/)
-      message  = "Enabling:\tNFS share on "+repo_version_dir
-      command  = "zfs set sharenfs=on #{$default_zpool}#{repo_version_dir}"
-      output   = execute_command(message,command)
-      message  = "Setting:\tNFS access rights on "+repo_version_dir
-      command  = "zfs set share=name=#{service_name},path=#{repo_version_dir},prot=nfs,anon=0,sec=sys,ro=@#{network_address}/24 #{$default_zpool}#{repo_version_dir}"
-      output   = execute_command(message,command)
+      check_zfs_fs_exists($client_base_dir)
+      add_nfs_export(service_name,repo_version_dir,publisher_host)
+      export_name = "client_configs"
+      add_nfs_export(export_name,$client_base_dir,publisher_host)
     else
-      dfs_file = "/etc/dfs/dfstab"
-      message  = "Checking:\tCurrent NFS exports"
-      command  = "cat #{dfs_file} |grep '#{repo_version_dir}' |grep -v '^#'"
-      output   = execute_command(message,command)
-      if !output.match(/#{repo_version_dir}/)
-        backup_file(dfs_file)
-        export  = "share -F nfs -o ro=@#{network_address},anon=0 #{repo_version_dir}"
-        message = "Adding:\tNFS export for "+repo_version_dir
-        command = "echo '#{export}' >> #{dfs_file}"
-        execute_command(message,command)
-        message = "Refreshing:\tNFS exports"
-        command = "shareall -F nfs"
-        execute_command(message,command)
-      end
+      check_dir_exists($client_base_dir)
+      add_nfs_export(service_name,repo_version_dir,publisher_host)
+      export_name = "client_configs"
+      add_nfs_export(export_name,$client_base_dir,publisher_host)
     end
   else
-    dfs_file = "/etc/exports"
-    message  = "Checking:\tCurrent NFS exports"
-    command  = "cat #{dfs_file} |grep '#{repo_version_dir}' |grep -v '^#'"
-    output   = execute_command(message,command)
-    if !output.match(/#{repo_version_dir}/)
-      if $os_name.match(/Darwin/)
-        export = "#{repo_version_dir} -maproot=root:wheel -network #{network_address} -mask #{$default_netmask}"
-      else
-        export = "#{repo_version_dir} #{network_address}/24(ro,no_root_squash,async,no_subtree_check)"
-      end
-      message = "Adding:\tNFS export for "+repo_version_dir
-      command = "echo '#{export}' >> #{dfs_file}"
-      execute_command(message,command)
-      message = "Refreshing:\tNFS exports"
-      if $os_name.match(/Darwin/)
-        command = "sysctl -w kern.aiomax=64 kern.aioprocmax=32 kern.aiothreads=4 ; nfsd enable ; nfsd start"
-      else
-        command = "/sbin/exportfs -a"
-      end
-      execute_command(message,command)
-    end
+    check_dir_exists($client_base_dir)
+    add_nfs_export(service_name,repo_version_dir,publisher_host)
+    export_name = "client_configs"
+    add_nfs_export(export_name,$client_base_dir,publisher_host)
   end
   return
 end
@@ -89,21 +59,7 @@ end
 
 def unconfigure_js_nfs_service(service_name)
   repo_version_dir = $repo_base_dir+"/"+service_name
-  if $os_name.match(/SunOS/)
-    message = "Disabling:\tNFS share on "+repo_version_dir
-    command = "zfs set sharenfs=off #{$default_zpool}#{repo_version_dir}"
-    execute_command(message,command)
-  else
-    dfs_file = "/etc/exports"
-    backup_file(dfs_file)
-    tmp_file = "/tmp/dfs_file"
-    message  = "Removing:\tExport "+repo_version_dir
-    command  = "cat #{dfs_file} |grep -v '#{repo_version_dir}' > #{tmp_file} ; cat #{tmp_file} > #{dfs_file} ; rm #{tmp_file}"
-    execute_command(message,command)
-    message  = "Restarting:\tNFS daemons"
-    command  = "nfsd restart"
-    execute_command(message,command)
-  end
+  remove_nfs_export(repo_version_dir)
 end
 
 # Configure tftpboot services
@@ -195,37 +151,49 @@ end
 # Configure Jumpstart repo
 
 def configure_js_repo(iso_file,repo_version_dir,os_version,os_update)
-  check_zfs_fs_exists(repo_version_dir)
+  if $os_name.match(/SunOS|Linux/)
+    check_zfs_fs_exists(repo_version_dir)
+  else
+    check_dir_exists(repo_version_dir)
+  end
   check_dir = repo_version_dir+"/boot"
   if $verbose_mode == 1
     puts "Checking:\tDirectory "+check_dir+" exists"
   end
   if !File.directory?(check_dir)
-    mount_iso(iso_file)
-    check_dir = $iso_mount_dir+"/boot"
-    if $verbose_mode == 1
-      puts "Checking:\tDirectory "+check_dir+" exists"
-    end
-    if File.directory?(check_dir)
-      iso_update = get_js_iso_update($iso_mount_dir,os_version)
-      puts iso_update
-      puts os_update
-      if !iso_update.match(/#{os_update}/)
-        puts "Warning:\tISO update version does not match ISO name"
-        exit
+    if $os_name.match(/SunOS/)
+      mount_iso(iso_file)
+      check_dir = $iso_mount_dir+"/boot"
+      if $verbose_mode == 1
+        puts "Checking:\tDirectory "+check_dir+" exists"
       end
-      message = "Copying:\tISO file "+iso_file+" contents to "+repo_version_dir
-      if $os_name.match(/SunOS/)
-        command = "cd /cdrom/Solaris_#{os_version}/Tools ; ./setup_install_server #{repo_version_dir}"
+      if File.directory?(check_dir)
+        iso_update = get_js_iso_update($iso_mount_dir,os_version)
+        puts iso_update
+        puts os_update
+        if !iso_update.match(/#{os_update}/)
+          puts "Warning:\tISO update version does not match ISO name"
+          exit
+        end
+        message = "Copying:\tISO file "+iso_file+" contents to "+repo_version_dir
+        if $os_name.match(/SunOS/)
+          command = "cd /cdrom/Solaris_#{os_version}/Tools ; ./setup_install_server #{repo_version_dir}"
+        else
+          command = "(cd /cdrom ; tar -cpf - . ) | (cd #{repo_version_dir} ; tar -xpf - )"
+        end
+        execute_command(message,command)
       else
-        command = "(cd /cdrom ; tar -cpf - . ) | (cd #{repo_version_dir} ; tar -xpf - )"
+        puts "Warning:\tISO "+iso_file+" is not mounted"
+        return
       end
-      execute_command(message,command)
+      umount_iso()
     else
-      puts "Warning:\tISO "+iso_file+" is not mounted"
-      return
+      if !File.directory?(check_dir)
+        message = "Mounting:\ISO "+iso_file+" on "+repo_version_dir
+        command = "hdiutil mount #{iso_file} -mountpoint #{repo_version_dir}"
+        execute_command(message,command)
+      end
     end
-    umount_iso()
   end
   return
 end
@@ -309,7 +277,12 @@ def configure_js_server(client_arch,publisher_host,publisher_port,service_name,i
   search_string = "\\-ga\\-"
   if iso_file.match(/[A-z]/)
     if File.exist?(iso_file)
-      iso_list[0] = iso_file
+      if !iso_file.match(/sol/)
+        puts "Warning:\tISO "+iso_file+" does not appear to be a valid Solaris distribution"
+        exit
+      else
+        iso_list[0] = iso_file
+      end
     else
       puts "Warning:\tISO file "+is_file+" does not exist"
     end
@@ -341,8 +314,10 @@ def configure_js_server(client_arch,publisher_host,publisher_port,service_name,i
     if os_arch.match(/sparc/)
       copy_js_sparc_boot_images(repo_version_dir,os_version,os_update)
     end
-    fix_js_rm_client(repo_version_dir,os_version)
-    fix_js_check(repo_version_dir,os_version)
+    if !$os_name.match(/Darwin/)
+      fix_js_rm_client(repo_version_dir,os_version)
+      fix_js_check(repo_version_dir,os_version)
+    end
   end
   return
 end

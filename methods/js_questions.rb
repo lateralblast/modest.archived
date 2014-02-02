@@ -6,14 +6,14 @@
 
 def get_js_system_karch()
   system_model = $q_struct["system_model"].value
-  if !system_model.match(/vmware/)
+  if !system_model.match(/vmware|i386/)
     if system_model.downcase.match(/^t/)
       system_karch = "sun4v"
     else
       system_karch = "sun4u"
     end
   else
-    system_karch = "i86"
+    system_karch = "i86pc"
   end
   return system_karch
 end
@@ -114,6 +114,7 @@ def set_js_fs()
     $q_struct["zfs_layout"].ask  = "no"
     $q_struct["zfs_bootenv"].ask = "no"
     (f_struct,f_order)=populate_js_fs_list()
+    f_struct = ""
     f_order.each do |fs_name|
       key                 = fs_name+"_filesys"
       $q_struct[key].ask  = "no"
@@ -131,9 +132,9 @@ end
 def get_js_network()
   os_version = $q_struct["os_version"].value
   if Integer(os_version) > 7
-    network = $q_struct["nic_model"].value+" { hostname = "+$q_struct["hostname"].value+" default_route = "+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" protocol_ipv6="+$q_struct["protocol_ipv6"].value+" }"
+    network = $q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" protocol_ipv6="+$q_struct["protocol_ipv6"].value+" }"
   else
-    network = $q_struct["nic_model"].value+" { hostname = "+$q_struct["hostname"].value+" default_route = "+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" }"
+    network = $q_struct["nic_model"].value+" { hostname="+$q_struct["hostname"].value+" default_route="+$q_struct["default_route"].value+" ip_address="+$q_struct["ip_address"].value+" netmask="+$q_struct["netmask"].value+" }"
   end
   return network
 end
@@ -340,7 +341,7 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
     question  = "System Kernel Architecture",
     ask       = "yes",
     parameter = "",
-    value     = client_karch,
+    value     = "get_js_system_karch()",
     valid     = "",
     eval      = "no"
     )
@@ -569,18 +570,22 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
 
     funct_string="get_js_filesys(\""+fs_name+"\")"
 
-    name = f_struct[fs_name].name+"_filesys"
-    config = Js.new(
-      type      = "output",
-      question  = "UFS Root File System",
-      ask       = "yes",
-      parameter = "filesys",
-      value     = funct_string,
-      valid     = "",
-      eval      = "no"
-      )
-    $q_struct[name] = config
-    $q_order.push(name)
+    if !service_name.match(/sol_10/)
+
+      name = f_struct[fs_name].name+"_filesys"
+      config = Js.new(
+        type      = "output",
+        question  = "UFS Root File System",
+        ask       = "yes",
+        parameter = "filesys",
+        value     = funct_string,
+        valid     = "",
+        eval      = "no"
+        )
+      $q_struct[name] = config
+      $q_order.push(name)
+
+    end
 
   end
 
@@ -722,21 +727,17 @@ def populate_js_sysid_questions(client_name,client_ip,client_arch,client_model,o
   $q_struct[name] = config
   $q_order.push(name)
 
-  if client_arch.match(/sparc/)
-
-    name = "system_karch"
-    config = Js.new(
-      type      = "",
-      question  = "System Kernel Architecture",
-      ask       = "yes",
-      parameter = "",
-      value     = "get_js_system_karch()",
-      valid     = "",
-      eval      = "no"
-      )
-    $q_struct[name] = config
-
-  end
+  name = "system_karch"
+  config = Js.new(
+    type      = "",
+    question  = "System Kernel Architecture",
+    ask       = "yes",
+    parameter = "",
+    value     = "get_js_system_karch()",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
 
   name = "nic_model"
   config = Js.new(

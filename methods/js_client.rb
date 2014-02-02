@@ -16,9 +16,17 @@ def create_js_sysid_file(client_name,sysid_file)
     end
     file.write(output)
   end
+  file.close
   message = "Creating:\tConfiguration file "+sysid_file+" for "+client_name
   command = "cp #{tmp_file} #{sysid_file} ; rm #{tmp_file}"
   execute_command(message,command)
+  if $verbose_mode == 1
+    puts
+    puts "information:\tContents of configuration file: "+sysid_file
+    puts
+    system("cat #{sysid_file}")
+    puts
+  end
   return
 end
 
@@ -37,9 +45,17 @@ def create_js_machine_file(client_name,machine_file)
     end
     file.write(output)
   end
+  file.close
   message = "Creating:\tConfiguration file "+machine_file+" for "+client_name
   command = "cp #{tmp_file} #{machine_file} ; rm #{tmp_file}"
   execute_command(message,command)
+  if $verbose_mode == 1
+    puts
+    puts "information:\tContents of configuration file: "+machine_file
+    puts
+    system("cat #{machine_file}")
+    puts
+  end
   return
 end
 
@@ -47,7 +63,7 @@ end
 
 def create_js_rules_file(client_name,client_karch,rules_file)
   tmp_file = "/tmp/rule_"+client_name
-  client_karch = %x[uname -m]
+  client_karch = $q_struct["system_karch"].value
   client_karch = client_karch.chomp
   karch_line   = "karch "+client_karch+" - machine."+client_name+" -"
   file         = File.open(tmp_file,"w")
@@ -56,6 +72,13 @@ def create_js_rules_file(client_name,client_karch,rules_file)
   message = "Creating:\tConfiguration file "+rules_file+" for "+client_name
   command = "cp #{tmp_file} #{rules_file} ; rm #{tmp_file}"
   execute_command(message,command)
+  if $verbose_mode == 1
+    puts
+    puts "Information:\tContent of rules file "+rules_file+":"
+    puts
+    system("cat #{rules_file}")
+    puts
+  end
   return karch_line
 end
 
@@ -86,7 +109,8 @@ end
 def check_js_config(client_name,client_dir,repo_version_dir,os_version)
   file_name     = "check"
   check_script  = repo_version_dir+"/Solaris_"+os_version+"/Misc/jumpstart_sample/"+file_name
-  rules_ok_file = client_dir+"/rules.ok"
+  rules_file    = client_dir+"/rules"
+  rules_ok_file = rules_file+".ok"
   if File.exist?(rules_ok_file)
     message = "Removing:\tExisting rules.ok file for client "+client_name
     command = "rm #{rules_ok_file}"
@@ -98,16 +122,25 @@ def check_js_config(client_name,client_dir,repo_version_dir,os_version)
     output  = execute_command(message,command)
   end
   message   = "Checking:\tSum for rules file for "+client_name
-  command   = "cd #{client_dir} ; sum rules |awk '{print $1}'"
+  command   = "cksum -o 2 #{rules_file} | awk '{print $1}'"
   output    = execute_command(message,command)
-  rules_sum = output.chomp
+  if output.match(/ /)
+    rules_sum = output.chomp.split(/ /)[0]
+  end
   message   = "Copying:\tRules file"
   command   = "cd #{client_dir}; cp rules rules.ok"
   execute_command(message,command)
-  output    = "# version = 2 checksum=#{rules_sum}"
+  output    = "# version=2 checksum=#{rules_sum}"
   message   = "Creating:\tRules file "+rules_ok_file
   command   = "echo '#{output}' >> #{rules_ok_file}"
   execute_command(message,command)
+  if $verbose_mode == 1
+    puts
+    puts "Information:\tContent of rules.ok file "+rules_ok_file+":"
+    puts
+    system("cat #{rules_ok_file}")
+    puts
+  end
   return
 end
 
@@ -136,7 +169,7 @@ def configure_js_pxe_client(client_name,client_mac,client_arch,service_name,repo
     pxe_cfg_file = "01"+pxe_cfg_file.upcase
     pxe_cfg_file = "menu.lst."+pxe_cfg_file
     pxe_cfg_file = $tftp_dir+"/"+pxe_cfg_file
-    sysid_dir    = repo_version_dir+"/clients/"+client_name
+    sysid_dir    = $client_base_dir+"/"+service_name+"/"+client_name
     install_url  = publisher_host+":"+repo_version_dir
     sysid_url    = publisher_host+":"+sysid_dir
     tmp_file     = "/tmp/pxe_"+client_name
@@ -237,7 +270,7 @@ def configure_js_client(client_name,client_arch,client_mac,client_ip,client_mode
     client_karch = $q_struct["client_karch"].value
   end
   # Create clients directory
-  clients_dir = repo_version_dir+"/clients"
+  clients_dir = $client_base_dir+"/"+service_name
   check_dir_exists(clients_dir)
   # Create client directory
   client_dir = clients_dir+"/"+client_name
