@@ -249,20 +249,38 @@ end
 
 # Configure client
 
-def configure_js_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
-  if !service_name.match(/i386|sparc/)
-    service_name = service_name+"_"+client_arch
-  end
-  if !service_name.match(/#{client_arch}/)
-    puts "Service "+service_name+" and Client architecture "+client_arch+" do not match"
-    return
-  end
-  repo_version_dir=$repo_base_dir+"/"+service_name
-  if !File.directory?(repo_version_dir)
-    puts "Warning:\tService "+service_name+" does not exist"
-    puts
-    list_js_services()
-    return
+def configure_js_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)
+  if image_file.match(/flar/)
+    if !File.exist?(image_file)
+      puts "Warning:\tFlar file "+image_file+" does not exist"
+      exit
+    else
+      message = "Information:\tMaking sure file is world readable"
+      command = "chmod 755 #{image_file}"
+      execute_command(message,command)
+    end
+    export_dir  = Pathname.new(image_file)
+    export_dir  = export_dir.dirname.to_s
+    add_apache_alias(export_dir)
+    if !service_name.match(/[A-z]/)
+      service_name = Pathname.new(image_file)
+      service_name = service_name.basename.to_s.gsub(/\.flar/,"")
+    end
+  else
+    if !service_name.match(/i386|sparc/)
+      service_name = service_name+"_"+client_arch
+    end
+    if !service_name.match(/#{client_arch}/)
+      puts "Service "+service_name+" and Client architecture "+client_arch+" do not match"
+     exit
+    end
+    repo_version_dir=$repo_base_dir+"/"+service_name
+    if !File.directory?(repo_version_dir)
+      puts "Warning:\tService "+service_name+" does not exist"
+      puts
+      list_js_services()
+      exit
+    end
   end
   if client_arch.match(/i386/)
     client_karch = client_arch
@@ -286,7 +304,7 @@ def configure_js_client(client_name,client_arch,client_mac,client_ip,client_mode
   sysid_file = client_dir+"/sysidcfg"
   create_js_sysid_file(client_name,sysid_file)
   # Populate machine questions
-  populate_js_machine_questions(client_model,client_karch,publisher_host,service_name,os_version,os_update)
+  populate_js_machine_questions(client_model,client_karch,publisher_host,service_name,os_version,os_update,image_file)
   process_questions()
   machine_file = client_dir+"/machine."+client_name
   create_js_machine_file(client_name,machine_file)

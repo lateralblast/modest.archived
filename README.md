@@ -106,6 +106,7 @@ Solaris 10 (and earlier) Jumpstart:
 - Automatically tries to determine boot and mirror disk ids based on model
 - Automatically tires to determine kernel architecture (e.g. sun4u / sun4v)
   based on model
+- Ability to quickly deploy flar based installs by answering a few questions
 
 ESXi Kickstart:
 
@@ -139,7 +140,7 @@ AI Services:
 
 Jumpstart Services:
 
-- Solaris 11 (OS S and Linux to be added)
+- Solaris 11 or OS X (Linux to be added)
 
 Linux Containers:
 
@@ -147,14 +148,18 @@ Linux Containers:
 
 Solaris Containers:
 
-- Solaris 10 or 11
+- Solaris 10 or 11 (Some branded container support on Solaris 11)
 
 VM Client Services:
 
 - VMware Fusion or VirtualBox
 
 VirtualBox bridged networking on OS X has been severly broken for quite
-sometime, therefore it is recommended to use VMware Fusion is available.
+some time, therefore it is recommended to use VMware Fusion if available.
+
+If using OS X and a installation platform for Jumpstart it is recommended to
+use flar based installs as the performance of the OS X NFS server being so
+utterly useless.
 
 Background
 ==========

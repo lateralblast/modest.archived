@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.3.6
+# Version:      1.3.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -24,6 +24,7 @@ require 'builder'
 require 'socket'
 require 'parseconfig'
 require 'unix_crypt'
+require 'pathname'
 
 # Set up some global variables/defaults
 
@@ -106,7 +107,7 @@ $backup_dir             = ""
 $rpm2cpio_url           = "http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
 $rpm2cpio_bin           = ""
 $vbox_disk_type         = "ide"
-$vm_disk_size           = "10G"
+$vm_disk_size           = "12G"
 $vm_memory_size         = "1024"
 $use_serial             = 0
 $os_name                = ""
@@ -639,7 +640,7 @@ end
 # Get ISO file if given
 
 if opt["f"]
-  if !opt["Z"]
+  if !opt["Z"] and !opt["C"]
     iso_file = opt["f"]
     if $verbose_mode == 1
       puts "Information:\tUsing ISO "+iso_file
@@ -1030,7 +1031,7 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["M"] or opt["U"] or opt["
         check_client_arch(client_arch)
       end
       check_client_ip(client_ip)
-      eval"[configure_#{funct}_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)]"
+      eval"[configure_#{funct}_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)]"
     end
   end
 end

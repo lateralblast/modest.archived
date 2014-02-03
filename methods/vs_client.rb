@@ -127,7 +127,7 @@ end
 
 # Configure VSphere client
 
-def configure_vs_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
+def configure_vs_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)
   repo_version_dir=$repo_base_dir+"/"+service_name
   if !File.directory?(repo_version_dir)
     puts "Warning:\tService "+service_name+" does not exist"

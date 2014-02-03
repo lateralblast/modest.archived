@@ -258,7 +258,7 @@ end
 
 # Main code to actually add a client
 
-def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
+def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_name)
   # Populate questions for AI profile
   check_ai_client_doesnt_exist(client_name,client_mac,service_name)
   populate_ai_client_profile_questions(client_ip,client_name)

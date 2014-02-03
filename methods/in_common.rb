@@ -1,6 +1,26 @@
 
 # Code common to all services
 
+# Tune OS X NFS
+
+def tune_osx_nfs()
+  nfs_file   = "/etc/nfs.conf"
+  nfs_params = ["nfs.server.nfsd_threads = 64","nfs.server.reqcache_size = 1024","nfs.server.tcp = 1","nfs.server.udp = 0","nfs.server.fsevents = 0"]
+  nfs_params.each do |nfs_tune|
+    nfs_tune = "nfs.client.nfsiod_thread_max = 64"
+    message  = "Checking:\tNFS tuning"
+    command  = "cat #{nfs_file} |grep '#{nfs_tune}'"
+    output   = execute_command(message,command)
+    if !output.match(/#{nfs_tune}/)
+      backup_file(nfs_file)
+      message = "Tuning:\tNFS"
+      command = "echo '#{nfs_tune}' >> #{nfs_file}"
+      execute_command(message,command)
+    end
+  end
+  return
+end
+
 # Add NFS export
 
 def add_nfs_export(export_name,export_dir,publisher_host)
@@ -824,7 +844,9 @@ def execute_command(message,command)
         end
       end
     end
-    puts "Executing:\t"+command
+    if $verbose_mode == 1
+      puts "Executing:\t"+command
+    end
     output = %x[#{command}]
   end
   if $verbose_mode == 1
@@ -1180,7 +1202,12 @@ end
 # Add apache alias
 
 def add_apache_alias(service_base_name)
-  repo_version_dir = $repo_base_dir+"/"+service_base_name
+  if service_base_name.match(/^\//)
+    repo_version_dir  = service_base_name
+    service_base_name = service_base_name.gsub(/^\//,"")
+  else
+    repo_version_dir = $repo_base_dir+"/"+service_base_name
+  end
   if $os_name.match(/SunOS/)
     apache_config_file = "/etc/apache2/2.2/httpd.conf"
   end

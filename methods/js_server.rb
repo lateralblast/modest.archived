@@ -317,6 +317,8 @@ def configure_js_server(client_arch,publisher_host,publisher_port,service_name,i
     if !$os_name.match(/Darwin/)
       fix_js_rm_client(repo_version_dir,os_version)
       fix_js_check(repo_version_dir,os_version)
+    else
+      tune_osx_nfs()
     end
   end
   return

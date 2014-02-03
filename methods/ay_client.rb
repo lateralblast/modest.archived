@@ -2,8 +2,8 @@
 
 # Configure AutoYast client
 
-def configure_ay_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
-  configure_ks_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name)
+def configure_ay_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)
+  configure_ks_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)
   return
 end
 

@@ -139,21 +139,6 @@ def get_js_network()
   return network
 end
 
-# Set install type
-
-def set_js_install_type()
-  if $q_struct["install_type"].value == "flash"
-    $q_struct["install_cluster"].ask  = "no"
-    $q_struct["install_cluster"].type = ""
-  else
-    ["flash_location","flash_file","flash_host","flash_method"].each do |key|
-      $q_struct[key].ask  = "no"
-      $q_struct[key].type = ""
-    end
-  end
-  return $q_struct
-end
-
 # Set mirror disk
 
 def set_js_mirror_disk()
@@ -271,7 +256,7 @@ end
 
 # Populate Jumpstart machine file
 
-def populate_js_machine_questions(client_model,client_karch,publisher_host,service_name,os_version,os_update)
+def populate_js_machine_questions(client_model,client_karch,publisher_host,service_name,os_version,os_update,image_file)
   $q_struct = {}
   $q_order  = []
 
@@ -387,6 +372,10 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
   $q_struct[name] = config
   $q_order.push(name)
 
+  if image_file.match(/flar/)
+    $default_install = "flash_install"
+  end
+
   name = "install_type"
   config = Js.new(
     type      = "output",
@@ -395,88 +384,59 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
     parameter = "install_type",
     value     = $default_install,
     valid     = "",
-    eval      = "set_js_install_type()"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
-
-  name = "system_type"
-  config = Js.new(
-    type      = "output",
-    question  = "System Type",
-    ask       = "yes",
-    parameter = "system_type",
-    value     = "server",
-    valid     = "",
     eval      = ""
     )
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "flash_method"
-  config = Js.new(
-    type      = "",
-    question  = "Flash Restore Method",
-    ask       = "yes",
-    parameter = "",
-    value     = "http",
-    valid     = "nfs,http,ftp,file",
-    eval      = "no"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
+  if image_file.match(/flar/)
 
-  name = "flash_host"
-  config = Js.new(
-    type      = "",
-    question  = "Flash Restore Server",
-    ask       = "yes",
-    parameter = "",
-    value     = publisher_host,
-    valid     = "",
-    eval      = "no"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
+    archive_url = "http://"+publisher_host+image_file
 
-  name = "flash_file"
-  config = Js.new(
-    type      = "",
-    question  = "Flash File",
-    ask       = "yes",
-    parameter = "",
-    value     = "",
-    valid     = "",
-    eval      = ""
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
+    name = "archive_location"
+    config = Js.new(
+      type      = "output",
+      question  = "Install Type",
+      ask       = "yes",
+      parameter = "archive_location",
+      value     = archive_url,
+      valid     = "",
+      eval      = "no"
+      )
+    $q_struct[name] = config
+    $q_order.push(name)
 
-  name = "flash_location"
-  config = Js.new(
-    type      = "output",
-    question  = "Flash location",
-    ask       = "yes",
-    parameter = "flash_location",
-    value     = "get_js_flash_location()",
-    valid     = "",
-    eval      = "no"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
+  end
 
-  name = "cluster"
-  config = Js.new(
-    type      = "output",
-    question  = "Install Cluser",
-    ask       = "yes",
-    parameter = "cluster",
-    value     = "SUNWCall",
-    valid     = "",
-    eval      = "no"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
+  if !image_file.match(/flar/)
+
+    name = "system_type"
+    config = Js.new(
+      type      = "output",
+      question  = "System Type",
+      ask       = "yes",
+      parameter = "system_type",
+      value     = "server",
+      valid     = "",
+      eval      = ""
+      )
+    $q_struct[name] = config
+    $q_order.push(name)
+
+    name = "cluster"
+    config = Js.new(
+      type      = "output",
+      question  = "Install Cluser",
+      ask       = "yes",
+      parameter = "cluster",
+      value     = "SUNWCall",
+      valid     = "",
+      eval      = "no"
+      )
+    $q_struct[name] = config
+    $q_order.push(name)
+
+  end
 
   name = "disk_partitioning"
   config = Js.new(
@@ -523,45 +483,23 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
     end
   end
 
-  name = "zfs_layout"
-  config = Js.new(
-    type      = "output",
-    question  = "ZFS File System Layout",
-    ask       = "yes",
-    parameter = "pool",
-    value     = "get_js_zfs_layout()",
-    valid     = "",
-    eval      = "no"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
-
-  zfs_bootenv=get_js_zfs_bootenv(service_name)
-
-  name = "zfs_bootenv"
-  config = Js.new(
-    type      = "output",
-    question  = "File System Layout",
-    ask       = "yes",
-    parameter = "bootenv",
-    value     = zfs_bootenv,
-    valid     = "",
-    eval      = "no"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
-
   (f_struct,f_order)=populate_js_fs_list()
 
   f_order.each do |fs_name|
 
+    if service_name.match(/sol_10/)
+      fs_size = "auto"
+    else
+      fs_size = f_struct[fs_name].size
+    end
+
     name = f_struct[fs_name].name+"_size"
     config = Js.new(
       type      = "",
-      question  = f_struct[fs_name].name.upcase+" Size",
+      question  = f_struct[fs_name].name.capitalize+" Size",
       ask       = "yes",
       parameter = "",
-      value     = f_struct[fs_name].size,
+      value     = fs_size,
       valid     = "",
       eval      = "no"
       )
@@ -586,6 +524,38 @@ def populate_js_machine_questions(client_model,client_karch,publisher_host,servi
       $q_order.push(name)
 
     end
+
+  end
+
+  if service_name.match(/sol_10/)
+
+    name = "zfs_layout"
+    config = Js.new(
+      type      = "output",
+      question  = "ZFS File System Layout",
+      ask       = "yes",
+      parameter = "pool",
+      value     = "get_js_zfs_layout()",
+      valid     = "",
+      eval      = "no"
+      )
+    $q_struct[name] = config
+    $q_order.push(name)
+
+    zfs_bootenv=get_js_zfs_bootenv(service_name)
+
+    name = "zfs_bootenv"
+    config = Js.new(
+      type      = "output",
+      question  = "File System Layout",
+      ask       = "yes",
+      parameter = "bootenv",
+      value     = zfs_bootenv,
+      valid     = "",
+      eval      = "no"
+      )
+    $q_struct[name] = config
+    $q_order.push(name)
 
   end
 
