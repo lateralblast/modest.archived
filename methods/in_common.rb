@@ -669,10 +669,9 @@ end
 # Remove host from DHCP config
 
 def remove_dhcp_client(client_name)
-  file_name = "/etc/inet/dhcpd4.conf"
   found     = 0
   copy      = []
-  file_info = IO.readlines(file_name)
+  file_info = IO.readlines($dhcpd_file)
   file_info.each do |line|
     if line.match(/^host #{client_name}/)
       found=1
@@ -889,25 +888,27 @@ end
 # Handle SMF service
 
 def handle_smf_service(function,smf_service_name)
-  uc_function = function.capitalize
-  if function.match(/enable/)
-    message = "Checking:\tStatus of service "+smf_service_name
-    command = "svcs #{smf_service_name} |grep -v STATE"
-    output  = execute_command(message,command)
-    if output.match(/maintenance/)
-      message = uc_function+":\tService "+smf_service_name
-      command = "svcadm clear #{smf_service_name} ; sleep 5"
+  if $os_name.match(/SunOS/)
+    uc_function = function.capitalize
+    if function.match(/enable/)
+      message = "Checking:\tStatus of service "+smf_service_name
+      command = "svcs #{smf_service_name} |grep -v STATE"
       output  = execute_command(message,command)
-    end
-    if !output.match(/online/)
+      if output.match(/maintenance/)
+        message = uc_function+":\tService "+smf_service_name
+        command = "svcadm clear #{smf_service_name} ; sleep 5"
+        output  = execute_command(message,command)
+      end
+      if !output.match(/online/)
+        message = uc_function+":\tService "+smf_service_name
+        command = "svcadm #{function} #{smf_service_name} ; sleep 5"
+        output  = execute_command(message,command)
+      end
+    else
       message = uc_function+":\tService "+smf_service_name
       command = "svcadm #{function} #{smf_service_name} ; sleep 5"
       output  = execute_command(message,command)
     end
-  else
-    message = uc_function+":\tService "+smf_service_name
-    command = "svcadm #{function} #{smf_service_name} ; sleep 5"
-    output  = execute_command(message,command)
   end
   return output
 end
@@ -980,9 +981,11 @@ end
 # Check SMF service
 
 def check_smf_service(smf_service_name)
-  message = "Checking:\tService "+smf_service_name
-  command = "svcs -a |grep '#{smf_service_name}"
-  output  = execute_command(message,command)
+  if $os_name.match(/SunOS/)
+    message = "Checking:\tService "+smf_service_name
+    command = "svcs -a |grep '#{smf_service_name}"
+    output  = execute_command(message,command)
+  end
   return output
 end
 
@@ -1326,6 +1329,19 @@ def mount_iso(iso_file)
   return
 end
 
+# Check ISO mounted for OS X based server
+
+def check_osx_iso_mount(mount_dir,iso_file)
+  check_dir_exists(mount_dir)
+  test_dir = mount_dir+"/boot"
+  if !File.directory?(test_dir)
+    message = "Mounting:\ISO "+iso_file+" on "+mount_dir
+    command = "hdiutil mount #{iso_file} -mountpoint #{mount_dir}"
+    output  = execute_command(message,command)
+  end
+  return output
+end
+
 # Copy repository from ISO to local filesystem
 
 def copy_iso(iso_file,repo_version_dir)
@@ -1356,9 +1372,11 @@ def copy_iso(iso_file,repo_version_dir)
       message = "Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
       command = "rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
       output  = execute_command(message,command)
-      message = "Rebuilding:\tRepository in "+repo_version_dir
-      command = "pkgrepo -s #{repo_version_dir} rebuild"
-      output  = execute_command(message,command)
+      if $os_name.match(/SunOS/)
+        message = "Rebuilding:\tRepository in "+repo_version_dir
+        command = "pkgrepo -s #{repo_version_dir} rebuild"
+        output  = execute_command(message,command)
+      end
     else
       check_dir_exists(test_dir)
       message = "Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir

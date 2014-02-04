@@ -189,9 +189,7 @@ def configure_js_repo(iso_file,repo_version_dir,os_version,os_update)
       umount_iso()
     else
       if !File.directory?(check_dir)
-        message = "Mounting:\ISO "+iso_file+" on "+repo_version_dir
-        command = "hdiutil mount #{iso_file} -mountpoint #{repo_version_dir}"
-        execute_command(message,command)
+        check_osx_iso_mount(repo_version_dir,iso_file)
       end
     end
   end

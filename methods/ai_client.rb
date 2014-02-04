@@ -263,6 +263,10 @@ def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_mode
   check_ai_client_doesnt_exist(client_name,client_mac,service_name)
   populate_ai_client_profile_questions(client_ip,client_name)
   process_questions()
+  if $os_name.match(/Darwin/)
+    tftp_version_dir = $tftp_dir+"/"+service_name
+    check_osx_iso_mount(tftp_version_dir,iso_file)
+  end
   output_file = $work_dir+"/"+client_name+"_ai_profile.xml"
   create_ai_client_profile(output_file)
   puts "Configuring:\tClient "+client_name+" with MAC address "+client_mac

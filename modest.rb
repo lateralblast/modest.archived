@@ -29,7 +29,7 @@ require 'pathname'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:m:n:o:p:r:s:t:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvy"
+$options                = "a:b:c:d:e:f:g:h:i:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvy"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"

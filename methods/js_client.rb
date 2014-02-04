@@ -295,6 +295,9 @@ def configure_js_client(client_name,client_arch,client_mac,client_ip,client_mode
   check_dir_exists(client_dir)
   # Get release information
   repo_version_dir = $repo_base_dir+"/"+service_name
+  if $os_name.match(/Darwin/)
+    check_osx_iso_mount(mount_dir,iso_file)
+  end
   os_version       = get_js_iso_version(repo_version_dir)
   os_update        = get_js_iso_update(repo_version_dir,os_version)
   # Populate sysid questions and process them
