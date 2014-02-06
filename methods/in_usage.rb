@@ -104,8 +104,9 @@ def print_examples(examples)
   if examples.match(/server|ps/)
     puts "Preseed server related examples:"
     puts
-    puts "List PS services:\t\t"+$script+" -U -S -L"
-    puts "Configure PS services:\t\t"+$script+" -P -S"
+    puts "List all PS services:\t\t\t"+$script+" -U -S -L"
+    puts "Configure all PS services:\t\t"+$script+" -U -S"
+    puts "Configure a PS service (from ISO):\t"+$script+" -U -S -f /export/isos/ubuntu-13.10-server-amd64.iso"
     puts
   end
   if examples.match(/server|js/)
@@ -193,9 +194,9 @@ def print_examples(examples)
   if examples.match(/client|ps/)
     puts "Preseed client related examples:"
     puts
-    puts "List PS clients:\t\t"+$script+" -U -C -L"
-    puts "Create PS client:\t\t"+$script+" -U -C -c ubuntu1310vm01 -e 08:00:27:BA:34:7C -a x86_64 -i 192.168.1.196 -n ubuntu_13_10_x86_64"
-    puts "Delete PS client:\t\t"+$script+" -K -C -d ubuntu1310vm01"
+    puts "List PS clients:\t\t\t"+$script+" -U -C -L"
+    puts "Create PS client:\t\t\t"+$script+" -U -C -c ubuntu1310vm01 -e 08:00:27:BA:34:7C -a x86_64 -i 192.168.1.196 -n ubuntu_13_10_x86_64"
+    puts "Delete PS client:\t\t\t"+$script+" -K -C -d ubuntu1310vm01"
     puts
   end
   if examples.match(/client|js/)

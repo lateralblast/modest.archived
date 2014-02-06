@@ -519,9 +519,9 @@ def check_brew_pkg(pkg_name)
   return output
 end
 
-# Check ISC DHCP installed on OS X
+# Check OSC DHCP installation on OS X
 
-def check_osx_dhcpd()
+def check_osx_dhcpd_installed()
   brew_file   = "/usr/local/Library/Formula/isc-dhcp.rb"
   backup_file = brew_file+".orig"
   dhcpd_bin   = "/usr/local/sbin/dhcpd"
@@ -552,22 +552,70 @@ def check_osx_dhcpd()
         command = "brew install isc-dhcp"
         execute_command(message,command)
       end
+        message = "Creating:\tLaunchd service for ISC DHCPd"
+        command = "cp -fv /usr/local/opt/isc-dhcp/*.plist /Library/LaunchDaemons"
+        execute_command(message,command)
     end
-    message = "Creating:\tLaunchd service for ISC DHCPd"
-    command = "cp -fv /usr/local/opt/isc-dhcp/*.plist /Library/LaunchDaemons"
-    execute_command(message,command)
     if !File.exist?($dhcpd_file)
       message = "Creating:\tDHCPd configuration file "+$dhcpd_file
       command = "touch #{$dhcpd_file}"
       execute_command(message,command)
     end
-    message = "Loading:\tISC DHCPd service profile"
-    command = "launchctl load -w /Library/LaunchDaemons/homebrew.mxcl.isc-dhcp.plist"
-    execute_command(message,command)
-  else
-    service = "dhcp"
-    check_osx_service_is_enabled(service)
   end
+  return
+end
+
+# Build DHCP plist file
+
+def create_osx_dhcpd_plist()
+  xml_output = []
+  tmp_file   = "/tmp/plist.xml"
+  plist_name = "homebrew.mxcl.isc-dhcp"
+  plist_file = "/Library/LaunchDaemons/homebrew.mxcl.isc-dhcp.plist"
+  dhcpd_bin  = "/usr/local/sbin/dhcpd"
+  message    = "Checking:\tDHCPd configruation"
+  command    = "cat #{plist_file} | grep '#{$default_net}'"
+  output     = execute_command(message,command)
+  if !output.match(/#{$default_net}/)
+    xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
+    xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
+    xml.declare! :DOCTYPE, :plist, :PUBLIC, :'"-//Apple Computer//DTD PLIST 1.0//EN"', :'"http://www.apple.com/DTDs/PropertyList-1.0.dtd"'
+    xml.plist(:version => "1.0") {
+      xml.dict {
+        xml.key("label")
+        xml.string(plist_name)
+        xml.key("ProgramArguments")
+        xml.array {
+          xml.string(dhcpd_bin)
+          xml.string($default_net)
+          xml.string("-4")
+          xml.string("-f")
+        }
+      }
+      xml.key("Disabled") ; xml.false
+      xml.key("KeepAlive") ; xml.true
+      xml.key("RunAtLoad") ; xml.true
+      xml.key("LowPriorityID") ; xml.true
+    }
+    file=File.open(tmp_file,"w")
+    xml_output.each do |item|
+      file.write(item)
+    end
+    file.close
+    message = "Creating:\tService file "+plist_file
+    command = "cp #{tmp_file} #{plist_file} ; rm #{tmp_file}"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Check ISC DHCP installed on OS X
+
+def check_osx_dhcpd()
+  check_osx_dhcpd_installed()
+  check_osx_dhcpd_plist()
+  service = "dhcp"
+  check_osx_service_is_enabled(service)
   return
 end
 
@@ -839,7 +887,7 @@ def execute_command(message,command)
     if $id != 0
       if !command.match(/brew |hg|pip/)
         if $use_sudo != 0
-          command = "sudo -s -- \""+command+"\""
+          command = "sudo sh -c \""+command+"\""
         end
       end
     end
@@ -941,7 +989,7 @@ def check_dhcpd()
     end
   end
   if $os_name.match(/Darwin/)
-    command = "ps aux |grep '/usr/local/bin/dhcpd'"
+    command = "ps aux |grep '/usr/local/bin/dhcpd' |grep -v grep"
     output  = execute_command(message,command)
     if !output.match(/dhcp/)
       service = "dhcp"

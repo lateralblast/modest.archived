@@ -16,9 +16,9 @@ end
 
 # Output the Preseed file contents
 
-def output_ps_header(output_file)
+def output_ps_header(client_name,output_file)
   if $verbose_mode == 1
-    puts "Creating:\tPreseed file "+output_file
+    puts "Creating:\tPreseed file "+output_file+" for "+client_name
   end
   file=File.open(output_file, 'a')
   $q_order.each do |key|
@@ -53,7 +53,7 @@ def populate_ps_post_list()
   post_list.push("# Configure apt mirror")
   post_list.push("")
   post_list.push("cp /etc/apt/sources.list /etc/apt/sources.list.orig")
-  post_list.push("sed -i 's,#{$default_ubuntu_mirror},#{local_ubuntu_mirror},g' /etc/apt/sources.list.orig")
+  post_list.push("sed -i 's,#{$default_ubuntu_mirror},#{$local_ubuntu_mirror},g' /etc/apt/sources.list.orig")
   post_list.push("")
   post_list.push("apt-get install -y avahi-daemon")
   post_list.push("apt-get install -y libterm-readkey-perl 2> /dev/null")

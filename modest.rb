@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.3.7
+# Version:      1.3.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -525,7 +525,7 @@ end
 
 # Check local configuration
 
-if opt["S"] or opt["W"]
+if opt["S"] or opt["W"] or opt["M"]
   mode="server"
 else
   mode="client"

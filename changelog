@@ -273,3 +273,5 @@
 # Cleaned up jumpstart client support
 # 1.3.7: Mon  3 Feb 2014 16:10:05 EST
 # Added flar based installs for Jumpstart
+# 1.3.8: Thu  6 Feb 2014 12:46:54 EST
+# Added code to check DHCPd plist on OS X
