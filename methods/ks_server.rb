@@ -259,6 +259,7 @@ end
 
 def list_ks_services()
   puts "Kickstart services:"
+  puts
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
     if service_name.match(/centos|rhel|sl_|oel/)

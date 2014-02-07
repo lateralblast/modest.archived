@@ -17,10 +17,8 @@ end
 # Output the Preseed file contents
 
 def output_ps_header(client_name,output_file)
-  if $verbose_mode == 1
-    puts "Creating:\tPreseed file "+output_file+" for "+client_name
-  end
-  file=File.open(output_file, 'a')
+  tmp_file = "/tmp/preseed_"+client_name
+  file = File.open(tmp_file, 'w')
   $q_order.each do |key|
     if $q_struct[key].parameter.match(/[A-z]/)
       output = "d-i "+$q_struct[key].parameter+" "+$q_struct[key].type+" "+$q_struct[key].value+"\n"
@@ -28,12 +26,22 @@ def output_ps_header(client_name,output_file)
     end
   end
   file.close
+  message = "Creating:\tPreseed file "+output_file+" for "+client_name
+  command = "cp #{tmp_file} #{output_file} ; rm #{tmp_file}"
+  execute_command(message,command)
+  if $verbose_mode == 1
+    puts
+    puts "Information:\tContents of "+output_file+":"
+    puts
+    system("cat #{output_file}")
+    puts
+  end
   return
 end
 
-# Populate post commands
+# Populate first boot commands
 
-def populate_ps_post_list()
+def populate_ps_first_boot_list()
   post_list        = []
   client_ip        = $q_struct["ip"].value
   client_gateway   = $q_struct["gateway"].value
@@ -53,20 +61,14 @@ def populate_ps_post_list()
   post_list.push("# Configure apt mirror")
   post_list.push("")
   post_list.push("cp /etc/apt/sources.list /etc/apt/sources.list.orig")
-  post_list.push("sed -i 's,#{$default_ubuntu_mirror},#{$local_ubuntu_mirror},g' /etc/apt/sources.list.orig")
+  post_list.push("sed -i 's,#{$default_ubuntu_mirror},#{$local_ubuntu_mirror},g' /etc/apt/sources.list")
   post_list.push("")
-  post_list.push("apt-get install -y avahi-daemon")
-  post_list.push("apt-get install -y libterm-readkey-perl 2> /dev/null")
-  post_list.push("apt-get install -y puppet 2> /dev/null")
-  post_list.push("apt-get install -y nfs-common 2> /dev/null")
-  post_list.push("apt-get install -y openssh-server 2> /dev/null")
-  post_list.push("apt-get install -y python-software-properties 2> /dev/null")
-  post_list.push("apt-get install -y software-properties-common 2> /dev/null")
+  post_list.push("apt-get update")
   post_list.push("")
   post_list.push("# Install VM tools")
   post_list.push("")
   post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
-  post_list.push("  apt-get install -y open-vm-tools")
+  post_list.push("  apt-get install -y --no-install-recommends open-vm-tools")
   post_list.push("fi")
   post_list.push("")
   post_list.push("# Setup sudoers")
@@ -79,7 +81,7 @@ def populate_ps_post_list()
   post_list.push("echo 'stop on runlevel [!12345]' >> /etc/init/ttyS0.conf")
   post_list.push("echo 'respawn' >> /etc/init/ttyS0.conf")
   post_list.push("echo 'exec /sbin/getty -L 115200 ttyS0 vt100' >> /etc/init/ttyS0.conf")
-  post_list.push("start getty")
+  post_list.push("start ttyS0")
   post_list.push("")
   post_list.push("# Configure network")
   post_list.push("")
@@ -96,6 +98,40 @@ def populate_ps_post_list()
   post_list.push("echo 'netmask #{client_netmask}' >> #{net_config}")
   post_list.push("echo 'network #{client_network}' >> #{net_config}")
   post_list.push("echo 'broadcast #{client_broadcast}' >> #{net_config}")
+  post_list.push("")
+  puppet_config = "/etc/default/puppet"
+  post_list.push("# Puppet configuration")
+  post_list.push("")
+  post_list.push("echo '[client]' > #{puppet_config}")
+  post_list.push("echo '' > #{puppet_config}")
+  post_list.push("")
+  return post_list
+end
+
+# Populate post commands
+
+def populate_ps_post_list(client_name,service_name)
+  post_list  = []
+  script_url = "http://"+$default_host+"/"+service_name+"/"+client_name+"_first_boot.sh"
+  post_list.push("#!/bin/sh")
+  post_list.push("/usr/bin/curl -o /root/firstboot #{script_url}")
+  first_boot = "/etc/init.d/firstboot"
+  post_list.push("chmod +x /root/firstboot")
+  post_list.push("echo '### BEGIN INIT INFO' > #{first_boot}")
+  post_list.push("echo '# Provides:        firstboot' > #{first_boot}")
+  post_list.push("echo '# Required-Start:  $networking' > #{first_boot}")
+  post_list.push("echo '# Required-Stop:   $networking' > #{first_boot}")
+  post_list.push("echo '# Default-Start:   2 3 4 5' > #{first_boot}")
+  post_list.push("echo '# Default-Stop:    0 1 6' > #{first_boot}")
+  post_list.push("echo '# Short-Description: A script that runs once' > #{first_boot}")
+  post_list.push("echo '# Description: A script that runs once' > #{first_boot}")
+  post_list.push("echo '### END INIT INFO' > #{first_boot}")
+  post_list.push("echo '' > #{first_boot}")
+  post_list.push("echo 'cd /root ; /usr/bin/nohup sh -x /root/firstboot &' > #{first_boot}")
+  post_list.push("echo '' > ")
+  post_list.push("")
+  post_list.push("chmod +x #{first_boot}")
+  post_list.push("update-rc.d firstboot defaults")
   post_list.push("")
   return post_list
 end

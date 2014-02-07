@@ -59,7 +59,7 @@ $default_terminal       = "sun"
 $default_country        = "AU"
 $local_opencsw_mirror   = "http://192.168.1.250/pub/Software/OpenCSW"
 $default_opencsw        = "testing"
-$default_ubuntu_mirror  = $default_country.downcase+"archive.ubuntu.com"
+$default_ubuntu_mirror  = $default_country.downcase+".archive.ubuntu.com"
 $default_centos_mirror  = "mirror.centos.org"
 $default_sl_mirror      = "ftp.scientificlinux.org/linux"
 $default_epel_mirror    = "download.fedoraproject.org"
@@ -127,9 +127,9 @@ $do_ssh_keys            = 0
 
 # Declare some package versions
 
-$facter_version = "1.7.4"
-$hiera_version  = "1.3.0"
-$puppet_version = "3.4.1"
+$facter_version = "1.7.5-rc2"
+$hiera_version  = "1.3.1"
+$puppet_version = "3.4.2"
 
 # Load methods
 
@@ -328,8 +328,10 @@ def check_local_config(mode)
       end
     end
     if $os_name.match(/Darwin/)
+      check_osx_dnsmasq()
       check_osx_tftpd()
       check_osx_dhcpd()
+      check_osx_puppet()
       $tftp_dir   = "/private/tftpboot"
       $dhcpd_file = "/usr/local/etc/dhcpd.conf"
     end

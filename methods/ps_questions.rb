@@ -277,6 +277,58 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
+  name = "mirror_country"
+  config = Ks.new(
+    type      = "string",
+    question  = "Mirror country",
+    ask       = "yes",
+    parameter = "mirror/country",
+    value     = $default_country,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "mirror_hostname"
+  config = Ks.new(
+    type      = "string",
+    question  = "Mirror hostname",
+    ask       = "yes",
+    parameter = "mirror/http/hostname",
+    value     = $local_ubuntu_mirror,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "mirror_directory"
+  config = Ks.new(
+    type      = "string",
+    question  = "Mirror directory",
+    ask       = "yes",
+    parameter = "mirror/http/directory",
+    value     = "/ubuntu",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "mirror_proxy"
+  config = Ks.new(
+    type      = "string",
+    question  = "Mirror country",
+    ask       = "yes",
+    parameter = "mirror/http/proxy",
+    value     = "",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
   name = "partition_method"
   config = Ks.new(
     type      = "string",
@@ -388,6 +440,25 @@ def populate_ps_questions(service_name,client_name,client_ip)
     ask       = "yes",
     parameter = "base-installer/kernel/image",
     value     = "linux-generic",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  pkg_list = [
+    "avahi-daemon", "libterm-readkey-perl", "nfs-common", "openssh-server",
+    "puppet", "python-software-properties", "software-properties-common",
+    "curl", "sysv-rc-conf"
+  ]
+
+  name = "additional_packages"
+  config = Ks.new(
+    type      = "string",
+    question  = "Additional packages",
+    ask       = "yes",
+    parameter = "pkgsel/include",
+    value     = pkg_list.join(","),
     valid     = "",
     eval      = "no"
     )
@@ -558,7 +629,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
     question  = "Post install commands",
     ask       = "yes",
     parameter = "preseed/late_command",
-    value     = "in-target wget #{script_url} -O - |sh",
+    value     = "in-target chroot /target sh -c '/usr/bin/curl -o /tmp/postinstall #{script_url} && /bin/sh -x /tmp/postinstall'",
     valid     = "",
     eval      = ""
     )

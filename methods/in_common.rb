@@ -165,6 +165,284 @@ def check_ips()
   return
 end
 
+# Get Mac disk name
+
+def get_osx_disk_name()
+  message = "Getting:\tRoot disk device ID"
+  command = "df |grep '/$' |awk '{print \\$1}'"
+  output  = execute_command(message,command)
+  disk_id = output.chomp
+  message = "Getting:\tVolume name for "+disk_id
+  command = "diskutil info #{disk_id} | grep 'Volume Name' |cut -f2 -d':'"
+  output  = execute_command(message,command)
+  volume  = output.chomp.gsub(/^\s+/,"")
+  return volume
+end
+
+# Check OSX Puppet install
+
+def check_osx_puppet_install()
+  pkg_list = {}
+  use_rvm  = 0
+  pkg_list["facter"] = $facter_version
+  pkg_list["hiera"]  = $hiera_version
+  pkg_list["puppet"] = $puppet_version
+  base_url  = "http://downloads.puppetlabs.com/mac/"
+  local_dir = $work_dir+"/dmg"
+  check_dir_exists(local_dir)
+  pkg_list.each do |key, value|
+    test_file = "/usr/bin/"+key
+    if !File.exist?(test_file)
+      file_name   = key+"-"+value
+      dmg_name    = file_name+".dmg"
+      local_pkg   = key+"-"+value+".pkg"
+      remote_file = base_url+"/"+dmg_name
+      local_file  = local_dir+"/"+dmg_name
+      if !File.exist?(local_file)
+        wget_file(remote_file,local_file)
+      end
+      message = "Mounting:\tDisk image "+local_file
+      command = "hdiutil mount #{local_file}"
+      execute_command(message,command)
+      local_pkg = "/Volumes/"+file_name+"/"+local_pkg
+      volume    = get_osx_disk_name()
+      volume    = "/Volumes/"+volume
+      message   = "Installing:\tPackage "+local_pkg
+      command   = "installer -package #{local_pkg} -target '#{volume}'"
+      execute_command(message,command)
+      if key.match(/puppet/)
+        message = "Checking:\tRuby version"
+        command = "which ruby"
+        output  = execute_command(message,command)
+        if output.match(/rvm/)
+          use_rvm  = 1
+          message  = "Storing:\tRVM Ruby version"
+          command  = "rvm current"
+          output   = execute_command(message,command)
+          rvm_ruby = output.chomp
+          message  = "Setting:\tRVM to use system ruby"
+          command  = "rvm use system"
+          execute_command(message,command)
+        end
+        message = "Creating:\tPuppet group"
+        command = "puppet resource group puppet ensure=present"
+        execute_command(message,command)
+        message = "Creating:\tPuppet user"
+        command = "puppet resource user puppet ensure=present gid=puppet shell='/sbin/nologin'"
+        execute_command(message,command)
+        etc_dir = "/etc/puppet"
+        check_dir_exists(etc_dir)
+        message = "Creating:\tPuppet directory"
+        command = "mkdir -p /var/lib/puppet ; mkdir -p /etc/puppet/manifests ; mkdir -p /etc/puppet/ssl"
+        execute_command(message,command)
+        message = "Fixing:\tPuppet permissions"
+        command = "chown -R puppet:puppet  /var/lib/puppet ; chown -R puppet:puppet  /etc/puppet"
+        execute_command(message,command)
+        if use_rvm == 1
+          message = "Reverting:\tRVM to use "+rvm_ruby
+          command = "rvm use rvm_ruby"
+          execute_command(message,command)
+        end
+      end
+      local_vol = "/Volumes/"+key+"-"+value
+      message   = "Unmounting:\t"+local_vol
+      command   = "umount "+local_vol
+      execute_command(message,command)
+    end
+  end
+
+  return
+end
+
+# Create OS X Puppet agent plist file
+
+def create_osx_puppet_agent_plist()
+  xml_output = []
+  plist_file = "/Library/LaunchDaemons/com.puppetlabs.puppet.plist"
+  tmp_file   = "/tmp/puppet.plist"
+  plist_name = "com.puppetlabs.puppet"
+  puppet_bin = "/usr/bin/puppet"
+  message    = "Checking:\tPuppet configruation"
+  command    = "cat #{plist_file} | grep 'agent'"
+  output     = execute_command(message,command)
+  if !output.match(/#{$default_net}/)
+    xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
+    xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
+    xml.declare! :DOCTYPE, :plist, :PUBLIC, :'"-//Apple Computer//DTD PLIST 1.0//EN"', :'"http://www.apple.com/DTDs/PropertyList-1.0.dtd"'
+    xml.plist(:version => "1.0") {
+      xml.dict {
+        xml.key("EnvironmentVariables")
+        xml.dict {
+          xml.key("PATH")
+          xml.string("/sbin:/usr/sbin:/bin:/usr/bin")
+          xml.key("RUBYLIB")
+          xml.string("/usr/lib/ruby/site_ruby/1.8/")
+        }
+        xml.key("label")
+        xml.string(plist_name)
+        xml.key("OnDemand") ; xml.false
+        xml.key("ProgramArguments")
+        xml.array {
+          xml.string(puppet_bin)
+          xml.string("agent")
+          xml.string("--verbose")
+          xml.string("--no-daemonize")
+          xml.string("--log-dest")
+          xml.string("console")
+        }
+      }
+      xml.key("RunAtLoad") ; xml.true
+      xml.key("ServiceIPC") ; xml.false
+      xml.key("StandardErrorPath")
+      xml.string("/var/log/puppet/puppet.err")
+      xml.key("StandardOutPath")
+      xml.string("/var/log/puppet/puppet.out")
+    }
+    file=File.open(tmp_file,"w")
+    xml_output.each do |item|
+      file.write(item)
+    end
+    file.close
+    message = "Creating:\tService file "+plist_file
+    command = "cp #{tmp_file} #{plist_file} ; rm #{tmp_file} ; chown root:wheel #{plist_file} ; chmod 644 #{plist_file}"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Create OS X Puppet master plist file
+
+def create_osx_puppet_master_plist()
+  xml_output = []
+  plist_file = "/Library/LaunchDaemons/com.puppetlabs.puppetmaster.plist"
+  tmp_file   = "/tmp/puppetmaster.plist"
+  plist_name = "com.puppetlabs.puppetmaster"
+  puppet_bin = "/usr/bin/puppet"
+  message    = "Checking:\tPuppet configruation"
+  command    = "cat #{plist_file} | grep 'master'"
+  output     = execute_command(message,command)
+  if !output.match(/#{$default_net}/)
+    xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
+    xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
+    xml.declare! :DOCTYPE, :plist, :PUBLIC, :'"-//Apple Computer//DTD PLIST 1.0//EN"', :'"http://www.apple.com/DTDs/PropertyList-1.0.dtd"'
+    xml.plist(:version => "1.0") {
+      xml.dict {
+        xml.key("EnvironmentVariables")
+        xml.dict {
+          xml.key("PATH")
+          xml.string("/sbin:/usr/sbin:/bin:/usr/bin")
+          xml.key("RUBYLIB")
+          xml.string("/usr/lib/ruby/site_ruby/1.8/")
+        }
+        xml.key("label")
+        xml.string(plist_name)
+        xml.key("ProgramArguments")
+        xml.array {
+          xml.string(puppet_bin)
+          xml.string("master")
+          xml.string("--verbose")
+          xml.string("--no-daemonize")
+        }
+      }
+      xml.key("RunAtLoad") ; xml.true
+      xml.key("ServiceIPC") ; xml.false
+      xml.key("StandardErrorPath")
+      xml.string("/var/log/puppet/puppetmaster.err")
+      xml.key("StandardOutPath")
+      xml.string("/var/log/puppet/puppetmaster.out")
+    }
+    file=File.open(tmp_file,"w")
+    xml_output.each do |item|
+      file.write(item)
+    end
+    file.close
+    message = "Creating:\tService file "+plist_file
+    command = "cp #{tmp_file} #{plist_file} ; rm #{tmp_file} ; chown root:wheel #{plist_file} ; chmod 644 #{plist_file}"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Check OX X Puppet plist
+
+def check_osx_puppet_plist()
+  plist_file = "/Library/LaunchDaemons/com.puppetlabs.puppet.plist"
+  plist_name = "com.puppetlabs.puppet"
+  if !File.exist?(plist_file)
+    create_osx_puppet_plist()
+    message = "Loading:\tPuppet Agent plist file "+plist_file
+    command = "launchctl load -w #{plist_file}"
+    execute_command(message,command)
+    message = "Loading:\tStarting Puppet Agent "+plist_name
+    command = "launchctl start #{plist_name}"
+    execute_command(message,command)
+  end
+  plist_file = "/Library/LaunchDaemons/com.puppetlabs.puppetmaster.plist"
+  plist_name = "com.puppetlabs.puppetmaster"
+  if !File.exist?(plist_file)
+    create_osx_puppet_master_plist()
+    message = "Loading:\tPuppet Master plist file "+plist_file
+    command = "launchctl load -w #{plist_file}"
+    execute_command(message,command)
+    message = "Loading:\tStarting Puppet Master "+plist_name
+    command = "launchctl start #{plist_name}"
+    execute_command(message,command)
+  end
+  return
+end
+
+# Create OS X Puppet config
+
+def create_osx_puppet_config()
+  tmp_file    = "/tmp/puppet_config"
+  puppet_file = "/etc/puppet/puppet.conf"
+  if !File.exist?(puppet_file)
+    config = []
+    config.push("[main]")
+    config.push("pluginsync = true")
+    config.push("server = #{$default_host}")
+    config.push("")
+    config.push("[master]")
+    config.push("vardir = /var/lib/puppet")
+    config.push("libdir = $vardir/lib")
+    config.push("ssldir = /etc/puppet/ssl")
+    config.push("certname = #{$default_host}")
+    config.push("")
+    config.push("[agent]")
+    config.push("vardir = /var/lib/puppet")
+    config.push("libdir = $vardir/lib")
+    config.push("ssldir = /etc/puppet/ssl")
+    config.push("certname = #{$default_host}")
+    config.push("")
+    file = File.open(tmp_file,"w")
+    config.each do |line|
+      output = line+"\n"
+      file.write(output)
+    end
+    file.close
+    message = "Creating:\tPuppet configuration file "+puppet_file
+    command = "cp #{tmp_file} #{puppet_file} ; rm #{tmp_file}"
+    execute_command(message,command)
+    if $verbose_mode == 1
+      puts
+      puts "Information: Contents of "+puppet_file
+      puts
+      system("cat #{puppet_file}")
+      puts
+    end
+  end
+  return
+end
+
+# Check OS X Puppet
+
+def check_osx_puppet()
+  check_osx_puppet_install()
+  check_osx_puppet_plist()
+  create_osx_puppet_config()
+  return
+end
+
 # Check OS X IPS
 
 def check_osx_ips()
@@ -613,7 +891,7 @@ end
 
 def check_osx_dhcpd()
   check_osx_dhcpd_installed()
-  check_osx_dhcpd_plist()
+  create_osx_dhcpd_plist()
   service = "dhcp"
   check_osx_service_is_enabled(service)
   return
