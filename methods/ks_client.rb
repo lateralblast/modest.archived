@@ -187,7 +187,10 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
         process_questions
         output_ps_header(client_name,output_file)
         output_file = repo_version_dir+"/"+client_name+"_post.sh"
-        post_list   = populate_ps_post_list()
+        post_list   = populate_ps_post_list(client_name,service_name)
+        output_ks_post_list(client_name,post_list,output_file,service_name)
+        output_file = repo_version_dir+"/"+client_name+"_first_boot.sh"
+        post_list   = populate_ps_first_boot_list()
         output_ks_post_list(client_name,post_list,output_file,service_name)
       end
     end

@@ -277,3 +277,5 @@
 # Added code to check DHCPd plist on OS X
 # 1.3.9: Fri  7 Feb 2014 11:28:17 EST
 # Added initial puppet master configuration
+# 1.4.0: Sat  8 Feb 2014 07:22:26 EST
+# Added OS X dnsmasq and puppet configuration to Ubuntu Preseed

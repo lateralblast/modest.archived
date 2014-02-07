@@ -44,12 +44,15 @@ end
 def populate_ps_first_boot_list()
   post_list        = []
   client_ip        = $q_struct["ip"].value
+  client_nic       = $q_struct["nic"].value
   client_gateway   = $q_struct["gateway"].value
   client_netmask   = $q_struct["netmask"].value
   client_network   = $q_struct["network_address"].value
   client_broadcast = $q_struct["broadcast"].value
   admin_user       = $q_struct["admin_username"].value
   post_list.push("# Install additional pacakges")
+  post_list.push("")
+  post_list.push("sleep 30")
   post_list.push("")
   post_list.push("export TERM=vt100")
   post_list.push("export LANGUAGE=en_US.UTF-8")
@@ -92,18 +95,38 @@ def populate_ps_first_boot_list()
   post_list.push("echo 'auto lo' >> #{net_config}")
   post_list.push("echo 'iface lo inet loopback' >> #{net_config}")
   post_list.push("echo '# The primary network interface' >> #{net_config}")
-  post_list.push("echo 'iface eth0 inet static' >> #{net_config}")
+  post_list.push("echo 'auto #{client_nic}' >> #{net_config}")
+  post_list.push("echo 'iface #{client_nic} inet static' >> #{net_config}")
   post_list.push("echo 'address #{client_ip}' >> #{net_config}")
   post_list.push("echo 'gateway #{client_gateway}' >> #{net_config}")
   post_list.push("echo 'netmask #{client_netmask}' >> #{net_config}")
   post_list.push("echo 'network #{client_network}' >> #{net_config}")
   post_list.push("echo 'broadcast #{client_broadcast}' >> #{net_config}")
   post_list.push("")
-  puppet_config = "/etc/default/puppet"
+  resolv_conf = "/etc/resolvconf/resolv.conf.d/base"
+  post_list.push("# Configure hosts ile")
+  post_list.push("")
+  post_list.push("echo 'nameserver #{$default_host}' > #{resolv_conf}")
+  post_list.push("echo 'nameserver 8.8.8.8' >> #{resolv_conf}")
+  post_list.push("echo 'search local' >> #{resolv_conf}")
+  post_list.push("")
+  puppet_config = "/etc/puppet/puppet.conf"
   post_list.push("# Puppet configuration")
   post_list.push("")
-  post_list.push("echo '[client]' > #{puppet_config}")
-  post_list.push("echo '' > #{puppet_config}")
+  post_list.push("echo '[main]' > #{puppet_config}")
+  post_list.push("echo 'logdir=/var/log/puppet' >> #{puppet_config}")
+  post_list.push("echo 'vardir=/var/lib/puppet' >> #{puppet_config}")
+  post_list.push("echo 'ssldir=/var/lib/puppet/ssl' >> #{puppet_config}")
+  post_list.push("echo 'rundir=/var/run/puppet' >> #{puppet_config}")
+  post_list.push("echo 'factpath=$vardir/lib/facter' >> #{puppet_config}")
+  post_list.push("echo 'templatedir=$confdir/templates' >> #{puppet_config}")
+  post_list.push("")
+  post_list.push("puppet agent --test")
+  post_list.push("")
+  post_list.push("# Disable script and reboot")
+  post_list.push("")
+  post_list.push("update-rc.d -f firstboot remove")
+  post_list.push("/sbin/reboot")
   post_list.push("")
   return post_list
 end
@@ -113,7 +136,6 @@ end
 def populate_ps_post_list(client_name,service_name)
   post_list  = []
   script_url = "http://"+$default_host+"/"+service_name+"/"+client_name+"_first_boot.sh"
-  post_list.push("#!/bin/sh")
   post_list.push("/usr/bin/curl -o /root/firstboot #{script_url}")
   first_boot = "/etc/init.d/firstboot"
   post_list.push("chmod +x /root/firstboot")
@@ -128,7 +150,6 @@ def populate_ps_post_list(client_name,service_name)
   post_list.push("echo '### END INIT INFO' > #{first_boot}")
   post_list.push("echo '' > #{first_boot}")
   post_list.push("echo 'cd /root ; /usr/bin/nohup sh -x /root/firstboot &' > #{first_boot}")
-  post_list.push("echo '' > ")
   post_list.push("")
   post_list.push("chmod +x #{first_boot}")
   post_list.push("update-rc.d firstboot defaults")

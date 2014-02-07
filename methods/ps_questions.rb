@@ -102,7 +102,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
     question  = "Nameservers",
     ask       = "yes",
     parameter = "netcfg/get_nameservers",
-    value     = $default_nameserver,
+    value     = "#{$default_host} #{$default_nameserver}",
     valid     = "",
     eval      = "no"
     )
@@ -200,6 +200,19 @@ def populate_ps_questions(service_name,client_name,client_ip)
     ask       = "yes",
     parameter = "netcfg/get_hostname",
     value     = client_name,
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "nic"
+  config = Ks.new(
+    type      = "",
+    question  = "NIC",
+    ask       = "yes",
+    parameter = "",
+    value     = "eth0",
     valid     = "",
     eval      = "no"
     )
@@ -629,7 +642,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
     question  = "Post install commands",
     ask       = "yes",
     parameter = "preseed/late_command",
-    value     = "in-target chroot /target sh -c '/usr/bin/curl -o /tmp/postinstall #{script_url} && /bin/sh -x /tmp/postinstall'",
+    value     = "chroot /target sh -c \"/usr/bin/curl -o /tmp/postinstall #{script_url} && /bin/sh -x /tmp/postinstall\"",
     valid     = "",
     eval      = ""
     )
