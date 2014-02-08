@@ -124,3 +124,34 @@ def uninstall_pkg(pkg_name)
   end
   return
 end
+
+# RPM list
+
+def populate_puppet_rpm_list(service_name,client_arch)
+  pkg_list = {}
+  rpm_list = []
+  pkg_list["facter"] = $facter_version
+  pkg_list["hiera"]  = $hiera_version
+  pkg_list["puppet"] = $puppet_version
+  pkg_list.each do |key, value|
+    if service_name.match(/centos_5|rhel_5|sl_5|oel_5/)
+      puppet_url = "https://yum.puppetlabs.com"
+      puppet_url = puppet_url+"/el/5/products/"+client_arch
+      if key.match(/facter/)
+        rpm_url = puppet_url+"/"+key+"-"+value+"-1.el5."+client_arch+".rpm"
+      else
+        rpm_url = puppet_url+"/"+key+"-"+value+"-1.el5.noarch.rpm"
+      end
+    end
+    if service_name.match(/centos_6|rhel_6|sl_6|oel_6/)
+      puppet_url = puppet_url+"/el/6/products/"+client_arch+"/"
+      if key.match(/facter/)
+        rpm_url = puppet_url+"/"+key+"-"+value+"-1.el6."+client_arch+".rpm"
+      else
+        rpm_url = puppet_url+"/"+key+"-"+value+"-1.el6.noarch.rpm"
+      end
+    end
+    rpm_list.push(rpm_url)
+  end
+  return rpm_list
+end

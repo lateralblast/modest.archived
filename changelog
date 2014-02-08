@@ -279,3 +279,5 @@
 # Added initial puppet master configuration
 # 1.4.0: Sat  8 Feb 2014 07:22:26 EST
 # Added OS X dnsmasq and puppet configuration to Ubuntu Preseed
+# 1.4.1: Sat  8 Feb 2014 12:19:41 EST
+# Added code to fetch puppet RPMs

@@ -337,6 +337,17 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
     post_list.push("chmod 644 #{auth_file}")
     post_list.push("")
   end
+  puppet_config = "/etc/puppet/puppet.conf"
+  post_list.push("# Puppet configuration")
+  post_list.push("")
+  post_list.push("echo '[main]' > #{puppet_config}")
+  post_list.push("echo 'logdir=/var/log/puppet' >> #{puppet_config}")
+  post_list.push("echo 'vardir=/var/lib/puppet' >> #{puppet_config}")
+  post_list.push("echo 'ssldir=/var/lib/puppet/ssl' >> #{puppet_config}")
+  post_list.push("echo 'rundir=/var/run/puppet' >> #{puppet_config}")
+  post_list.push("echo 'factpath=$vardir/lib/facter' >> #{puppet_config}")
+  post_list.push("echo 'templatedir=$confdir/templates' >> #{puppet_config}")
+  post_list.push("")
   if $use_alt_repo == 1
     post_list.push("mkdir /tmp/rpms")
     post_list.push("cd /tmp/rpms")

@@ -104,7 +104,7 @@ def populate_ps_first_boot_list()
   post_list.push("echo 'broadcast #{client_broadcast}' >> #{net_config}")
   post_list.push("")
   resolv_conf = "/etc/resolvconf/resolv.conf.d/base"
-  post_list.push("# Configure hosts ile")
+  post_list.push("# Configure hosts file")
   post_list.push("")
   post_list.push("echo 'nameserver #{$default_host}' > #{resolv_conf}")
   post_list.push("echo 'nameserver 8.8.8.8' >> #{resolv_conf}")

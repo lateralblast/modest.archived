@@ -434,6 +434,7 @@ def add_hosts_entry(client_name,client_ip)
     output  = execute_command(message,command)
     if $os_name.match(/Darwin/)
       service = "dnsmasq"
+      service = get_service_name(service)
       refresh_service(service)
     end
   end
@@ -848,6 +849,15 @@ def get_service_name(service_name)
     end
     if service_name.match(/dhcp/)
       service_name = "homebrew.mxcl.isc-dhcp"
+    end
+    if service_name.match(/dnsmasq/)
+      service_name = "homebrew.mxcl.dnsmasq"
+    end
+    if service_name.match(/^puppet$/)
+      service_name = "com.puppetlabs.puppet.plist"
+    end
+    if service_name.match(/^puppetmaster$/)
+      service_name = "com.puppetlabs.puppetmaster.plist"
     end
   end
   if $os_name.match(/RedHat|CentOS|SuSE|Ubuntu/)

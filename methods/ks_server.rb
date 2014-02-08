@@ -214,6 +214,25 @@ def configure_ks_vmware_repo(service_name,client_arch)
   return
 end
 
+# Configure local Puppet repo
+
+def configure_ks_puppet_repo(service_name,iso_arch)
+  repo_dir   = $repo_base_dir+"/"+service_name
+  puppet_dir = repo_dir+"/puppet"
+  rpm_list   = populate_puppet_rpm_list(service_name,iso_arch)
+  if !File.directory?(puppet_dir)
+    check_dir_exists(puppet_dir)
+  end
+  rpm_list.each do |rpm_url|
+    rpm_file = File.basename(rpm_url)
+    rpm_file = puppet_dir+"/"+rpm_file
+    if !File.exist?(rpm_file)
+      wget_file(rpm_url,rpm_file)
+    end
+  end
+  return
+end
+
 # Configue Linux server
 
 def configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
@@ -231,14 +250,14 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
       puts "Warning:\tISO file "+is_file+" does not exist"
     end
   else
-    iso_list=check_iso_base_dir(search_string)
+    iso_list = check_iso_base_dir(search_string)
   end
   if iso_list[0]
     iso_list.each do |iso_file_name|
-      iso_file_name=iso_file_name.chomp
+      iso_file_name = iso_file_name.chomp
       (linux_distro,iso_version,iso_arch) = get_linux_version_info(iso_file_name)
-      iso_version = iso_version.gsub(/\./,"_")
-      service_name      = linux_distro+"_"+iso_version+"_"+iso_arch
+      iso_version  = iso_version.gsub(/\./,"_")
+      service_name = linux_distro+"_"+iso_version+"_"+iso_arch
       repo_version_dir  = $repo_base_dir+"/"+service_name
       add_apache_alias(service_name)
       configure_ks_repo(iso_file_name,repo_version_dir)
@@ -246,11 +265,24 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
       if service_name.match(/centos|rhel|sl_|oel/)
         configure_ks_vmware_repo(service_name,iso_arch)
       end
+      configure_ks_puppet_repo(service_name,iso_arch)
     end
   else
-    add_apache_alias(service_name)
-    configure_ks_repo(iso_file,repo_version_dir)
-    configure_ks_pxe_boot(service_name)
+    if service_name.match(/[A-z]/)
+      if !client_arch.match(/[A-z]/)
+        iso_info    = service_name.split(/_/)
+        client_arch = iso_info[-1]
+      end
+      add_apache_alias(service_name)
+      configure_ks_pxe_boot(service_name,client_arch)
+      if service_name.match(/centos|rhel|sl_|oel/)
+        configure_ks_vmware_repo(service_name,client_arch)
+      end
+      configure_ks_puppet_repo(service_name,client_arch)
+    else
+      puts "Warning:\tISO file and/or Service name not found"
+      exit
+    end
   end
   return
 end

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.4.0
+# Version:      1.4.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -127,7 +127,7 @@ $do_ssh_keys            = 0
 
 # Declare some package versions
 
-$facter_version = "1.7.5-rc2"
+$facter_version = "1.7.4"
 $hiera_version  = "1.3.1"
 $puppet_version = "3.4.2"
 
