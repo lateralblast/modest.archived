@@ -927,7 +927,7 @@ def check_iso_base_dir(search_string)
   end
   check_zfs_fs_exists($iso_base_dir)
   message  = "Getting:\t"+$iso_base_dir+" contents"
-  command  = "ls #{$iso_base_dir}/*.iso |egrep '#{search_string}'"
+  command  = "ls #{$iso_base_dir}/*.iso |egrep '#{search_string}' |grep -v '2.iso'"
   iso_list = execute_command(message,command)
   if search_string.match(/sol_11/)
     if !iso_list.grep(/full/)
@@ -1024,10 +1024,10 @@ end
 
 def add_apache_alias(service_base_name)
   if service_base_name.match(/^\//)
-    repo_version_dir  = service_base_name
-    service_base_name = service_base_name.gsub(/^\//,"")
+    apache_alias_dir  = service_base_name
+    service_base_name = File.basename(service_base_name)
   else
-    repo_version_dir = $repo_base_dir+"/"+service_base_name
+    apache_alias_dir = $repo_base_dir+"/"+service_base_name
   end
   if $os_name.match(/SunOS/)
     apache_config_file = "/etc/apache2/2.2/httpd.conf"
@@ -1037,7 +1037,7 @@ def add_apache_alias(service_base_name)
   end
   tmp_file     = "/tmp/httpd.conf"
   message      = "Checking:\tApache confing file "+apache_config_file+" for "+service_base_name
-  command      = "cat #{apache_config_file} |grep '#{service_base_name}'"
+  command      = "cat #{apache_config_file} |grep '/#{service_base_name}'"
   apache_check = execute_command(message,command)
   if !apache_check.match(/#{service_base_name}/)
     message = "Archiving:\tApache config file "+apache_config_file+" to "+apache_config_file+".no_"+service_base_name
@@ -1050,7 +1050,7 @@ def add_apache_alias(service_base_name)
     command = "cp #{apache_config_file} #{tmp_file} ; chown #{$id} #{tmp_file}"
     execute_command(message,command)
     output = File.open(tmp_file,"a")
-    output.write("<Directory #{repo_version_dir}>\n")
+    output.write("<Directory #{apache_alias_dir}>\n")
     if service_base_name.match(/oel/)
       output.write("Options Indexes FollowSymLinks\n")
     else
@@ -1058,7 +1058,7 @@ def add_apache_alias(service_base_name)
     end
     output.write("Allow from #{$default_apache_allow}\n")
     output.write("</Directory>\n")
-    output.write("Alias /#{service_base_name} #{repo_version_dir}\n")
+    output.write("Alias /#{service_base_name} #{apache_alias_dir}\n")
     output.close
     message = "Updating:\tApache config file"
     command = "cp #{tmp_file} #{apache_config_file} ; rm #{tmp_file}"
@@ -1100,7 +1100,7 @@ def mount_iso(iso_file)
     command = "mount -F hsfs "+iso_file+" "+$iso_mount_dir
   end
   if $os_name.match(/Darwin/)
-    command = "hdiutil attach -nomount #{iso_file} |head -1 |awk '{print $1}'"
+    command = "sudo hdiutil attach -nomount #{iso_file} |head -1 |awk '{print $1}'"
     if $verbose_mode == 1
       puts "Executing:\t"+command
     end
@@ -1137,10 +1137,11 @@ def mount_iso(iso_file)
       end
     end
   end
-  if !File.directory?(iso_test_dir)
+  if !File.directory?(iso_test_dir) and !iso_file.match(/DVD2\.iso|2of2\.iso/)
     puts "Warning:\tISO did not mount, or this is not a repository ISO"
     puts "Warning:\t"+iso_test_dir+" does not exit"
     if $test_mode != 1
+      umount_iso()
       exit
     end
   end
@@ -1163,7 +1164,9 @@ end
 # Copy repository from ISO to local filesystem
 
 def copy_iso(iso_file,repo_version_dir)
-  puts "Checking:\tIf we can copy data from full repo ISO"
+  if $verbose_mode == 1
+    puts "Checking:\tIf we can copy data from full repo ISO"
+  end
   if iso_file.match(/sol/)
     iso_repo_dir = $iso_mount_dir+"/repo"
     test_dir     = repo_version_dir+"/publisher"
@@ -1179,13 +1182,13 @@ def copy_iso(iso_file,repo_version_dir)
       end
     end
   end
-  if !File.directory?(repo_version_dir) and !File.symlink?(repo_version_dir)
+  if !File.directory?(repo_version_dir) and !File.symlink?(repo_version_dir) and !iso_file.match(/2\.iso/)
     puts "Warning:\tRepository directory "+repo_version_dir+" does not exist"
     if $test_mode != 1
       exit
     end
   end
-  if !File.directory?(test_dir)
+  if !File.directory?(test_dir) or iso_file.match(/DVD2\.iso|2of2\.iso/)
     if iso_file.match(/sol/)
       message = "Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
       command = "rsync -a #{iso_repo_dir}/* #{repo_version_dir}"

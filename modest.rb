@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.4.1
+# Version:      1.4.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -35,11 +35,12 @@ $test_mode              = 0
 $iso_base_dir           = "/export/isos"
 $repo_base_dir          = "/export/repo"
 $image_base_dir         = "/export/images"
+$pkg_base_dir           = "/export/pkgs"
 $ldom_base_dir          = "/ldoms"
 $zone_base_dir          = "/zones"
 $iso_mount_dir          = "/cdrom"
 $ai_base_dir            = "/export/auto_install"
-$client_base_dir        = "/export/repo/clients"
+$client_base_dir        = "/export/clients"
 $lxc_base_dir           = "/lxc"
 $lxc_image_dir          = "/export/images"
 $work_dir               = ""

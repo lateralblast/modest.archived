@@ -56,6 +56,17 @@ def configure_ks_repo(iso_file,repo_version_dir)
     mount_iso(iso_file)
     copy_iso(iso_file,repo_version_dir)
     umount_iso()
+    if iso_file.match(/DVD1\.iso|1of2\.iso/)
+      if iso_file.match(/DVD1/)
+        iso_file = iso_file.gsub(/1\.iso/,"2.iso")
+      end
+      if iso_file.match(/1of2/)
+        iso_file = iso_file.gsub(/1of2\.iso/,"2of2.iso")
+      end
+      mount_iso(iso_file)
+      copy_iso(iso_file,repo_version_dir)
+      umount_iso()
+    end
   end
   return
 end
@@ -189,8 +200,8 @@ end
 # Configure local VMware repo
 
 def configure_ks_vmware_repo(service_name,client_arch)
-  repo_dir     = $repo_base_dir+"/"+service_name
-  vmware_dir   = repo_dir+"/vmware"
+  vmware_dir   = $pkg_base_dir+"/vmware"
+  add_apache_alias(vmware_dir)
   repodata_dir = vmware_dir+"/repodata"
   vmware_url   = "http://packages.vmware.com/tools/esx/latest"
   if service_name.match(/centos_5|rhel_5|sl_5|oel_5/)
@@ -202,7 +213,7 @@ def configure_ks_vmware_repo(service_name,client_arch)
     repodata_url = vmware_url+"repodata/"
   end
   if !File.directory?(vmware_dir)
-    check_dir_exists(vmware_dir)
+    check_zfs_fs_exists(vmware_dir)
     message = "Fetching:\tVMware RPMs"
     command = "cd #{vmware_dir} ; lftp -e 'mget * ; quit' #{vmware_url}"
     execute_command(message,command)
@@ -217,8 +228,9 @@ end
 # Configure local Puppet repo
 
 def configure_ks_puppet_repo(service_name,iso_arch)
-  repo_dir   = $repo_base_dir+"/"+service_name
-  puppet_dir = repo_dir+"/puppet"
+  puppet_dir = $pkg_base_dir+"/puppet"
+  check_zfs_fs_exists(puppet_dir)
+  add_apache_alias(puppet_dir)
   rpm_list   = populate_puppet_rpm_list(service_name,iso_arch)
   if !File.directory?(puppet_dir)
     check_dir_exists(puppet_dir)
@@ -228,6 +240,11 @@ def configure_ks_puppet_repo(service_name,iso_arch)
     rpm_file = puppet_dir+"/"+rpm_file
     if !File.exist?(rpm_file)
       wget_file(rpm_url,rpm_file)
+    else
+      file_size = File.size(rpm_file)
+      if file_size == 0
+        wget_file(rpm_url,rpm_file)
+      end
     end
   end
   return
@@ -237,6 +254,7 @@ end
 
 def configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
   iso_list = []
+  check_zfs_fs_exists($client_base_dir)
   check_dhcpd_config(publisher_host)
   if iso_file.match(/[A-z]/)
     if File.exist?(iso_file)
@@ -247,7 +265,7 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
         iso_list[0] = iso_file
       end
     else
-      puts "Warning:\tISO file "+is_file+" does not exist"
+      puts "Warning:\tISO file "+iso_file+" does not exist"
     end
   else
     iso_list = check_iso_base_dir(search_string)
@@ -259,13 +277,19 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
       iso_version  = iso_version.gsub(/\./,"_")
       service_name = linux_distro+"_"+iso_version+"_"+iso_arch
       repo_version_dir  = $repo_base_dir+"/"+service_name
-      add_apache_alias(service_name)
-      configure_ks_repo(iso_file_name,repo_version_dir)
-      configure_ks_pxe_boot(service_name,iso_arch)
-      if service_name.match(/centos|rhel|sl_|oel/)
-        configure_ks_vmware_repo(service_name,iso_arch)
+      if !iso_file_name.match(/DVD2\.iso|2of2\.iso/)
+        add_apache_alias(service_name)
+        configure_ks_repo(iso_file_name,repo_version_dir)
+        configure_ks_pxe_boot(service_name,iso_arch)
+        if service_name.match(/centos|rhel|sl_|oel/)
+          configure_ks_vmware_repo(service_name,iso_arch)
+        end
+        configure_ks_puppet_repo(service_name,iso_arch)
+      else
+        mount_iso(iso_file)
+        copy_iso(iso_file,repo_version_dir)
+        umount_iso()
       end
-      configure_ks_puppet_repo(service_name,iso_arch)
     end
   else
     if service_name.match(/[A-z]/)

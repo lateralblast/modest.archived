@@ -226,6 +226,20 @@ def check_osx_puppet_plist()
   return
 end
 
+# Check OS X apache config
+
+def check_osx_apache()
+  ssl_dir = "/private/etc/apache2/ssl"
+  check_dir_exists(ssl_dir)
+  server_key = ssl_dir+"/server.key"
+  if !File.exist?(server_key)
+    message = "Generating:\tApache SSL Server Key "+server_key
+    command = "ssh-keygen -f #{server_key}"
+    execute_command(message,command)
+  end
+  return
+end
+
 # Create OS X Puppet config
 
 def create_osx_puppet_config()

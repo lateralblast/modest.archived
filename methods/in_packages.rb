@@ -127,30 +127,56 @@ end
 
 # RPM list
 
+def populate_puppet_pkg_list(service_name)
+  pkg_list = {}
+  if service_name.match(/[a-z]_5/)
+    pkg_list["ruby-libs"] = "1.8.7.374-2"
+    pkg_list["ruby"] = "1.8.7.374-2"
+    pkg_list["ruby-irb"] = "1.8.7.374-2"
+    pkg_list["ruby-rdoc"] = "1.8.7.374-2"
+    pkg_list["rubygems"] = "1.3.7-1"
+  end
+  pkg_list["facter"] = "1.7.4-1"
+  pkg_list["rubygem-json"] = "1.5.5-1"
+  if service_name.match(/[a-z]_5/)
+    pkg_list["augeas-libs"] = "0.10.0-4"
+    pkg_list["ruby-augeas"] = "0.4.1-2"
+    pkg_list["ruby-shadow"] = "1.4.1-8"
+  else
+    pkg_list["ruby-augeas"] = "0.4.1-1"
+    pkg_list["ruby-shadow"] = "1.4.1-13"
+  end
+  pkg_list["ruby-rgen"] = "0.6.5-1"
+  pkg_list["hiera"]  = "1.3.1-1"
+  pkg_list["puppet"] = "3.4.2-1"
+  return pkg_list
+end
+
 def populate_puppet_rpm_list(service_name,client_arch)
   pkg_list = {}
+  pkg_list = populate_puppet_pkg_list(service_name)
   rpm_list = []
-  pkg_list["facter"] = $facter_version
-  pkg_list["hiera"]  = $hiera_version
-  pkg_list["puppet"] = $puppet_version
-  pkg_list.each do |key, value|
-    if service_name.match(/centos_5|rhel_5|sl_5|oel_5/)
-      puppet_url = "https://yum.puppetlabs.com"
-      puppet_url = puppet_url+"/el/5/products/"+client_arch
-      if key.match(/facter/)
-        rpm_url = puppet_url+"/"+key+"-"+value+"-1.el5."+client_arch+".rpm"
-      else
-        rpm_url = puppet_url+"/"+key+"-"+value+"-1.el5.noarch.rpm"
-      end
+  pkg_list.each do |pkg_name, pkg_ver|
+    puppet_url = "https://yum.puppetlabs.com"
+    if pkg_name.match(/facter|hiera|puppet/)
+      sub_dir = "products"
+    else
+      sub_dir = "dependencies"
     end
-    if service_name.match(/centos_6|rhel_6|sl_6|oel_6/)
-      puppet_url = puppet_url+"/el/6/products/"+client_arch+"/"
-      if key.match(/facter/)
-        rpm_url = puppet_url+"/"+key+"-"+value+"-1.el6."+client_arch+".rpm"
-      else
-        rpm_url = puppet_url+"/"+key+"-"+value+"-1.el6.noarch.rpm"
-      end
+    if service_name.match(/[a-z]_5/)
+      ver_dir = "el/5"
+      elx_ver = "el5"
+    else
+      ver_dir = "el/6"
+      elx_ver = "el6"
     end
+    if pkg_name.match(/facter|rubygem-json|ruby-rdoc|ruby-irb|ruby$|ruby-shadow|ruby-augeas|ruby-libs|augeas/)
+      pkg_arch = client_arch
+    else
+      pkg_arch = "noarch"
+    end
+    puppet_url = puppet_url+"/"+ver_dir+"/"+sub_dir+"/"+client_arch
+    rpm_url    = puppet_url+"/"+pkg_name+"-"+pkg_ver+"."+elx_ver+"."+pkg_arch+".rpm"
     rpm_list.push(rpm_url)
   end
   return rpm_list

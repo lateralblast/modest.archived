@@ -1393,7 +1393,7 @@ def output_ay_client_profile(client_name,client_ip,client_mac,output_file)
   patterns              = populate_ay_patterns()
   disabled_http_modules = populate_ay_disabled_http_modules()
   enabled_http_modules  = populate_ay_enabled_http_modules()
-  xml             = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
+  xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
   xml.declare! :DOCTYPE, :profile
   xml.profile(:xmlns => "http://www.suse.com/1.0/yast2ns", :"xmlns:config" => "http://www.suse.com/1.0/configns") {

@@ -29,16 +29,19 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   tftp_pxe_file = "01"+tftp_pxe_file+".pxelinux"
   test_file     = $tftp_dir+"/"+tftp_pxe_file
   tmp_file      = "/tmp/pxecfg"
-  if !File.exist?(test_file)
-    if service_name.match(/ubuntu/)
-      pxelinux_file = service_name+"/images/pxeboot/netboot/pxelinux.0"
-    else
-      pxelinux_file = service_name+"/usr/share/syslinux/pxelinux.0"
-    end
-    message       = "Creating:\tPXE boot file for "+client_name+" with MAC address "+client_mac
-    command       = "cd #{$tftp_dir} ; ln -s #{pxelinux_file} #{tftp_pxe_file}"
+  if File.symlink?(test_file)
+    message = "Removing:\tOld PXE boot file "+test_file
+    command = "rm #{test_file}"
     execute_command(message,command)
   end
+  if service_name.match(/ubuntu/)
+    pxelinux_file = service_name+"/images/pxeboot/netboot/pxelinux.0"
+  else
+    pxelinux_file = service_name+"/usr/share/syslinux/pxelinux.0"
+  end
+  message = "Creating:\tPXE boot file for "+client_name+" with MAC address "+client_mac
+  command = "cd #{$tftp_dir} ; ln -s #{pxelinux_file} #{tftp_pxe_file}"
+  execute_command(message,command)
   pxe_cfg_dir  = $tftp_dir+"/pxelinux.cfg"
   pxe_cfg_file = client_mac.gsub(/:/,"-")
   pxe_cfg_file = "01-"+pxe_cfg_file
@@ -66,8 +69,8 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
     vmlinuz_file = vmlinuz_file.gsub(/^\//,"")
     initrd_file  = initrd_file.gsub(/^\//,"")
   end
-  ks_url       = "http://"+$default_host+"/"+service_name+"/"+client_name+".cfg"
-  autoyast_url = "http://"+$default_host+"/"+service_name+"/"+client_name+".xml"
+  ks_url       = "http://"+$default_host+"/clients/"+service_name+"/"+client_name+"/"+client_name+".cfg"
+  autoyast_url = "http://"+$default_host+"/clients/"+service_name+"/"+client_name+"/"+client_name+".xml"
   install_url  = "http://"+$default_host+"/"+service_name
   file         = File.open(tmp_file,"w")
   file.write("DEFAULT LINUX\n")
@@ -156,16 +159,20 @@ end
 
 def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)
   repo_version_dir = $repo_base_dir+"/"+service_name
+  add_apache_alias($client_base_dir)
+  client_dir = $client_base_dir+"/"+service_name+"/"+client_name
+  check_zfs_fs_exists(client_dir)
   if !File.directory?(repo_version_dir)
     puts "Warning:\tService "+service_name+" does not exist"
     puts
     list_ks_services()
     exit
   end
+  check_dir_exists(client_dir)
   if service_name.match(/sles/)
-    output_file = repo_version_dir+"/"+client_name+".xml"
+    output_file = client_dir+"/"+client_name+".xml"
   else
-    output_file = repo_version_dir+"/"+client_name+".cfg"
+    output_file = client_dir+"/"+client_name+".cfg"
   end
   delete_file(output_file)
   if service_name.match(/rhel|centos|sl_|oel/)
@@ -186,10 +193,10 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
         populate_ps_questions(service_name,client_name,client_ip)
         process_questions
         output_ps_header(client_name,output_file)
-        output_file = repo_version_dir+"/"+client_name+"_post.sh"
+        output_file = client_dir+"/"+client_name+"_post.sh"
         post_list   = populate_ps_post_list(client_name,service_name)
         output_ks_post_list(client_name,post_list,output_file,service_name)
-        output_file = repo_version_dir+"/"+client_name+"_first_boot.sh"
+        output_file = client_dir+"/"+client_name+"_first_boot.sh"
         post_list   = populate_ps_first_boot_list()
         output_ks_post_list(client_name,post_list,output_file,service_name)
       end
@@ -234,6 +241,13 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("")
   post_list.push("echo \"#{admin_user}\tALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers")
   post_list.push("")
+  resolv_conf = "/etc/resolv.conf"
+  post_list.push("# Create #{resolv_conf}")
+  post_list.push("")
+  post_list.push("echo 'nameserver #{publisher_host}' > #{resolv_conf}")
+  post_list.push("echo 'nameserver #{$default_nameserver}' >> #{resolv_conf}")
+  post_list.push("echo 'search local' >> #{resolv_conf}")
+  post_list.push("")
   if service_name.match(/centos|rhel|sl_|oel/)
     if service_name.match(/centos_5|rhel_5|sl_5|oel_5/)
       epel_url = "http://"+$local_epel_mirror+"/pub/epel/5/i386/epel-release-5-4.noarch.rpm"
@@ -269,11 +283,17 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("sed -i 's/^#\\(baseurl\\)/\\1/g' #{epel_file}")
   post_list.push("sed -i 's,#{$default_epel_mirror},#{$local_epel_mirror},g' #{epel_file}")
   post_list.push("yum -y update")
+  post_list.push("")
   if service_name.match(/sl_/)
     post_list.push("yum -y install redhat-lsb-core")
   end
-  post_list.push("yum -y install nss-mdns")
-  post_list.push("yum -y install puppet")
+  #post_list.push("yum -y install nss-mdns")
+  rpm_list = populate_puppet_rpm_list(service_name,client_arch)
+  rpm_list.each do |rpm_url|
+    rpm_file  = File.basename(rpm_url)
+    local_url = "http://"+publisher_host+"/puppet/"+rpm_file
+    post_list.push("rpm -i #{local_url}")
+  end
   post_list.push("")
   post_list.push("chkconfig avahi-daemon on")
   post_list.push("service avahi-daemon start")
@@ -284,7 +304,7 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("export OSARCH=`uname -p`")
   post_list.push("if [ \"`dmidecode |grep VMware`\" ]; then")
   post_list.push("  echo 'Installing VMware RPMs'")
-  post_list.push("  echo -e \"[vmware-tools]\\nname=VMware Tools\\nbaseurl=http://#{publisher_host}/#{service_name}/vmware\\nenabled=1\\ngpgcheck=0\" >> /etc/yum.repos.d/vmware-tools.repo")
+  post_list.push("  echo -e \"[vmware-tools]\\nname=VMware Tools\\nbaseurl=http://#{publisher_host}/vmware\\nenabled=1\\ngpgcheck=0\" >> /etc/yum.repos.d/vmware-tools.repo")
   post_list.push("  yum -y install vmware-tools-core")
   post_list.push("fi")
   post_list.push("")
@@ -348,6 +368,8 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("echo 'factpath=$vardir/lib/facter' >> #{puppet_config}")
   post_list.push("echo 'templatedir=$confdir/templates' >> #{puppet_config}")
   post_list.push("")
+  post_list.push("puppet agent --test")
+  post_list.push("")
   if $use_alt_repo == 1
     post_list.push("mkdir /tmp/rpms")
     post_list.push("cd /tmp/rpms")
@@ -382,13 +404,21 @@ def populate_ks_pkg_list(service_name)
   if service_name.match(/centos|rhel|sl_|oel/)
     pkg_list.push("@base")
     pkg_list.push("@core")
-    pkg_list.push("@console-internet")
-    if !service_name.match(/sl_6/)
+    if service_name.match(/[a-z]_6/)
+      pkg_list.push("@console-internet")
+      pkg_list.push("@system-admin-tools")
+    end
+    if !service_name.match(/sl_6/) and !service_name.match(/[a-z]_5/)
       pkg_list.push("@network-file-system-client")
     end
-    pkg_list.push("@system-admin-tools")
     if service_name.match(/centos_6|rhel_6|oel_6/)
       pkg_list.push("redhat-lsb-core")
+      pkg_list.push("ruby")
+      pkg_list.push("ruby-irb")
+      pkg_list.push("ruby-rdoc")
+      pkg_list.push("rubygems")
+      pkg_list.push("augeas-libs")
+      pkg_list.push("augeas")
     end
     pkg_list.push("grub")
     pkg_list.push("e2fsprogs")
