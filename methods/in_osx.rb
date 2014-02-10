@@ -1,5 +1,25 @@
 # Common OS X routines
 
+# Tune OS X NFS
+
+def tune_osx_nfs()
+  nfs_file   = "/etc/nfs.conf"
+  nfs_params = ["nfs.server.nfsd_threads = 64","nfs.server.reqcache_size = 1024","nfs.server.tcp = 1","nfs.server.udp = 0","nfs.server.fsevents = 0"]
+  nfs_params.each do |nfs_tune|
+    nfs_tune = "nfs.client.nfsiod_thread_max = 64"
+    message  = "Checking:\tNFS tuning"
+    command  = "cat #{nfs_file} |grep '#{nfs_tune}'"
+    output   = execute_command(message,command)
+    if !output.match(/#{nfs_tune}/)
+      backup_file(nfs_file)
+      message = "Tuning:\tNFS"
+      command = "echo '#{nfs_tune}' >> #{nfs_file}"
+      execute_command(message,command)
+    end
+  end
+  return
+end
+
 # Get Mac disk name
 
 def get_osx_disk_name()

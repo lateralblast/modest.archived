@@ -1,26 +1,6 @@
 
 # Code common to all services
 
-# Tune OS X NFS
-
-def tune_osx_nfs()
-  nfs_file   = "/etc/nfs.conf"
-  nfs_params = ["nfs.server.nfsd_threads = 64","nfs.server.reqcache_size = 1024","nfs.server.tcp = 1","nfs.server.udp = 0","nfs.server.fsevents = 0"]
-  nfs_params.each do |nfs_tune|
-    nfs_tune = "nfs.client.nfsiod_thread_max = 64"
-    message  = "Checking:\tNFS tuning"
-    command  = "cat #{nfs_file} |grep '#{nfs_tune}'"
-    output   = execute_command(message,command)
-    if !output.match(/#{nfs_tune}/)
-      backup_file(nfs_file)
-      message = "Tuning:\tNFS"
-      command = "echo '#{nfs_tune}' >> #{nfs_file}"
-      execute_command(message,command)
-    end
-  end
-  return
-end
-
 # Add NFS export
 
 def add_nfs_export(export_name,export_dir,publisher_host)
@@ -728,34 +708,6 @@ def get_password_crypt(password)
   return crypt
 end
 
-# Handle SMF service
-
-def handle_smf_service(function,smf_service_name)
-  if $os_name.match(/SunOS/)
-    uc_function = function.capitalize
-    if function.match(/enable/)
-      message = "Checking:\tStatus of service "+smf_service_name
-      command = "svcs #{smf_service_name} |grep -v STATE"
-      output  = execute_command(message,command)
-      if output.match(/maintenance/)
-        message = uc_function+":\tService "+smf_service_name
-        command = "svcadm clear #{smf_service_name} ; sleep 5"
-        output  = execute_command(message,command)
-      end
-      if !output.match(/online/)
-        message = uc_function+":\tService "+smf_service_name
-        command = "svcadm #{function} #{smf_service_name} ; sleep 5"
-        output  = execute_command(message,command)
-      end
-    else
-      message = uc_function+":\tService "+smf_service_name
-      command = "svcadm #{function} #{smf_service_name} ; sleep 5"
-      output  = execute_command(message,command)
-    end
-  end
-  return output
-end
-
 # Restart DHCPd
 
 def restart_dhcpd()
@@ -793,41 +745,6 @@ def check_dhcpd()
       refresh_service(service_name)
     end
     check_osx_tftpd()
-  end
-  return output
-end
-
-# Disable SMF service
-
-def disable_smf_service(smf_service_name)
-  function = "disable"
-  output   = handle_smf_service(function,smf_service_name)
-  return output
-end
-
-# Enable SMF service
-
-def enable_smf_service(smf_service_name)
-  function = "enable"
-  output   = handle_smf_service(function,smf_service_name)
-  return output
-end
-
-# Refresh SMF service
-
-def refresh_smf_service(smf_service_name)
-  function = "refresh"
-  output   = handle_smf_service(function,smf_service_name)
-  return output
-end
-
-# Check SMF service
-
-def check_smf_service(smf_service_name)
-  if $os_name.match(/SunOS/)
-    message = "Checking:\tService "+smf_service_name
-    command = "svcs -a |grep '#{smf_service_name}"
-    output  = execute_command(message,command)
   end
   return output
 end
