@@ -2,8 +2,8 @@
 # Output Zone profile XML
 
 def create_zone_profile_xml(output_file)
-    xml_output=[]
-  xml=Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
+  xml_output = []
+  xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.declare! :DOCTYPE, :service_bundle, :SYSTEM, "/usr/share/lib/xml/dtd/service_bundle.dtd.1"
   xml.service_bundle(:type => "profile", :name => "system configuration") {
     xml.service(:version => "1", :name => "system/config-user", :type => "service") {
@@ -139,7 +139,7 @@ def create_zone_profile_xml(output_file)
       }
     }
   }
-  file=File.open(output_file,"w")
+  file = File.open(output_file,"w")
   xml_output.each do |item|
     file.write(item)
   end
@@ -153,8 +153,8 @@ end
 # Output AI profile XML
 
 def create_ai_client_profile(output_file)
-  xml_output=[]
-  xml=Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
+  xml_output = []
+  xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.declare! :DOCTYPE, :service_bundle, :SYSTEM, "/usr/share/lib/xml/dtd/service_bundle.dtd.1"
   xml.service_bundle(:type => "profile", :name => "system configuration") {
     xml.service(:version => "1", :name => "system/config-user") {
@@ -262,7 +262,7 @@ def create_ai_client_profile(output_file)
       xml.instance(:name => "default", :enabled => "true")
     }
   }
-  file=File.open(output_file,"w")
+  file = File.open(output_file,"w")
   xml_output.each do |item|
     file.write(item)
   end
@@ -276,8 +276,8 @@ end
 # Output AI manifest XML
 
 def create_ai_manifest(output_file)
-  xml_output=[]
-  xml=Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
+  xml_output = []
+  xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.declare! :DOCTYPE, :auto_install, :SYSTEM, "file:///usr/share/install/ai.dtd.1"
   xml.auto_install {
     xml.ai_instance(:auto_reboot => "true", :name => "orig_default") {
@@ -330,7 +330,7 @@ def create_ai_manifest(output_file)
       end
     }
   }
-  file=File.open(output_file,"w")
+  file = File.open(output_file,"w")
   xml_output.each do |item|
     file.write(item)
   end

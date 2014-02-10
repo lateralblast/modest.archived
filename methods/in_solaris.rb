@@ -149,6 +149,52 @@ def create_named_conf()
   return
 end
 
+# Create Solaris Puppet Manifest
+
+def create_sol11_puppet_manifest()
+  xml_output = []
+  xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
+  xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
+  return
+end
+
+# Check Solaris Puppet packages
+
+def check_sol_puppet()
+  puppet_conf = "/etc/puppet/puppet.conf"
+  puppet_bin  = "/var/ruby/1.8/gem_home/bin/puppet"
+  tmp_file    = "/tmp/puppet_conf"
+  puppet_dir  = "/var/lib/puppet"
+  if !File.exist?(puppet_bin)
+    message = "Installing:\tPuppet"
+    command = "gem install puppet"
+    execute_command(message,command)
+  end
+  message = "Checking:\tPuppet user exists"
+  command = "cat /etc/passwd |grep '^puppet'"
+  output  = execute_command(message,command)
+  if !output.match(/puppet/)
+    message = "Creating:\tPuppet user"
+    command = "#{puppet_bin} resource group puppet ensure=present ; #{puppet_bin} resource user puppet ensure=present gid=puppet shell='/bin/false'"
+    execute_command(message,command)
+  end
+  if !File.exist?(puppet_conf)
+    message = "Creating:\tPuppet config file "+puppet_conf
+    command = "#{puppet_bin} master --genconfig > #{puppet_conf}"
+    execute_command(message,command)
+    message = "Adding SSL Client Entry to "+puppet_conf
+    command = "echo '    ssl_client_header = SSL_CLIENT_S_DN' >> #{puppet_conf}"
+    execute_command(message,command)
+    message = "Adding SSL Verify Entry to "+puppet_conf
+    command = "echo '    ssl_client_verify_header = SSL_CLIENT_VERIFY' >> #{puppet_conf}"
+    execute_command(message,command)
+    message = "Creating:\tPuppet directories"
+    command = "mkdir -p #{puppet_dir}/run ; chown -R puppet:puppet #{puppet_dir}"
+    execute_command(message,command)
+  end
+  return
+end
+
 # Check Solaris DNS server
 
 def check_sol_bind()
