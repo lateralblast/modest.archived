@@ -315,6 +315,9 @@ def check_local_config(mode)
     if $verbose_mode == 1
       puts "Information:\tSetting apache allow range to "+$default_apache_allow
     end
+    if $os_name.match(/SunOS/)
+      check_sol_puppet()
+    end
     if $os_name.match(/Linux/)
       if $os_info.match(/RedHat|CentOS/)
         check_yum_tftpd()

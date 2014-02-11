@@ -149,12 +149,64 @@ def create_named_conf()
   return
 end
 
+# Create Puppet master service manifest
+
+def create_sol11_puppet_agent_manifest(service)
+  create_sol11_puppet_manifest(service)
+  return
+end
+
+# Create Puppet agent service manifest
+
+def create_sol11_puppet_master_manifest(service)
+  create_sol11_puppet_manifest(service)
+  return
+end
+
 # Create Solaris Puppet Manifest
 
-def create_sol11_puppet_manifest()
-  xml_output = []
+def create_sol11_puppet_manifest(service)
+  puppet_conf = "/etc/puppet/puppet.conf"
+  tmp_file    = "/tmp/puppet_"+service
+  xml_output  = []
   xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
+  xml.declare! :DOCTYPE, :service_bundle, :SYSTEM => "/usr/share/lib/xml/dtd/service_bundle.dtd.1"
+  xml.service_bundle(:type => "manifest", :name => "puppet"+service) {
+    xml.service(:name => "network/puppet"+service, :type => "service", :version => "1") {
+      xml.create_default_instance(:enabled => "false")
+      xml.single_instance()
+      xml.dependancy(:name => "config_file", :grouping => "require_all", :restart_on => "none", :type => "path") {
+        xml.service_fmri(:value => "file://#{puppet_conf}")
+      }
+      xml.dependancy(:name => "loopback", :grouping => "require_all", :restart_on => "error", :type => "service") {
+        xml.service_fmri(:value => "svc:/network/loopback:default")
+      }
+      xml.dependancy(:name => "physical", :grouping => "require_all", :restart_on => "error", :type => "service") {
+        xml.service_fmri(:value => "svc:/network/physical:default")
+      }
+      xml.dependancy(:name => "fs-localk", :grouping => "require_all", :restart_on => "error", :type => "service") {
+        xml.service_fmri(:value => "svc:/system/filesystem/local")
+      }
+      xml.exec_method(:type => "method", :name => "start", :exec => "/opt/csw/sbin/puppet "+service, :timeout_seconds => "60")
+      xml.exec_method(:type => "method", :name => "stop", :exec => ":kill", :timeout_seconds => "60")
+      xml.stability(:vale => "Unstable")
+      xml.template {
+        xml.common_name {
+          xml.loctext("Puppet "+service, :"xml:lang" => "C")
+        }
+        xml.documentation {
+          xml.manpage(:title => "puppet"+service, :section => "1")
+          xml.doc_link(:name => "puppetlabs.com", :uri =>"http://puppetlabs.com/puppet/introduction")
+        }
+      }
+    }
+  }
+  file=File.open(tmp_file,"w")
+  xml_output.each do |item|
+    file.write(item)
+  end
+  file.close
   return
 end
 
@@ -191,6 +243,14 @@ def check_sol_puppet()
     message = "Creating:\tPuppet directories"
     command = "mkdir -p #{puppet_dir}/run ; chown -R puppet:puppet #{puppet_dir}"
     execute_command(message,command)
+  end
+  ["master","agent"].each do |service|
+    message = "Checking:\tService "+service
+    command = "svcs -a |grep 'puppet#{service}'"
+    output  = execute_command(message,command)
+    if !output.match(/#{service}/)
+      eval"[create_sol11_puppet_#{service}_manifest(service)]"
+    end
   end
   return
 end
