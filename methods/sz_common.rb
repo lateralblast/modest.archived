@@ -118,13 +118,7 @@ def standard_zone_post_install(client_name,client_rel)
     admin_info = admin_username+":x:"+admin_uid+":"+admin_gid+":"+admin_fullname+":"+admin_home+":"+admin_shell
     command = "echo '#{admin_info}' >> #{tmp_file} ; cat #{tmp_file} > #{passwd_file} ; rm #{tmp_file}"
     execute_command(message,command)
-    if $verbose_mode == 1
-      puts
-      puts "Information:\tFile contents of "+passwd_file
-      puts
-      system("cat #{passwd_file}")
-      puts
-    end
+    print_contents_of_file(passwd_file)
     info = IO.readlines(shadow_file)
     file = File.open(tmp_file,"w")
     info.each do |line|
@@ -144,13 +138,7 @@ def standard_zone_post_install(client_name,client_rel)
     message = "Creating:\tShadow file"
     command = "cat #{tmp_file} > #{shadow_file} ; rm #{tmp_file}"
     execute_command(message,command)
-    if $verbose_mode == 1
-      puts
-      puts "Information:\tFile contents of "+shadow_file
-      puts
-      system("cat #{shadow_file}")
-      puts
-    end
+    print_contents_of_file(shadow_file)
     client_home = client_dir+admin_home
     message = "Creating:\tSSH directory for "+admin_username
     command = "mkdir -p #{client_home}/.ssh ; cd #{client_dir}/export/home ; chown -R #{admin_uid}:#{admin_gid} #{admin_username}"
@@ -312,15 +300,9 @@ def create_zone_config(client_name,client_ip)
       file.write("set configure-allowed-address=false\n")
       file.write("set mac-address=random\n")
     end
-    if $verbose_mode == 1
-      puts
-      puts "Information:\tZone configuration:"
-      puts
-      system("cat #{zone_file}")
-      puts
-    end
     file.write("end\n")
     file.close
+    print_contents_of_file(zone_file)
   end
   return zone_file
 end

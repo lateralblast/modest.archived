@@ -87,10 +87,7 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   message = "Creating:\tNetwork configuration file "+config_file
   command = "cp #{tmp_file} #{config_file} ; rm #{tmp_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts "Information:\tFile contents of "+config_file
-    system("cat #{config_file}")
-  end
+  print_contents_of_file(config_file)
   file = File.open(tmp_file,"w")
   gateway    = $q_struct["gateway"].value
   broadcast  = $q_struct["broadcast"].value
@@ -141,10 +138,7 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   message = "Creating:\tPassword file"
   command = "cat #{tmp_file} > #{passwd_file} ; rm #{tmp_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts "Information:\tFile contents of "+passwd_file
-    system("cat #{passwd_file}")
-  end
+  print_contents_of_file(passwd_file)
   info = IO.readlines(shadow_file)
   file = File.open(tmp_file,"w")
   info.each do |line|
@@ -164,10 +158,7 @@ def create_ubuntu_lxc_config(client_name,client_ip,client_mac)
   message = "Creating:\tShadow file"
   command = "cat #{tmp_file} > #{shadow_file} ; rm #{tmp_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts "Information:\tFile contents of "+shadow_file
-    system("cat #{shadow_file}")
-  end
+  print_contents_of_file(shadow_file)
   client_home = client_dir+user_home
   message = "Creating:\tSSH directory for "+user_username
   command = "mkdir -p #{client_home}/.ssh ; cd #{client_dir}/home ; chown -R #{user_uid}:#{user_gid} #{user_username}"

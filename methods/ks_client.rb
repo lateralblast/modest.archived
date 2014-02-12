@@ -101,12 +101,7 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
   message = "Creating:\tPXE configuration file "+pxe_cfg_file
   command = "cp #{tmp_file} #{pxe_cfg_file} ; rm #{tmp_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts "Information:\tPXE menu file "+pxe_cfg_file+" contents:"
-    puts
-    system("cat #{pxe_cfg_file}")
-    puts
-  end
+  print_contents_of_file(pxe_cfg_file)
   return
 end
 

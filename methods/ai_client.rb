@@ -146,12 +146,7 @@ def update_ai_client_grub_cfg(client_mac)
       end
     end
     File.open(grub_file,"w") {|file| file.puts copy}
-    if $verbose_mode == 1
-      puts "Information:\tGrub entry:"
-      puts
-      puts copy
-      puts
-    end
+    print_contents_of_file(grub_file)
   end
 end
 
@@ -211,12 +206,7 @@ def update_ai_client_dhcpd_entry(client_name,client_mac,client_ip)
     end
   end
   File.open(dhcp_file,"w") {|file| file.puts copy}
-  if $verbose_mode == 1
-    puts "Information:\tDHCPd file entry:"
-    puts
-    puts copy
-    puts
-  end
+  print_contents_of_file(dhcp_file)
   return
 end
 

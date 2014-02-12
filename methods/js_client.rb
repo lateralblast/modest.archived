@@ -20,13 +20,7 @@ def create_js_sysid_file(client_name,sysid_file)
   message = "Creating:\tConfiguration file "+sysid_file+" for "+client_name
   command = "cp #{tmp_file} #{sysid_file} ; rm #{tmp_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts
-    puts "information:\tContents of configuration file: "+sysid_file
-    puts
-    system("cat #{sysid_file}")
-    puts
-  end
+  print_contents_of_file(sysid_file)
   return
 end
 
@@ -72,13 +66,7 @@ def create_js_rules_file(client_name,client_karch,rules_file)
   message = "Creating:\tConfiguration file "+rules_file+" for "+client_name
   command = "cp #{tmp_file} #{rules_file} ; rm #{tmp_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts
-    puts "Information:\tContent of rules file "+rules_file+":"
-    puts
-    system("cat #{rules_file}")
-    puts
-  end
+  print_contents_of_file(rules_file)
   return karch_line
 end
 
@@ -134,13 +122,7 @@ def check_js_config(client_name,client_dir,repo_version_dir,os_version)
   message   = "Creating:\tRules file "+rules_ok_file
   command   = "echo '#{output}' >> #{rules_ok_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts
-    puts "Information:\tContent of rules.ok file "+rules_ok_file+":"
-    puts
-    system("cat #{rules_ok_file}")
-    puts
-  end
+  print_contents_of_file(rules_ok_file)
   return
 end
 

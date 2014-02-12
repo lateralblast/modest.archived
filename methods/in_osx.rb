@@ -292,13 +292,7 @@ def create_osx_puppet_config()
     message = "Creating:\tPuppet configuration file "+puppet_file
     command = "cp #{tmp_file} #{puppet_file} ; rm #{tmp_file}"
     execute_command(message,command)
-    if $verbose_mode == 1
-      puts
-      puts "Information: Contents of "+puppet_file
-      puts
-      system("cat #{puppet_file}")
-      puts
-    end
+    print_contents_of_file(puppet_file)
   end
   return
 end

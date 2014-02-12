@@ -29,13 +29,7 @@ def output_ps_header(client_name,output_file)
   message = "Creating:\tPreseed file "+output_file+" for "+client_name
   command = "cp #{tmp_file} #{output_file} ; rm #{tmp_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts
-    puts "Information:\tContents of "+output_file+":"
-    puts
-    system("cat #{output_file}")
-    puts
-  end
+  print_contents_of_file(output_file)
   return
 end
 

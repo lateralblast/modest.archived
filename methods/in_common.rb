@@ -1,6 +1,23 @@
 
 # Code common to all services
 
+# Print contents of file
+
+def print_contents_of_file(file_name)
+  if $verbose_mode == 1
+    if File.exist?(file_name)
+      puts
+      puts "Information:\tContents of file "+file_name
+      puts
+      system("cat '#{file_name}'")
+      puts
+    else
+      puts "Warning:\tFile "+file_name+" does not exist"
+    end
+  end
+  return
+end
+
 # Add NFS export
 
 def add_nfs_export(export_name,export_dir,publisher_host)
