@@ -163,34 +163,46 @@ def create_sol11_puppet_master_manifest(service)
   return
 end
 
+# Import SMF file
+
+def import_smf_manifest(service,xml_file)
+  message = "Importing:\tService manifest for "+service
+  command = "svccfg import #{xml_file}"
+  execute_command(message,command)
+  return
+end
+
 # Create Solaris Puppet Manifest
 
 def create_sol11_puppet_manifest(service)
   puppet_conf = "/etc/puppet/puppet.conf"
   tmp_file    = "/tmp/puppet_"+service
+  puppet_bin  = "/var/ruby/1.8/gem_home/bin/puppet"
+  xml_file    = "/var/svc/manifest/network/puppet"+service+".xml"
   xml_output  = []
   xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
   xml.instruct! :xml, :version => "1.0", :encoding => "UTF-8"
-  xml.declare! :DOCTYPE, :service_bundle, :SYSTEM => "/usr/share/lib/xml/dtd/service_bundle.dtd.1"
+  xml.declare! :DOCTYPE, :service_bundle, :SYSTEM, "/usr/share/lib/xml/dtd/service_bundle.dtd.1"
   xml.service_bundle(:type => "manifest", :name => "puppet"+service) {
     xml.service(:name => "network/puppet"+service, :type => "service", :version => "1") {
       xml.create_default_instance(:enabled => "false")
       xml.single_instance()
-      xml.dependancy(:name => "config_file", :grouping => "require_all", :restart_on => "none", :type => "path") {
+      xml.dependency(:name => "config_file", :grouping => "require_all", :restart_on => "none", :type => "path") {
         xml.service_fmri(:value => "file://#{puppet_conf}")
       }
-      xml.dependancy(:name => "loopback", :grouping => "require_all", :restart_on => "error", :type => "service") {
+      xml.dependency(:name => "loopback", :grouping => "require_all", :restart_on => "error", :type => "service") {
         xml.service_fmri(:value => "svc:/network/loopback:default")
       }
-      xml.dependancy(:name => "physical", :grouping => "require_all", :restart_on => "error", :type => "service") {
+      xml.dependency(:name => "physical", :grouping => "require_all", :restart_on => "error", :type => "service") {
         xml.service_fmri(:value => "svc:/network/physical:default")
       }
-      xml.dependancy(:name => "fs-localk", :grouping => "require_all", :restart_on => "error", :type => "service") {
+      xml.dependency(:name => "fs-localk", :grouping => "require_all", :restart_on => "error", :type => "service") {
         xml.service_fmri(:value => "svc:/system/filesystem/local")
       }
-      xml.exec_method(:type => "method", :name => "start", :exec => "/opt/csw/sbin/puppet "+service, :timeout_seconds => "60")
+      xml.exec_method(:type => "method", :name => "start", :exec => puppet_bin+" "+service, :timeout_seconds => "60")
       xml.exec_method(:type => "method", :name => "stop", :exec => ":kill", :timeout_seconds => "60")
-      xml.stability(:vale => "Unstable")
+      xml.exec_method(:type => "method", :name => "refresh", :exec => ":true", :timeout_seconds => "60")
+      xml.stability(:value => "Unstable")
       xml.template {
         xml.common_name {
           xml.loctext("Puppet "+service, :"xml:lang" => "C")
@@ -207,6 +219,20 @@ def create_sol11_puppet_manifest(service)
     file.write(item)
   end
   file.close
+  message = "Creating:\tPuppet "+service
+  command = "cp #{tmp_file} #{xml_file} ; rm #{tmp_file}"
+  execute_command(message,command)
+  if $verbose_mode == 1
+    puts
+    puts "Contents of "+xml_file
+    puts
+    system("cat #{xml_file}")
+    puts
+  end
+  service = "puppet"+service
+  import(service,xml_file)
+  service = "svc:/network/"+service
+  enable_smf_service(service)
   return
 end
 
@@ -250,6 +276,10 @@ def check_sol_puppet()
     output  = execute_command(message,command)
     if !output.match(/#{service}/)
       eval"[create_sol11_puppet_#{service}_manifest(service)]"
+    end
+    if output.match(/disabled/)
+      service = "svc:/network/puppet"+service
+      enable_smf_service(service)
     end
   end
   return
