@@ -53,6 +53,7 @@ $fusion_dir             = ""
 $default_zpool          = "rpool"
 $default_ai_port        = "10081"
 $default_host           = ""
+$default_hostname       = %x["hostname"].chomp
 $default_nic            = ""
 $default_net            = "net0"
 $default_timezone       = "Australia/Victoria"
@@ -83,6 +84,9 @@ $default_files          = "files"
 $default_hosts          = "files dns"
 $default_root_password  = "XXXX"
 $default_admin_password = "YYYY"
+$default_maas_admin     = "root"
+$default_maas_email     = $default_maas_admin+"@"+$default_host
+$default_mass_password  = $default_admin_password
 $use_alt_repo           = 0
 $destroy_fs             = 0
 $use_defaults           = 0
@@ -159,7 +163,8 @@ def print_usage()
   puts "-Y: Configure AutoYast (SuSE)"
   puts "-E: Configure VSphere"
   puts "-Z: Configure Zone"
-  puts "-M: Maintenance mode"
+  puts "-M: Configure MAAS"
+  puts "-G: Maintenance mode"
   puts "-a: Architecture"
   puts "-e: Client MAC Address"
   puts "-i: Client IP Address"
@@ -181,7 +186,6 @@ def print_usage()
   puts "-d: Delete client"
   puts "-n: Set service name"
   puts "-z: Delete service name"
-  puts "-M: Maintenance operations"
   puts "-P: Configure PXE"
   puts "-W: Update apache proxy entry for AI"
   puts "-R: Use alternate package repository (additional packages like puppet)"
@@ -317,6 +321,7 @@ def check_local_config(mode)
     end
     if $os_name.match(/SunOS/)
       check_sol_puppet()
+      check_sol_bind()
     end
     if $os_name.match(/Linux/)
       if $os_info.match(/RedHat|CentOS/)
@@ -414,7 +419,7 @@ end
 if opt["H"]
   $os_name = %x[uname]
   $os_arch = %x[uname -p]
-  if opt["M"]
+  if opt["G"]
     examples = "maint"
   end
   if opt["S"]
@@ -531,14 +536,14 @@ end
 
 # Check local configuration
 
-if opt["S"] or opt["W"] or opt["M"]
+if opt["S"] or opt["W"] or opt["G"]
   mode="server"
 else
   mode="client"
 end
 check_local_config(mode)
 
-if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"] and !opt["F"] and !opt["Z"] and !opt["M"]
+if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"] and !opt["F"] and !opt["Z"] and !opt["G"]
   puts "Warning:\tClient name not given"
   exit
 else
@@ -888,7 +893,7 @@ end
 
 # Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE
 
-if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["M"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"]
+if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"]
   # Set function
   if opt["A"]
     funct = "ai"
@@ -931,6 +936,10 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["M"] or opt["U"] or opt["
   end
   # Handle server related functions
   if opt ["S"]
+    # Handle MAAS
+    if opt["M"]
+      configure_maas()
+    end
     if opt["O"] and $os_arch.match(/sparc/)
       configure_cdom(publisher_host)
       exit
@@ -960,7 +969,7 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["M"] or opt["U"] or opt["
     exit
   end
   # Perform maintenance related functions
-  if opt["M"]
+  if opt["G"]
     if opt["T"]
       check_tftpd()
       restart_tftpd()

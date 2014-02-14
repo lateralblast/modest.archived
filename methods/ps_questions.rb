@@ -462,7 +462,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   pkg_list = [
     "avahi-daemon", "libterm-readkey-perl", "nfs-common", "openssh-server",
     "puppet", "python-software-properties", "software-properties-common",
-    "curl", "sysv-rc-conf"
+    "curl", "sysv-rc-conf", "lsb-core"
   ]
 
   name = "additional_packages"

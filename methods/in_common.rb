@@ -391,6 +391,15 @@ def check_apt_dhcpd()
   return
 end
 
+# Restart a service
+
+def restart_service(service)
+  refresh_service(service)
+  return
+end
+
+# Restart tftpd
+
 def restart_tftpd()
   service = "tftp"
   service = get_service_name(service)
@@ -834,6 +843,9 @@ def refresh_service(service_name)
   end
   if $os_name.match(/Darwin/)
     output = refresh_osx_service(service_name)
+  end
+  if $os_name.match(/Linux/)
+    restart_linux_service(service)
   end
   return output
 end

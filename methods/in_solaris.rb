@@ -90,7 +90,7 @@ def check_sol11_ntp()
     ntp_test = output.chomp
     if !ntp_test.match(/#ntp_test/)
       message = "Adding:\tNTP host "+ntp_host+" to "+ntp_file
-      ommand  = "echo '#{ntp_host}' >> #{ntp_file}"
+      command = "echo '#{ntp_host}' >> #{ntp_file}"
       execute_command(message,command)
     end
   end
@@ -103,7 +103,7 @@ def check_sol11_ntp()
     ntp_test = output.chomp
     if !ntp_test.match(/#{ntp_entry}/)
       message = "Adding:\tNTP entry "+ntp_entry+" to "+ntp_file
-      ommand  = "echo '#{ntp_entry}' >> #{ntp_file}"
+      command = "echo '#{ntp_entry}' >> #{ntp_file}"
       execute_command(message,command)
     end
   end
@@ -111,14 +111,18 @@ def check_sol11_ntp()
   return
 end
 
-
 # Create named configuration file
 
 def create_named_conf()
-  named_conf = "/etc/named.conf"
-  tmp_file   = "/tmp/named_conf"
-  if !File.exists(named_conf)
-    file = File.open(tmp_file)
+  named_conf   = "/etc/named.conf"
+  tmp_file     = "/tmp/named_conf"
+  forward_file = "/etc/namedb/master/local.db"
+  net_info     = $default_host.split(".")
+  net_address  = net_info[2]+"."+net_info[1]+"."+net_info[0]
+  host_segment = $default_host.split(".")[3]
+  reverse_file = "/etc/namedb/master/"+net_address+".db"
+  if !File.exist?(named_conf)
+    file = File.open(tmp_file,"w")
     file.write("\n")
     file.write("# named config\n")
     file.write("\n")
@@ -127,15 +131,15 @@ def create_named_conf()
     file.write("  pid-file  \"/var/run/named/pid\";\n")
     file.write("  dump-file \"/var/dump/named_dump.db\";\n")
     file.write("  statistics-file \"/var/stats/named.stats\";\n")
-    file.write("  forwarders  {#{$default_nameserver}};\n")
+    file.write("  forwarders  {#{$default_nameserver};};\n")
     file.write("};\n")
     file.write("\n")
     file.write("zone \"local\" {\n")
     file.write("  type master;\n")
-    file.write("  file \"/etc/namedb/master/local.db\"\n")
+    file.write("  file \"/etc/namedb/master/local.db\";\n")
     file.write("};\n")
     file.write("\n")
-    file.write("zone \"1.168.192.in-addr.arpa\" {\n")
+    file.write("zone \"#{net_address}.in-addr.arpa\" {\n")
     file.write("  type master;\n")
     file.write("  file \"/etc/namedb/master/1.168.192.db\";\n")
     file.write("};\n")
@@ -145,6 +149,56 @@ def create_named_conf()
     message = "Creating:\tDirectories for named"
     command = "mkdir /var/dump ; mkdir /var/stats ; mkdir -p /var/run/namedb ; mkdir -p /etc/namedb/master ; mkdir -p /etc/namedb/working"
     execute_command(message,command)
+    message = "Creating:\tNamed configuration file "+named_conf
+    command = "cp #{tmp_file} #{named_conf} ; rm #{tmp_file}"
+    execute_command(message,command)
+    print_contents_of_file(named_conf)
+  end
+  serial_no = %x[date +%Y%m%d].chomp+"01"
+  tmp_file  = "/tmp/forward"
+  if !File.exist?(forward_file)
+    file = File.open(tmp_file,"w")
+    file.write("$TTL 3h\n")
+    file.write("@\tIN\tSOA\t#{$default_hostname}.local. local. (\n")
+    file.write("\t#{serial_no}\n")
+    file.write("\t28800\n")
+    file.write("\t3600\n")
+    file.write("\t604800\n")
+    file.write("\t38400\n")
+    file.write(")\n")
+    file.write("\n")
+    file.write("local.\tIN\tNS\t#{$default_hostname}.\n")
+    file.write("#{$default_hostname}\tIN\tA\t#{$default_host}\n")
+    file.write("puppet\tIN\tA\t#{$default_host}")
+    file.write("\n")
+    file.close
+    message = "Creating:\tNamed configuration file "+forward_file
+    command = "cp #{tmp_file} #{forward_file} ; rm #{tmp_file}"
+    execute_command(message,command)
+    print_contents_of_file(forward_file)
+  end
+  tmp_file = "/tmp/reverse"
+  if !File.exist?(reverse_file)
+    file = File.open(tmp_file,"w")
+    file.write("$TTL 3h\n")
+    file.write("@\tIN\tSOA\t#{$default_hostname}.local. local. (\n")
+    file.write("\t#{serial_no}\n")
+    file.write("\t28800\n")
+    file.write("\t3600\n")
+    file.write("\t604800\n")
+    file.write("\t38400\n")
+    file.write(")\n")
+    file.write("\n")
+    file.write("\tIN\tNS\t#{$default_hostname}.local\n")
+    file.write("\n")
+    file.write("#{host_segment}\tIN\tPTR\t#{$default_hostname}.\n")
+    file.write("#{host_segment}\tIN\tPTR\tpuppet.\n")
+    file.write("\n")
+    file.close
+    message = "Creating:\tNamed configuration file "+reverse_file
+    command = "cp #{tmp_file} #{reverse_file} ; rm #{tmp_file}"
+    execute_command(message,command)
+    print_contents_of_file(reverse_file)
   end
   return
 end
@@ -222,13 +276,7 @@ def create_sol11_puppet_manifest(service)
   message = "Creating:\tPuppet "+service
   command = "cp #{tmp_file} #{xml_file} ; rm #{tmp_file}"
   execute_command(message,command)
-  if $verbose_mode == 1
-    puts
-    puts "Contents of "+xml_file
-    puts
-    system("cat #{xml_file}")
-    puts
-  end
+  print_contents_of_file(xml_file)
   service = "puppet"+service
   import(service,xml_file)
   service = "svc:/network/"+service
@@ -241,7 +289,6 @@ end
 def check_sol_puppet()
   puppet_conf = "/etc/puppet/puppet.conf"
   puppet_bin  = "/var/ruby/1.8/gem_home/bin/puppet"
-  tmp_file    = "/tmp/puppet_conf"
   puppet_dir  = "/var/lib/puppet"
   if !File.exist?(puppet_bin)
     message = "Installing:\tPuppet"

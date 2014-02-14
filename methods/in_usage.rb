@@ -120,18 +120,18 @@ def print_examples(examples)
   if examples.match(/maint/)
     puts "Maintenance related examples:"
     puts
-    puts "Configure AI client services:\t"+$script+" -A -M -C -a i386"
-    puts "Enable AI proxy:\t\t"+$script+" -A -M -W -n sol_11_1"
-    puts "Disable AI proxy:\t\t"+$script+" -A -M -W -z sol_11_1"
-    puts "Configure AI alternate repo:\t"+$script+" -A -M -R"
-    puts "Unconfigure AI alternate repo:\t"+$script+" -A -M -R -z sol_11_1_alt"
-    puts "Configure KS alternate repo:\t"+$script+" -K -M -R -n centos_5_10_x86_64"
-    puts "Unconfigure KS alternate repo:\t"+$script+" -K -M -R -z centos_5_10_x86_64"
-    puts "Enable KS alias:\t\t"+$script+" -K -M -W -n centos_5_10_x86_64"
-    puts "Disable KS alias:\t\t"+$script+" -K -M -W -z centos_5_10_x86_64"
-    puts "Import KS PXE files:\t\t"+$script+" -K -M -P -n centos_5_10_x86_64"
-    puts "Delete KS PXE files:\t\t"+$script+" -K -M -P -z centos_5_10_x86_64"
-    puts "Unconfigure KS client PXE:\t"+$script+" -K -M -P -d centos510vm01"
+    puts "Configure AI client services:\t"+$script+" -A -G -C -a i386"
+    puts "Enable AI proxy:\t\t"+$script+" -A -G -W -n sol_11_1"
+    puts "Disable AI proxy:\t\t"+$script+" -A -G -W -z sol_11_1"
+    puts "Configure AI alternate repo:\t"+$script+" -A -G -R"
+    puts "Unconfigure AI alternate repo:\t"+$script+" -A -G -R -z sol_11_1_alt"
+    puts "Configure KS alternate repo:\t"+$script+" -K -G -R -n centos_5_10_x86_64"
+    puts "Unconfigure KS alternate repo:\t"+$script+" -K -G -R -z centos_5_10_x86_64"
+    puts "Enable KS alias:\t\t"+$script+" -K -G -W -n centos_5_10_x86_64"
+    puts "Disable KS alias:\t\t"+$script+" -K -G -W -z centos_5_10_x86_64"
+    puts "Import KS PXE files:\t\t"+$script+" -K -G -P -n centos_5_10_x86_64"
+    puts "Delete KS PXE files:\t\t"+$script+" -K -G -P -z centos_5_10_x86_64"
+    puts "Unconfigure KS client PXE:\t"+$script+" -K -G -P -d centos510vm01"
     puts
   end
   if examples.match(/zone/)
