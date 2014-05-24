@@ -1,5 +1,43 @@
 # Solaris common code
 
+# Install required packages
+
+def check_solaris_install()
+  pkgutil_bin  = "/opt/csw/bin/pkgutil"
+  pkgutil_conf = "/opt/csw/etc/pkgutil.conf"
+  ["git", "autoconf", "automake", "libtool"].each do |pkg_name|
+    meesage = "Checking:\tPackage "+pkg_name+" is installed"
+    command = "which #{pkg}"
+    output  = execute_command(message,command)
+    if !output.match(/^\//)
+      install_sol11_pkg(pkg_name)
+    end
+  end
+  if !File.exist(pkgutil_bin)
+    pkg_file    = "pkgutil-"+$os_arch+".pkg"
+    local_file  = "/tmp/"+pkg_file
+    remote_file = $local_opencsw_mirror+"/"+pkg_file
+    wget_file(remote_file,local_file)
+    if File.exist?(local_file)
+      message = "Installing:\tOpenCSW Package pkgutil"
+      command = "pkgadd -d #{local_file}"
+      execute_command(message,command)
+    end
+  end
+  if File.exist?(pkgutil_conf)
+    message = "Checking:\tMirror is set for OpenCSW"
+    command = "cat #{pkgutil_conf} |grep '^mirror' |grep -v '^#'"
+    output  = execute_command(message,command)
+    if !output.match(/#{$local_opencsw_mirror}/)
+      mirror  = "mirror="+$local_opencsw_mirror
+      message = "Adding:\tLocal OpenCSW Mirror"
+      command = "echo '#{mirror}' >> #{pkgutil_conf}"
+      execute_command(message,command)
+    end
+  end
+  return
+end
+
 # Handle SMF service
 
 def handle_smf_service(function,smf_service_name)
@@ -327,6 +365,15 @@ def check_sol_puppet()
     if output.match(/disabled/)
       service = "svc:/network/puppet"+service
       enable_smf_service(service)
+    end
+  end
+  ["ntp"].each do |module_name|
+    module_dir = "/etc/puppet/modules"
+    module_dir = module_dir+"/"+module_name
+    if !File.directory?(module_dir)
+      message = "Installing:\tPuppet module "+module_name
+      command = "#{puppet_bin} module install puppetlabs-#{module_name}"
+      execute_command(message,command)
     end
   end
   return

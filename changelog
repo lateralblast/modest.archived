@@ -281,7 +281,9 @@
 # Added OS X dnsmasq and puppet configuration to Ubuntu Preseed
 # 1.4.1: Sat  8 Feb 2014 12:19:41 EST
 # Added code to fetch puppet RPMs
-# 1.4.2: 
+# 1.4.2:
 # Cleaned up puppet support and added second DVD import capability for CentOS
 # 1.4.3: Wed 12 Feb 2014 12:53:31 EST
 # Added Puppet master support for Solaris 11
+# 1.4.4: Sat 24 May 2014 11:28:02 EST
+# Fix bugs with set up on Solaris

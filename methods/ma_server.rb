@@ -18,7 +18,7 @@ def configure_maas_server()
         execute_command(message,command)
       end
       message = "Installing:\tMAAS"
-      command = "echo '' |apt-get install -y maas maas-dhcp maas-dns"
+      command = "echo '' |apt-get install -y apt-get install maas dnsmasq debmirror"
       execute_command(message,command)
       service = "apache"
       restart_service(service)
@@ -26,6 +26,7 @@ def configure_maas_server()
       restart_service(service)
       message = "Creating:\tMAAS Admin"
       command = "maas createadmin --username=#{$default_maas_admin} --email=#{$default_maas_email} --password=#{$default_mass_password}"
+      execute_command(message,command)
       puts
       puts "Information:\tLog into "+maas_url+" and continue configuration"
       puts
