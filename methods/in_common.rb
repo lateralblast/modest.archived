@@ -532,7 +532,7 @@ def remove_dhcp_client(client_name)
       found=0
     end
   end
-  File.open(file_name,"w") {|file| file.puts copy}
+  File.open($dhcpd_file,"w") {|file| file.puts copy}
   return
 end
 
@@ -898,25 +898,40 @@ def check_client_arch(client_arch)
   return
 end
 
-# Client MAC check
+# Check client MAC
 
 def check_client_mac(client_mac)
-  if !client_mac.match(/[0-9]/)
-    puts "Warning:\tNo client MAC address given"
+  macs = client_mac.split(":")
+  if macs.length != 6
+    puts "Invalid MAC address"
     exit
+  end
+  macs.each do |mac|
+    if mac =~ /[G-Z]|[g-z]/ or mac.length > 2 or mac.length < 2
+      puts "Invalid MAC address"
+      exit
+    end
   end
   return
 end
 
-# Client IP check
+# Check client IP
 
 def check_client_ip(client_ip)
-  if !client_ip.match(/[0-9]/)
-    puts "Warning:\tNo client IP address given"
+  ips = client_ip.split(".")
+  if ips.length != 4
+    puts "Invalid IP address"
     exit
+  end
+  ips.each do |ip|
+    if ip =~ /[A-z]/ or ip.length > 3 or ip.to_i > 254
+      puts "Invalid IP address"
+      exit
+    end
   end
   return
 end
+
 
 # Add apache proxy
 

@@ -6,7 +6,7 @@ def check_solaris_install()
   pkgutil_bin  = "/opt/csw/bin/pkgutil"
   pkgutil_conf = "/opt/csw/etc/pkgutil.conf"
   ["git", "autoconf", "automake", "libtool"].each do |pkg_name|
-    meesage = "Checking:\tPackage "+pkg_name+" is installed"
+    message = "Checking:\tPackage "+pkg_name+" is installed"
     command = "which #{pkg}"
     output  = execute_command(message,command)
     if !output.match(/^\//)

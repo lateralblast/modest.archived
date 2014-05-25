@@ -634,7 +634,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  script_url = "http://"+$default_host+"/"+service_name+"/"+client_name+"_post.sh"
+  script_url = "http://"+$default_host+"/clients/"+service_name+"/"+client_name+"/"+client_name+"_post.sh"
 
   name = "late_command"
   config = Ks.new(

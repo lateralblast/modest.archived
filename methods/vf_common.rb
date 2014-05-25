@@ -303,6 +303,9 @@ def configure_fusion_vm(client_name,client_mac,client_os)
   check_dir_exists(fusion_vm_dir)
   create_fusion_vm_vmx_file(client_name,client_mac,client_os,fusion_vmx_file)
   create_fusion_vm_disk(client_name,fusion_vm_dir,fusion_disk_file)
+  puts
+  puts "Client:     "+client_name+" created with MAC address "+client_mac
+  puts
   return
 end
 

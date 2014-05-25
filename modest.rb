@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.4.4
+# Version:      1.4.5
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -29,7 +29,7 @@ require 'pathname'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvy"
+$options                = "a:b:c:d:e:f:g:h:i:l:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvy"
 $verbose_mode           = 0
 $test_mode              = 0
 $iso_base_dir           = "/export/isos"
@@ -179,7 +179,7 @@ def print_usage()
   puts "-s: Boot VM"
   puts "-g: Halt VM"
   puts "-p: Puplisher server port number"
-  puts "-h: Puplisher server Hostname/IP"
+  puts "-l: Puplisher server Hostname/IP"
   puts "-t: Run it test mode (in client mode create files but don't import them)"
   puts "-v: Run in verbose mode"
   puts "-f: ISO file to use"
@@ -235,7 +235,7 @@ end
 # If not running on Solaris, run in test mode
 # Useful for generating client config files
 
-def check_local_config(mode)
+def check_local_config(mode,opt)
   if $do_ssh_keys == 1
     check_ssh_keys()
   end
@@ -345,9 +345,6 @@ def check_local_config(mode)
       $dhcpd_file = "/usr/local/etc/dhcpd.conf"
     end
   else
-    if $verbose_mode == 1
-      puts "Information:\tSetting apache allow range to "+$default_apache_allow
-    end
     if $os_name.match(/Linux/)
       if $os_info.match(/RedHat|CentOS/)
         $tftp_dir   = "/tftpboot"
@@ -460,6 +457,9 @@ if opt["H"]
   if opt["E"]
     examples = "vs"
   end
+  if opt["Y"]
+    examples = "ay"
+  end
   if opt["Z"]
     if $os_name.match(/SunOS/)
       examples = "zone"
@@ -502,28 +502,42 @@ if opt["h"]
   print_usage()
 end
 
-# If given -y assume yes to all questions
-
-if opt["y"]
-  $yes_to_all = 1
-  $destroy_fs = 1
-  if $verbose_mode == 1
-     puts "Warning:\tDestroying ZFS filesystems"+client_arch
-  end
-end
-
-# Enable test mode
+# Enable verbose mode
 
 if opt["v"]
   $verbose_mode = 1
   puts "Information:\tRunning in verbose mode"
 end
 
-# Enable verbose mode
+# Enable test mode
 
 if opt["t"]
   $test_mode = 1
   puts "Information:\tRunning in test mode"
+end
+
+# Check local configuration
+
+if opt["S"] or opt["W"] or opt["G"]
+  mode = "server"
+else
+  mode = "client"
+end
+if $verbose_mode == 1
+  puts "Information     Running in "+mode+" mode"
+end
+check_local_config(mode,opt)
+
+# If given -y assume yes to all questions
+
+if opt["y"]
+  $yes_to_all = 1
+  $destroy_fs = 1
+  if $verbose_mode == 1
+    if $on_name =~ /SunOS/
+      puts "Warning:\tDestroying ZFS filesystems"
+    end
+  end
 end
 
 # Get OS type
@@ -533,15 +547,6 @@ if opt["o"]
 else
   client_os = ""
 end
-
-# Check local configuration
-
-if opt["S"] or opt["W"] or opt["G"]
-  mode="server"
-else
-  mode="client"
-end
-check_local_config(mode)
 
 if !opt["c"] and !opt["S"] and !opt["d"] and !opt["z"] and !opt["W"] and !opt["C"] and !opt["R"] and !opt["L"] and !opt["P"] and !opt["O"] and !opt["F"] and !opt["Z"] and !opt["G"]
   puts "Warning:\tClient name not given"
@@ -590,15 +595,17 @@ end
 
 # Get/set X based installer
 
-if opt["X"]
-  $text_install = 0
-  if $verbose_mode == 1
-    puts "Information:\tSetting install type to X based"
-  end
-else
-  $text_install = 1
-  if $verbose_mode == 1
-    puts "Information:\tSetting install type to text based"
+if !opt["d"]
+  if opt["X"]
+    $text_install = 0
+    if $verbose_mode == 1
+      puts "Information:\tSetting install type to X based"
+    end
+  else
+    $text_install = 1
+    if $verbose_mode == 1
+      puts "Information:\tSetting install type to text based"
+    end
   end
 end
 
@@ -609,18 +616,20 @@ if opt["p"]
 else
   publisher_port = $default_ai_port
 end
-if $verbose_mode == 1
+
+if $verbose_mode == 1 and opt["I"]
    puts "Information:\tSetting publisher port to "+publisher_port
 end
 
 # Get/set publisher host
 
-if opt["h"]
-  publisher_host = opt["h"]
+if opt["l"]
+  publisher_host = opt["l"]
 else
   publisher_host = $default_host
 end
-if $verbose_mode == 1
+
+if $verbose_mode == 1 and opt["I"]
    puts "Information:\tSetting publisher host to "+publisher_port
 end
 
@@ -628,6 +637,7 @@ end
 
 if opt["i"]
   client_ip = opt["i"]
+  check_client_ip(client_ip)
   if $verbose_mode == 1
      puts "Information:\tClient IP address is "+client_ip
   end
@@ -797,9 +807,14 @@ if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] 
   end
   if opt["e"]
     client_mac = opt["e"]
+    check_client_mac(client_mac)
     eval"[change_#{vfunct}_vm_mac(client_name,client_mac)]"
   end
   exit
+else
+  if opt["F"] and opt["d"]
+    eval"[unconfigure_#{vfunct}_vm(client_name)]"
+  end
 end
 
 # Set LXC server type
@@ -827,9 +842,11 @@ if opt["r"] and opt["Z"]
     puts "Setting:\tOperating System version of container to "+client_rel
   end
 else
-  if $verbose_mode == 1
+  if opt["Z"]
     client_rel = $os_rel
-    puts "Setting:\tOperating System version of container to same as host ["+$os_rel+"]"
+    if $verbose_mode == 1
+      puts "Setting:\tOperating System version of container to same as host ["+$os_rel+"]"
+    end
   end
 end
 
@@ -927,6 +944,7 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
     if opt["c"]
       check_client_arch(client_arch)
       client_mac = create_client_mac(client_mac)
+      check_client_mac(client_mac)
       eval"[configure_#{funct}_#{vfunct}_vm(client_name,client_mac,client_arch,client_os,client_rel)]"
     end
     if opt["L"]

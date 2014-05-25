@@ -97,8 +97,9 @@ def print_examples(examples)
   if examples.match(/server|ay/)
     puts "AutoYast server related examples:"
     puts
-    puts "List AY services:\t\t"+$script+" -Y -S -L"
-    puts "Configure AY services:\t\t"+$script+" -A -S"
+    puts "List AY services:\t\t\t"+$script+" -Y -S -L"
+    puts "Configure AY services:\t\t\t"+$script+" -Y -S"
+    puts "Configure a AY service (from ISO):\t"+$script+" -Y -S -f /export/isos/SLES-11-SP2-DVD-x86_64-GM-DVD1.iso"
     puts
   end
   if examples.match(/server|ps/)
@@ -196,7 +197,7 @@ def print_examples(examples)
     puts
     puts "List PS clients:\t\t\t"+$script+" -U -C -L"
     puts "Create PS client:\t\t\t"+$script+" -U -C -c ubuntu1310vm01 -e 08:00:27:BA:34:7C -a x86_64 -i 192.168.1.196 -n ubuntu_13_10_x86_64"
-    puts "Delete PS client:\t\t\t"+$script+" -K -C -d ubuntu1310vm01"
+    puts "Delete PS client:\t\t\t"+$script+" -U -C -d ubuntu1310vm01"
     puts
   end
   if examples.match(/client|js/)
@@ -210,9 +211,9 @@ def print_examples(examples)
   if examples.match(/client|ay/)
     puts "AutoYast client related examples:"
     puts
-    puts "List AY clients:\t\t"+$script+" -Y -C -L"
-    puts "Create AY client:\t\t"+$script+" -Y -C -c sles11sp2vm01 -e 08:00:27:BA:34:7D -a x86_64 -i 192.168.1.197 -n sles_11_2_x86_64"
-    puts "Delete AY client:\t\t"+$script+" -J -C -d sles11sp2vm01"
+    puts "List AY clients:\t\t\t"+$script+" -Y -C -L"
+    puts "Create AY client:\t\t\t"+$script+" -Y -C -c sles11sp2vm01 -e 08:00:27:BA:34:7D -a x86_64 -i 192.168.1.197 -n sles_11_2_x86_64"
+    puts "Delete AY client:\t\t\t"+$script+" -Y -C -d sles11sp2vm01"
     puts
   end
   if examples.match(/client|vs/)
