@@ -182,7 +182,7 @@ def get_linux_version_info(iso_file_name)
   if linux_distro.match(/oraclelinux/)
     linux_distro = "oel"
   end
-  if linux_distro.match(/centos|ubuntu|sles|sl|oel/)
+  if linux_distro.match(/centos|ubuntu|sles|sl|oel|rhel/)
     if linux_distro.match(/sles/)
       iso_version = iso_info[1]+"."+iso_info[2]
       iso_version = iso_version.gsub(/SP/,"")
@@ -190,26 +190,39 @@ def get_linux_version_info(iso_file_name)
       if linux_distro.match(/sl$/)
         iso_version = iso_info[1].split(//).join(".")
       else
-        if linux_distro.match(/oel/)
-          iso_version = iso_info[1]+"."+iso_info[2]
-          iso_version = iso_version.gsub(/[A-z]/,"")
+        if linux_distro.match(/oel|rhel/)
+          if iso_file_name =~ /-rc-/
+            iso_version = iso_info[1..3].join(".")
+            iso_version = iso_version.gsub(/server/,"")
+          else
+            iso_version = iso_info[1..2].join(".")
+            iso_version = iso_version.gsub(/[A-z]/,"")
+          end
+          iso_version = iso_version.gsub(/^\./,"")
         else
           iso_version = iso_info[1]
         end
       end
     end
-    if linux_distro.match(/centos|sl$/)
-      iso_arch = iso_info[2]
+    case iso_file_name
+    when /i[3-6]86/
+      iso_arch = "i386"
+    when /x86_64/
+      iso_arch = "x86_64"
     else
-      if linux_distro.match(/sles|oel/)
-        iso_arch = iso_info[4]
+      if linux_distro.match(/centos|sl$/)
+        iso_arch = iso_info[2]
       else
-        iso_arch = iso_info[3]
-        iso_arch = iso_arch.split(/\./)[0]
-        if iso_arch.match(/amd64/)
-          iso_arch = "x86_64"
+        if linux_distro.match(/sles|oel/)
+          iso_arch = iso_info[4]
         else
-          iso_arch = "i386"
+          iso_arch = iso_info[3]
+          iso_arch = iso_arch.split(/\./)[0]
+          if iso_arch.match(/amd64/)
+            iso_arch = "x86_64"
+          else
+            iso_arch = "i386"
+          end
         end
       end
     end
@@ -551,11 +564,13 @@ end
 # Wget a file
 
 def wget_file(file_url,file_name)
-  file_dir = File.dirname(file_name)
-  check_dir_exists(file_dir)
-  message  = "Fetching:\tURL "+file_url+" to "+file_name
-  command  = "wget #{file_url} -O #{file_name}"
-  execute_command(message,command)
+  if $download_mode == 1
+    file_dir = File.dirname(file_name)
+    check_dir_exists(file_dir)
+    message  = "Fetching:\tURL "+file_url+" to "+file_name
+    command  = "wget #{file_url} -O #{file_name}"
+    execute_command(message,command)
+  end
   return
 end
 # Find client MAC
@@ -629,7 +644,7 @@ def check_zfs_fs_exists(dir_name)
       end
       command = "zfs create #{zfs_name}"
       output  = execute_command(message,command)
-      if dir_name.match(/vmware/)
+      if dir_name.match(/vmware_/)
         service_name = File.basename(dir_name)
         mount_dir    = $tftp_dir+"/"+service_name
         message      = "Information:\tVMware repository being mounted under "+mount_dir

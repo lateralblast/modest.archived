@@ -99,7 +99,7 @@ def configure_ks_pxe_boot(service_name,iso_arch)
           rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
         end
       end
-      if service_name.match(/oel/)
+      if service_name.match(/oel|rhel/)
         rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
       end
       if File.directory?(rpm_dir)
@@ -208,19 +208,21 @@ def configure_ks_vmware_repo(service_name,client_arch)
     vmware_url   = vmware_url+"/rhel5/"+client_arch+"/"
     repodata_url = vmware_url+"repodata/"
   end
-  if service_name.match(/centos_6|rhel_6|sl_6|oel_6/)
+  if service_name.match(/centos_6|rhel_6|sl_6|oel_6|rhel_7/)
     vmware_url   = vmware_url+"/rhel6/"+client_arch+"/"
     repodata_url = vmware_url+"repodata/"
   end
-  if !File.directory?(vmware_dir)
-    check_zfs_fs_exists(vmware_dir)
-    message = "Fetching:\tVMware RPMs"
-    command = "cd #{vmware_dir} ; lftp -e 'mget * ; quit' #{vmware_url}"
-    execute_command(message,command)
-    check_dir_exists(repodata_dir)
-    message = "Fetching:\tVMware RPM repodata"
-    command = "cd #{repodata_dir} ; lftp -e 'mget * ; quit' #{repodata_url}"
-    execute_command(message,command)
+  if $download_mode == 1
+    if !File.directory?(vmware_dir)
+      check_zfs_fs_exists(vmware_dir)
+      message = "Fetching:\tVMware RPMs"
+      command = "cd #{vmware_dir} ; lftp -e 'mget * ; quit' #{vmware_url}"
+      execute_command(message,command)
+      check_dir_exists(repodata_dir)
+      message = "Fetching:\tVMware RPM repodata"
+      command = "cd #{repodata_dir} ; lftp -e 'mget * ; quit' #{repodata_url}"
+      execute_command(message,command)
+    end
   end
   return
 end

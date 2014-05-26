@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.4.5
+# Version:      1.4.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -29,9 +29,10 @@ require 'pathname'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:l:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvy"
+$options                = "a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvwy"
 $verbose_mode           = 0
 $test_mode              = 0
+$download_mode          = 1
 $iso_base_dir           = "/export/isos"
 $repo_base_dir          = "/export/repo"
 $image_base_dir         = "/export/images"
@@ -129,6 +130,7 @@ $default_dpool          = "dpool"
 $default_gdom_vnet      = "vnet0"
 $use_sudo               = 1
 $do_ssh_keys            = 0
+$vm_network_type        = "hostonly"
 
 # Declare some package versions
 
@@ -197,6 +199,8 @@ def print_usage()
   puts "    or run VM in GUI mode (default is headless)"
   puts "-H: Provide detailed examples"
   puts "-Q: Copy SSH keys"
+  puts "-k: Set VMware Fusion or VirtualBox networking type (e.g. bridged or hostonly)"
+  puts "-w: Disable downloads"
   puts
   exit
   return
@@ -380,10 +384,12 @@ def check_local_config(mode,opt)
   check_dir_exists(bin_dir)
   $rpm2cpio_bin=bin_dir+"/rpm2cpio"
   if !File.exist?($rpm2cpio_bin)
-    message = "Fetching:\tTool rpm2cpio"
-    command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin} ; chown #{$id} #{$rpm2cpio_bin} ; chmod +x #{$rpm2cpio_bin}"
-    execute_command(message,command)
-    system("chmod +x #{$rpm2cpio_bin}")
+    if $download_mode == 1
+      message = "Fetching:\tTool rpm2cpio"
+      command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin} ; chown #{$id} #{$rpm2cpio_bin} ; chmod +x #{$rpm2cpio_bin}"
+      execute_command(message,command)
+      system("chmod +x #{$rpm2cpio_bin}")
+    end
   end
   if $os_name.match(/SunOS/)
     message = "Checking:\tPackage lftp installed"
@@ -395,6 +401,7 @@ def check_local_config(mode,opt)
       execute_command(message,command)
     end
   end
+  check_zfs_fs_exists($pkg_base_dir)
   return
 end
 
@@ -409,6 +416,14 @@ begin
   opt = Getopt::Std.getopts($options)
 rescue
   print_usage()
+end
+
+# Enable / Disable downloads
+
+if opt["w"]
+  $download_mode = 0
+else
+  $download_mode = 1
 end
 
 # Print examples
@@ -538,6 +553,12 @@ if opt["y"]
       puts "Warning:\tDestroying ZFS filesystems"
     end
   end
+end
+
+# Set VMware Fusion or VirtualBox networking type
+
+if opt["k"]
+  $vm_network_type = opt["k"]
 end
 
 # Get OS type
