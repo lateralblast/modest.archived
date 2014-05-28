@@ -169,7 +169,7 @@ end
 
 def create_vbox_hdd(client_name,vbox_disk_name)
   message = "Creating:\tVM hard disk for "+client_name
-  command = "VBoxManage createhd --filename \"#{vbox_disk_name}\" --size \"#{$vm_disk_size}\""
+  command = "VBoxManage createhd --filename \"#{vbox_disk_name}\" --size \"#{$default_vm_size}\""
   execute_command(message,command)
   return
 end
@@ -187,7 +187,7 @@ end
 
 def add_memory_to_vbox_vm(client_name)
   message = "Adding:\t\tMemory to VM "+client_name
-  command = "VBoxManage modifyvm \"#{client_name}\" --memory \"#{$vm_memory_size}\""
+  command = "VBoxManage modifyvm \"#{client_name}\" --memory \"#{$default_vm_mem}\""
   execute_command(message,command)
   return
 end

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.4.7
+# Version:      1.4.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -113,8 +113,9 @@ $backup_dir             = ""
 $rpm2cpio_url           = "http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
 $rpm2cpio_bin           = ""
 $vbox_disk_type         = "ide"
-$vm_disk_size           = "12G"
-$vm_memory_size         = "1024"
+$default_vm_size        = "12G"
+$default_vm_mem         = "1024"
+$default_vm_vcpu        = "1"
 $use_serial             = 0
 $os_name                = ""
 $yes_to_all             = 0
@@ -130,7 +131,7 @@ $default_dpool          = "dpool"
 $default_gdom_vnet      = "vnet0"
 $use_sudo               = 1
 $do_ssh_keys            = 0
-$vm_network_type        = "hostonly"
+$default_vm_network     = "hostonly"
 
 # Declare some package versions
 
@@ -178,7 +179,7 @@ def print_usage()
   puts "-o: Specify OS type (used when creating VMs)"
   puts "-r: Specify OS release (used when creating VMs)"
   puts "-b: Boot VM"
-  puts "-s: Boot VM"
+  puts "-s: Stop VM"
   puts "-g: Halt VM"
   puts "-p: Puplisher server port number"
   puts "-l: Puplisher server Hostname/IP"
@@ -418,6 +419,13 @@ rescue
   print_usage()
 end
 
+# If we building ESX set default memory to 4G and 2 vCPUs
+
+if opt["E"]
+  $default_vm_mem  = "4096"
+  $default_vm_vcpu = "2"
+end
+
 # Enable / Disable downloads
 
 if opt["w"]
@@ -483,7 +491,8 @@ if opt["H"]
     end
   end
   if !examples
-    print_usage
+    examples = "all"
+    print_examples(examples)
   else
     print_examples(examples)
   end
@@ -802,7 +811,7 @@ end
 
 # VirtualBox and VMware Fusion functions (not create)
 
-if opt["O"] or opt["F"] and !opt["A"] and !opt["K"] and !opt["J"] and !opt["N"] and !opt["Y"] and !opt["U"] and !$os_arch.match(/sparc/)
+if opt["O"] or opt["F"] and !opt["A"] and !opt["E"] and !opt["K"] and !opt["J"] and !opt["N"] and !opt["Y"] and !opt["U"] and !$os_arch.match(/sparc/)
   if opt ["L"]
     search_string = ""
     if opt["c"]

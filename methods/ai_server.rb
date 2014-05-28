@@ -4,19 +4,18 @@
 # List available ISOs
 
 def list_ai_isos()
-  search_string = "repoi-full"
+  search_string = "repo-full"
   iso_list      = check_iso_base_dir(search_string)
   iso_list.each do |iso_file|
     iso_file    = iso_file.chomp
     iso_info    = File.basename(iso_file)
     iso_info    = iso_info.split(/-/)
     iso_version = iso_info[1]
-    iso_arch    = iso_info[2]
     puts "ISO file:\t"+iso_file
     puts "Distribution:\tSolaris"
     puts "Version:\t"+iso_version.gsub(/_/,".")
     puts "Architecture:\tSPARC and i386"
-    service_name     = "sol_"+iso_version+"_"+iso_arch
+    service_name     = "sol_"+iso_version
     repo_version_dir = $repo_base_dir+"/"+service_name
     if File.directory?(repo_version_dir)
       puts "Service Name:\t"+service_name+" (exists)"

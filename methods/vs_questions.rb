@@ -181,7 +181,7 @@ def populate_vs_questions(service_name,client_name,client_ip)
     parameter = "",
     value     = "get_root_password_crypt()",
     valid     = "",
-    eval      = "get_password_crypt()"
+    eval      = "no"
     )
   $q_struct[name] = config
   $q_order.push(name)
@@ -192,7 +192,7 @@ def populate_vs_questions(service_name,client_name,client_ip)
     question  = "Root Password Configuration",
     ask       = "yes",
     parameter = "rootpw",
-    value     = get_vs_password(),
+    value     = "get_vs_password()",
     valid     = "",
     eval      = "get_vs_password()"
     )

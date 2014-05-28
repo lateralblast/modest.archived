@@ -293,3 +293,7 @@
 # Improved ISO file name processing and added initial RHEL 7.0 RC ISO copy support
 # 1.4.7: Wed 28 May 2014 13:01:24 EST
 # RHEL 7.0 RC support and bug fixes
+# 1.4.8: Thu 29 May 2014 07:59:18 EST
+# Fixed bug with listing Solaris 11 ISOs and improved help
+# 1.4.9: Thu 29 May 2014 09:22:45 EST
+# Fixed bugs with ESXi configuration (5.5.0u1 test OK)

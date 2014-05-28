@@ -135,7 +135,7 @@ def create_fusion_vm_disk(client_name,fusion_vm_dir,fusion_disk_file)
   check_dir_exists(fusion_vm_dir)
   vdisk_bin = "/Applications/VMware Fusion.app//Contents/Library/vmware-vdiskmanager"
   message   = "Creating:\tVMware Fusion disk '"+fusion_disk_file+"' for "+client_name
-  command   = "cd '#{fusion_vm_dir}' ; '#{vdisk_bin}' -c -s '#{$vm_disk_size}' -a LsiLogic -t 1 '#{fusion_disk_file}'"
+  command   = "cd '#{fusion_vm_dir}' ; '#{vdisk_bin}' -c -s '#{$default_vm_size}' -a LsiLogic -t 1 '#{fusion_disk_file}'"
   execute_command(message,command)
   return
 end
