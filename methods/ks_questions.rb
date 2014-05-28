@@ -755,17 +755,28 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  if service_name
-  name = "zerombr"
-  config = Ks.new(
-    type      = "output",
-    question  = "Zero MBR",
-    ask       = "yes",
-    parameter = "zerombr",
-    value     = "yes",
-    valid     = "",
-    eval      = ""
-    )
+    name = "zerombr"
+  if service_name.match(/rhel/)
+    config = Ks.new(
+      type      = "output",
+      question  = "Zero MBR",
+      ask       = "yes",
+      parameter = "zerombr",
+      value     = "yes",
+      valid     = "",
+      eval      = ""
+      )
+  else
+    config = Ks.new(
+      type      = "output",
+      question  = "Zero MBR",
+      ask       = "yes",
+      parameter = "zerombr",
+      value     = "",
+      valid     = "",
+      eval      = ""
+      )
+  end
   $q_struct[name] = config
   $q_order.push(name)
 
