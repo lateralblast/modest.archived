@@ -239,11 +239,20 @@ def configure_ks_fusion_vm(client_name,client_mac,client_arch,client_os,client_r
       client_os = "ubuntu"
     end
     if client_name.match(/centos|redhat|rhel|sl|scientific|oel|suse/) or client_os.downcase.match(/centos|redhat|rhel|sl|scientific|oel|suse/)
-      client_os = "rhel5"
+      case client_rel
+      when /^5/
+        client_os = "rhel5"
+      else
+        client_os = "rhel6"
+      end
     end
   end
-  if !client_arch.match(/i386/) and !client_arch.match(/64/)
+  if client_arch.match(/64/)
     client_os = client_os+"-64"
+  else
+    if !client_arch.match(/i386/) and !client_arch.match(/64/)
+      client_os = client_os+"-64"
+    end
   end
   configure_fusion_vm(client_name,client_mac,client_os)
   return

@@ -23,7 +23,7 @@ end
 
 # Configure client PXE boot
 
-def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
+def configure_ks_pxe_client(client_name,client_ip,client_mac,client_arch,service_name)
   tftp_pxe_file = client_mac.gsub(/:/,"")
   tftp_pxe_file = tftp_pxe_file.upcase
   tftp_pxe_file = "01"+tftp_pxe_file+".pxelinux"
@@ -82,7 +82,7 @@ def configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
     if service_name.match(/sles/)
       append_string = "  APPEND initrd=#{initrd_file} install=#{install_url} autoyast=#{autoyast_url} language=#{$default_language}"
     else
-      append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url}"
+      append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url} ksdevice=#{$default_net} ip=#{client_ip} netmask=#{$default_netmask}"
     end
   end
   if $text_install == 1
@@ -175,7 +175,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     process_questions()
     output_ks_header(client_name,output_file)
     pkg_list  = populate_ks_pkg_list(service_name)
-    output_ks_pkg_list(client_name,pkg_list,output_file)
+    output_ks_pkg_list(client_name,pkg_list,output_file,service_name)
     post_list = populate_ks_post_list(client_arch,service_name,publisher_host)
     output_ks_post_list(client_name,post_list,output_file,service_name)
   else
@@ -197,7 +197,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
       end
     end
   end
-  configure_ks_pxe_client(client_name,client_mac,client_arch,service_name)
+  configure_ks_pxe_client(client_name,client_ip,client_mac,client_arch,service_name)
   configure_ks_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
   add_hosts_entry(client_name,client_ip)
   return
@@ -415,12 +415,14 @@ def populate_ks_pkg_list(service_name)
       pkg_list.push("augeas-libs")
       pkg_list.push("augeas")
     end
-    pkg_list.push("grub")
+    if !service_name.match(/rhel/)
+      pkg_list.push("grub")
+      pkg_list.push("libselinux-ruby")
+    end
     pkg_list.push("e2fsprogs")
     pkg_list.push("lvm2")
     pkg_list.push("kernel-devel")
     pkg_list.push("kernel-headers")
-    pkg_list.push("libselinux-ruby")
     pkg_list.push("tk")
     pkg_list.push("lftp")
     pkg_list.push("dos2unix")
@@ -459,7 +461,7 @@ end
 
 # Output the ks packages list
 
-def output_ks_pkg_list(client_name,pkg_list,output_file)
+def output_ks_pkg_list(client_name,pkg_list,output_file,service_name)
   tmp_file = "/tmp/ks_pkg_"+client_name
   file     = File.open(tmp_file, 'w')
   output   = "\n%packages\n"
@@ -467,6 +469,9 @@ def output_ks_pkg_list(client_name,pkg_list,output_file)
   pkg_list.each do |pkg_name|
     output = pkg_name+"\n"
     file.write(output)
+  end
+  if service_name.match(/rhel/)
+    output   = "\n%end\n"
   end
   file.close
   message = "Updating:\tKickstart file "+output_file
@@ -493,6 +498,10 @@ def output_ks_post_list(client_name,post_list,output_file,service_name)
   file.write(output)
   post_list.each do |line|
     output = line+"\n"
+    file.write(output)
+  end
+  if service_name.match(/rhel/)
+    output   = "\n%end\n"
     file.write(output)
   end
   file.close

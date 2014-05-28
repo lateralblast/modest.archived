@@ -291,3 +291,5 @@
 # Bug fixes
 # 1.4.6: Tue 27 May 2014 08:33:16 EST
 # Improved ISO file name processing and added initial RHEL 7.0 RC ISO copy support
+# 1.4.7: Wed 28 May 2014 13:01:24 EST
+# RHEL 7.0 RC support and bug fixes
