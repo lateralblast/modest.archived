@@ -665,14 +665,21 @@ end
 
 def destroy_zfs_fs(dir_name)
   output = ""
-  if $destroy_fs == 1
+  if dir_name.match(/ldoms|zones/)
+    zfs_name = $default_dpool+dir_name
+  else
+    zfs_name = $default_zpool+dir_name
+  end
+  if $destroy_fs !~ /y|n/
+    while $destroy_fs !~ /y|n/
+      print "Destroy ZFS filesystem "+zfs_name+" [y/n]: "
+      $destroy_fs = gets.chomp
+    end
+  end
+  if $destroy_fs == "y"
     if File.directory?(dir_name)
       message = "Warning:\tDestroying "+dir_name
-      if dir_name.match(/ldoms|zones/)
-        zfs_name = $default_dpool+dir_name
-      else
-        zfs_name = $default_zpool+dir_name
-      end
+
       command = "zfs destroy -r #{zfs_name}"
       output  = execute_command(message,command)
     end
@@ -788,6 +795,13 @@ def check_dhcpd()
     check_osx_tftpd()
   end
   return output
+end
+
+# Get service basename
+
+def get_service_base_name(service_name)
+  service_name = service_name.gsub(/_i386|_x86_64|_sparc/,"")
+  return service_name
 end
 
 # Get service name
@@ -1113,7 +1127,7 @@ def mount_iso(iso_file)
       end
     end
   end
-  if !File.directory?(iso_test_dir) and !iso_file.match(/DVD2\.iso|2of2\.iso/)
+  if !File.directory?(iso_test_dir) and !iso_file.match(/DVD2\.iso|2of2\.iso|repo-full/)
     puts "Warning:\tISO did not mount, or this is not a repository ISO"
     puts "Warning:\t"+iso_test_dir+" does not exit"
     if $test_mode != 1
@@ -1144,7 +1158,20 @@ def copy_iso(iso_file,repo_version_dir)
     puts "Checking:\tIf we can copy data from full repo ISO"
   end
   if iso_file.match(/sol/)
-    iso_repo_dir = $iso_mount_dir+"/repo"
+    iso_test_dir = $iso_mount_dir+"/repo"
+    if File.directory?(iso_test_dir)
+      iso_repo_dir = iso_test_dir
+    else
+      iso_test_dir = $iso_mount_dir+"/publisher"
+      if File.directory?(iso_test_dir)
+        iso_repo_dir = $iso_mount_dir
+      else
+        puts "Warning:\tRepository source directory does not exist"
+        if $test_mode != 1
+          exit
+        end
+      end
+    end
     test_dir     = repo_version_dir+"/publisher"
   else
     iso_repo_dir = $iso_mount_dir
@@ -1166,6 +1193,12 @@ def copy_iso(iso_file,repo_version_dir)
   end
   if !File.directory?(test_dir) or iso_file.match(/DVD2\.iso|2of2\.iso/)
     if iso_file.match(/sol/)
+      if !File.directory?(iso_repo_dir)
+        puts "Warning:\tRepository source directory "+iso_repo_dir+" does not exist"
+        if $test_mode != 1
+          exit
+        end
+      end
       message = "Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
       command = "rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
       output  = execute_command(message,command)
@@ -1203,5 +1236,29 @@ def umount_iso()
     command = "hdiutil detach #{disk_id}"
     execute_command(message,command)
   end
+  return
+end
+
+# Clear a service out of maintenance mode
+
+def clear_service(service_name)
+  message    = "Checking:\tStatus of service "+service_name
+  command    = "sleep 5 ; svcs -a |grep '#{service_name}' |awk '{print $1}'"
+  output     = execute_command(message,command)
+  if output.match(/maintenance/)
+    message    = "Clearing:\tService "+service_name
+    command    = "svcadm clear #{service_name}"
+    output     = execute_command(message,command)
+  end
+  return
+end
+
+
+# Occassionally DHCP gets stuck if it's restart to often
+# Clear it out of maintenance mode
+
+def clear_solaris_dhcpd()
+  service_name = "svc:/network/dhcp/server:ipv4"
+  clear_service(service_name)
   return
 end

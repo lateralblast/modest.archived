@@ -297,3 +297,7 @@
 # Fixed bug with listing Solaris 11 ISOs and improved help
 # 1.4.9: Thu 29 May 2014 09:22:45 EST
 # Fixed bugs with ESXi configuration (5.5.0u1 test OK)
+# 1.5.0: Thu  5 Jun 2014 15:16:57 EST
+# Fixed bugs with Solaris 11 AI server configuration
+# 1.5.1: Fri  6 Jun 2014 08:31:50 EST
+# Fixed more bugs with AI server installation and de-installation

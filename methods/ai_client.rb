@@ -80,35 +80,35 @@ end
 # Check the structs for settings and more information
 
 def import_ai_manifest(output_file,service_name)
-  date              = get_date_string()
-  client_arch_list  = []
-  service_base_name = get_service_base_name(service_name)
+  date_string = get_date_string()
+  arch_list   = []
+  base_name   = get_service_base_name(service_name)
   if !service_name.match(/i386|sparc/) and !client_arch.match(/i386|sparc/)
-    client_arch_list = ["i386","SPARC"]
+    arch_list = ["i386","SPARC"]
   else
     if service_name.match(/i386/)
-      client_arch_list.push("i386")
+      arch_list.push("i386")
     else
       if service_name.match(/sparc/)
-        client_arch_list.push("SPARC")
+        arch_list.push("SPARC")
       end
     end
   end
-  client_arch_list.each do |sys_arch|
-    lc_sys_arch = sys_arch.downcase
-    backup_file = $work_dir+"/"+service_base_name+"_"+lc_sys_arch+"_orig_default.xml."+date
-    message     = "Archiving:\tService configuration for "+service_base_name+"_"+lc_sys_arch+" to "+backup_file
-    command     = "installadm export -n #{service_base_name}_#{lc_sys_arch} -m orig_default > #{backup_file}"
-    output      = execute_command(message,command)
-    message     = "Validating:\tService configuration "+output_file
-    command     = "AIM_MANIFEST=#{output_file} ; export AIM_MANIFEST ; aimanifest validate"
-    output      = execute_command(message,command)
+  arch_list.each do |sys_arch|
+    lc_arch = sys_arch.downcase
+    backup  = $work_dir+"/"+base_name+"_"+lc_arch+"_orig_default.xml."+date_string
+    message = "Archiving:\tService configuration for "+base_name+"_"+lc_arch+" to "+backup
+    command = "installadm export -n #{base_name}_#{lc_arch} -m orig_default > #{backup}"
+    output  = execute_command(message,command)
+    message = "Validating:\tService configuration "+output_file
+    command = "AIM_MANIFEST=#{output_file} ; export AIM_MANIFEST ; aimanifest validate"
+    output  = execute_command(message,command)
     if output.match(/[A-z|0-9]/)
       puts "AI manifest file "+output_file+" does not contain a valid XML manifest"
       puts output
     else
       message = "Importing:\t"+output_file+" to service "+service_name
-      command = "installadm update-manifest -n #{service_base_name}_#{lc_sys_arch} -m orig_default -f #{output_file}"
+      command = "installadm update-manifest -n #{base_name}_#{lc_arch} -m orig_default -f #{output_file}"
       output  = execute_command(message,command)
     end
   end
@@ -166,17 +166,9 @@ def configure_ai_client_services(client_arch,publisher_host,publisher_port,servi
   # Set name of AI manifest file to create and import
   if service_name.match(/i386|sparc/)
     service_list[0] = service_name
-  end
-  if !service_name.match(/[A-z|0-9]/)
-    if client_arch.match(/i386|sparc/)
-      service_name    = get_ai_service_name(client_arch)
-      service_list[0] = service_name
-    else
-      ["i386","sparc"].each do |sys_arch|
-        service_name = get_ai_service_name(sys_arch)
-        service_list.push(service_name)
-      end
-    end
+  else
+    service_list[0] = service_name+"_i386"
+    service_list[1] = service_name+"_sparc"
   end
   service_list.each do |temp_name|
     output_file = $work_dir+"/"+temp_name+"_ai_manifest.xml"
@@ -250,6 +242,9 @@ end
 
 def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_name)
   # Populate questions for AI profile
+  if !service_name.match(/i386|sparc/)
+    service_name = service_name+"_"+client_arch
+  end
   check_ai_client_doesnt_exist(client_name,client_mac,service_name)
   populate_ai_client_profile_questions(client_ip,client_name)
   process_questions()
@@ -260,9 +255,11 @@ def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_mode
   output_file = $work_dir+"/"+client_name+"_ai_profile.xml"
   create_ai_client_profile(output_file)
   puts "Configuring:\tClient "+client_name+" with MAC address "+client_mac
-  service_name = get_ai_service_name(client_arch)
   import_ai_client_profile(output_file,client_name,client_mac,service_name)
   create_ai_client(client_name,client_arch,client_mac,service_name,client_ip)
+  if $os_name.match(/SunOS/) and $os_rel.match(/11/)
+    clear_solaris_dhcpd()
+  end
   return
 end
 
@@ -275,21 +272,21 @@ def unconfigure_ai_client(client_name,client_mac,service_name)
     temp_client_mac   = ""
     temp_service_name = ""
     repo_list.each do |line|
-      line=line.chomp
+      line = line.chomp
       if line.match(/[A-z|0-9]/)
         if line.match(/^[A-z|0-9]/)
-          line=line.gsub(/\s+/,"")
-          temp_service_name=line
+          line = line.gsub(/\s+/,"")
+          temp_service_name = line
         else
-          line=line.gsub(/\s+/,"")
+          line = line.gsub(/\s+/,"")
           if line.match(/mac=/)
-            (temp_client_name,temp_client_mac)=line.split(/mac=/)
+            (temp_client_name,temp_client_mac) = line.split(/mac=/)
             if temp_client_name.match(/^#{client_name}/)
               if !service_name.match(/[A-z|0-9]/)
-                service_name=temp_service_name
+                service_name = temp_service_name
               end
               if !client_mac.match(/[A-z|0-9]/)
-                client_mac=temp_client_mac
+                client_mac = temp_client_mac
               end
             end
           end
@@ -304,6 +301,9 @@ def unconfigure_ai_client(client_name,client_mac,service_name)
     message = "Deleting:\tClient "+client_name+" with MAC address "+client_mac
     command = "installadm delete-client "+client_mac
     execute_command(message,command)
+  else
+    puts "Warning:\tClient "+client_name+" does not exist"
+    exit
   end
   return
 end

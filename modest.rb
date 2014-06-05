@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.4.9
+# Version:      1.5.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -29,7 +29,7 @@ require 'pathname'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:r:s:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvwy"
+$options                = "a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvwy"
 $verbose_mode           = 0
 $test_mode              = 0
 $download_mode          = 1
@@ -89,7 +89,7 @@ $default_maas_admin     = "root"
 $default_maas_email     = $default_maas_admin+"@"+$default_host
 $default_mass_password  = $default_admin_password
 $use_alt_repo           = 0
-$destroy_fs             = 0
+$destroy_fs             = "n"
 $use_defaults           = 0
 $default_apache_allow   = ""
 $default_admin_name      = "Sys Admin"
@@ -202,6 +202,7 @@ def print_usage()
   puts "-Q: Copy SSH keys"
   puts "-k: Set VMware Fusion or VirtualBox networking type (e.g. bridged or hostonly)"
   puts "-w: Disable downloads"
+  puts "-x: Set VM network type (e.g. hostonly/bridged/nat)"
   puts
   exit
   return
@@ -419,6 +420,12 @@ rescue
   print_usage()
 end
 
+# If given -x set network type
+
+if opt["x"]
+  $default_vm_network = opt["x"]
+end
+
 # If we building ESX set default memory to 4G and 2 vCPUs
 
 if opt["E"]
@@ -556,9 +563,9 @@ check_local_config(mode,opt)
 
 if opt["y"]
   $yes_to_all = 1
-  $destroy_fs = 1
+  $destroy_fs = "y"
   if $verbose_mode == 1
-    if $on_name =~ /SunOS/
+    if $os_name =~ /SunOS/
       puts "Warning:\tDestroying ZFS filesystems"
     end
   end
@@ -936,6 +943,19 @@ if opt["Z"] or opt["O"] and !opt["S"]
     eval"[unconfigure_#{vfunct}(client_name)]"
   end
   exit
+end
+
+# If client configuration is being done, ensure there is a service name and a client architecture
+
+if opt["C"] and !opt["d"]
+  if !opt["n"]
+    puts "Warning:\tService name not specified"
+    exit
+  end
+  if !opt["a"]
+    puts "Warning:\tClient architecture not specified"
+    exit
+  end
 end
 
 # Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE

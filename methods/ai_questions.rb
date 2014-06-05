@@ -17,7 +17,7 @@ def populate_ai_manifest_questions(publisher_host,publisher_port)
   $q_order.push(name)
 
   name="publisher_url"
-  publisher_url=get_publisher_url(publisher_host,publisher_port)
+  publisher_url=get_ai_publisher_url(publisher_host,publisher_port)
   config=Ai.new(
     question  = "Publisher URL",
     ask       = "yes",
@@ -40,7 +40,7 @@ def populate_ai_manifest_questions(publisher_host,publisher_port)
   $q_order.push(name)
 
   name="repo_url"
-  repo_url=get_repo_url(publisher_url,publisher_host,publisher_port)
+  repo_url=get_ai_repo_url(publisher_url,publisher_host,publisher_port)
   config=Ai.new(
     question  = "Solaris repository version",
     ask       = "yes",
@@ -86,7 +86,6 @@ def populate_ai_manifest_questions(publisher_host,publisher_port)
     $q_struct[name]=config
     $q_order.push(name)
   end
-
   return
 end
 

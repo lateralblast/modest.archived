@@ -189,11 +189,9 @@ def unconfigure_ai_alt_repo(service_name)
     end
     uninstall_pkg(pkg_name)
   end
-  if $destroy_fs == 1
-    alt_service_name=check_alt_service_name(service_name)
-    pkg_repo_dir=$repo_base_dir+"/"+alt_service_name
-    destroy_zfs_fs(pkg_repo_dir)
-  end
+  alt_service_name=check_alt_service_name(service_name)
+  pkg_repo_dir=$repo_base_dir+"/"+alt_service_name
+  destroy_zfs_fs(pkg_repo_dir)
   alt_service_name=check_alt_service_name(service_name)
   unconfigure_ai_pkg_repo(alt_service_name)
   return

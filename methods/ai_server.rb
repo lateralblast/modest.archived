@@ -10,7 +10,11 @@ def list_ai_isos()
     iso_file    = iso_file.chomp
     iso_info    = File.basename(iso_file)
     iso_info    = iso_info.split(/-/)
-    iso_version = iso_info[1]
+    if iso_file.match(/beta/)
+      iso_version = iso_info[1]+"_beta"
+    else
+      iso_version = iso_info[1]
+    end
     puts "ISO file:\t"+iso_file
     puts "Distribution:\tSolaris"
     puts "Version:\t"+iso_version.gsub(/_/,".")
@@ -35,7 +39,7 @@ def unconfigure_ai_server(service_name)
     smf_service_name  = "svc:/application/pkg/server:"+service_base_name
     smf_service_test  = %x[svcs -a |grep '#{smf_service_name}']
     if smf_service_test.match(/pkg/)
-      unconfigure_ai_pkg_repo(service_name)
+      unconfigure_ai_pkg_repo(smf_service_name)
     end
     if !service_name.match(/i386|sparc/)
       ["i386","sparc"].each do |sys_arch|
@@ -64,6 +68,11 @@ def unconfigure_ai_server(service_name)
       refresh_smf_service(smf_service_name)
     end
     remove_apache_proxy(service_name)
+    repo_version_dir = $repo_base_dir+"/"+service_base_name
+    test_dir = repo_version_dir+"/publisher"
+    if File.directory?(test_dir)
+      destroy_zfs_fs(repo_version_dir)
+    end
   else
     remove_apache_proxy(service_name)
   end
@@ -92,7 +101,9 @@ end
 def check_dhcpd4_conf()
   if $os_name.match(/SunOS/)
     file="/etc/inet/dhcpd4.conf"
-    puts "Checking:\t"+file+" exists"
+    if $verbose_mode == 1
+      puts "Checking:\t"+file+" exists"
+    end
     if !File.exist?(file)
       message = "Creating:\t"+file
       command = "touch #{file}"
@@ -111,7 +122,9 @@ end
 # Eg /export/auto_install
 
 def check_ai_base_dir()
-  puts "Checking:\t"+$ai_base_dir
+  if $verbose_mode == 1
+    puts "Checking:\t"+$ai_base_dir
+  end
   output = check_zfs_fs_exists($ai_base_dir)
   return output
 end
@@ -131,7 +144,11 @@ end
 def check_ai_service(service_name)
   message = "Checking:\tAI service "+service_name
   if $os_name.match(/SunOS/)
-    command = "installadm list |grep '#{service_name}'"
+    if service_name.match(/alt/)
+      command = "installadm list |grep '#{service_name}'"
+    else
+      command = "installadm list |grep '#{service_name}' |grep -v alt"
+    end
   else
     command = "ls #{$repo_base_dir} |grep '#{service_name}'"
   end
@@ -150,24 +167,24 @@ def configure_ai_services(iso_repo_version,publisher_url,client_arch)
     client_arch_list = ["#{client_arch}"]
   end
   client_arch_list.each do |sys_arch|
-    lc_sys_arch      = sys_arch.downcase
-    auto_install_dir = $ai_base_dir+"/"+iso_repo_version+"_"+lc_sys_arch
-    service_name     = iso_repo_version+"_"+lc_sys_arch
+    lc_arch = sys_arch.downcase
+    ai_dir  = $ai_base_dir+"/"+iso_repo_version+"_"+lc_arch
+    service_name = iso_repo_version+"_"+lc_arch
     if $os_name.match(/SunOS/)
-      service_check    = check_ai_service(service_name)
+      service_check = check_ai_service(service_name)
       if !service_check.match(/#{service_name}/)
-        message = "Creating:\tAI service for #{lc_sys_arch}"
-        command = "installadm create-service -a #{lc_sys_arch} -n #{service_name} -p solaris=#{publisher_url} -d #{auto_install_dir}"
+        message = "Creating:\tAI service for #{lc_arch}"
+        command = "installadm create-service -a #{lc_arch} -n #{service_name} -p solaris=#{publisher_url} -d #{ai_dir}"
         execute_command(message,command)
       end
     else
       service_info = service_name.split(/_/)
       client_ver   = service_info[1]
       client_rel   = service_info[2]
-      ai_iso_file  = "sol-"+client_ver+"_"+client_rel+"-ai-"+lc_sys_arch+".iso"
+      ai_iso_file  = "sol-"+client_ver+"_"+client_rel+"-ai-"+lc_arch+".iso"
       ai_iso_file  = $iso_base_dir+"/"+ai_iso_file
       if !File.exist?(ai_iso_file)
-        puts "Warning:\tAI ISO file "+ai_iso_file+" not found for architecture "+lc_sys_arch
+        puts "Warning:\tAI ISO file "+ai_iso_file+" not found for architecture "+lc_arch
       else
         if $os_name.match(/Darwin/)
           tftp_version_dir = $tftp_dir+"/"+service_name
@@ -212,11 +229,11 @@ end
 def get_ai_install_services()
   message = "Getting:\tList of AI services"
   if $os_name.match(/SunOS/)
-    command = "installadm list"
+    command = "installadm list |grep '^sol_11' |awk '{print $1}'"
   else
     command = "ls #{$repo_base_dir} |grep 'sol_11'"
   end
-  output  = execute_command(message,command)
+  output = execute_command(message,command)
   return output
 end
 
@@ -272,100 +289,86 @@ end
 # Main server routine called from modest main code
 
 def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
+  # Enable default package service
+  clear_service("svc:/system/install/server:default")
+  enable_service("svc:/system/install/server:default")
   iso_list = []
   # Check we have a default route (required for DHCPd to start)
   check_default_route()
   # Check that we have a DHCPd config file to write to
   check_dhcpd4_conf()
   check_dhcpd_config(publisher_host)
-  # Check that we have a local repoistory
-  publisher_url=get_ai_publisher_url(publisher_host,publisher_port)
   # Get a list of installed services
-  services_list=get_ai_install_services()
-  # If we don't have a local repository start setting one up
-  if publisher_url.match(/oracle/) or !services_list.match(/sol_/)
-    # Check if we have a file based repository we can use
-    if $os_name.match(/SunOS/)
-      message       = "Checking:\tIf file based repository exists"
-      command       = "pkg publisher |grep online |grep file |awk '{print $5}'"
-      output        = execute_command(message,command)
-      file_repo_url = output.chomp
-      if file_repo_url.match(/file/)
-        repo_version_dir = file_repo_url.split(/:\/\//)[1]
-        iso_repo_version             = get_ai_solaris_release(repo_version_dir)
-        if !service_name.match(/[A-z|0-9]/)
-          service_base_name = iso_repo_version
-        else
-          service_base_name = get_ai_ervice_base_name(service_name)
-        end
-        ai_version_dir=check_ai_base_dir()
-        read_only="true"
-        configure_ai_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
-        if $use_alt_repo == 1
-          alt_service_name = service_base_name+"_"+$alt_repo_name
-          configure_ai_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
-        end
-        configure_ai_services(iso_repo_version,publisher_url,client_arch)
-      else
-        configure_ai_services(iso_repo_version,publisher_url,client_arch)
+  services_list = get_ai_install_services()
+  # If given a service name check the service doesn't already exist
+  if service_name.match(/[A-z]/)
+    if services_list.match(/#{service_name}/)
+      puts "Warning:\tService "+service_name+" already exists"
+      exit
+    end
+  end
+  # Check we have ISO to get repository data from
+  if !iso_file.match(/[A-z|0-9]/)
+    if service_name.match(/[A-z]/)
+      search_string = service_name.gsub(/i386|sparc/,"")
+      search_string = search_string.gsub(/sol_/,"sol-")
+      search_string = search_string.gsub(/_beta/,"-beta")
+      search_string = search_string+"-repo-full"
+    else
+      search_string = "repo-full"
+    end
+    iso_list = check_iso_base_dir(search_string)
+  else
+    iso_list[0] = iso_file
+  end
+  if !iso_list[0]
+    puts "Warning:\tNo suitable ISOs found"
+    exit
+  end
+  iso_list.each do |iso_file|
+    if File.exist?(iso_file)
+      if !iso_file.match(/repo-full/)
+        puts "Warning:\tISO "+iso_file+" does not appear to be a valid Solaris distribution"
+        exit
       end
     else
-      # Check we have ISO to get repository data from
-      search_string = "repo-full"
-      if !iso_file.match(/[A-z|0-9]/)
-        if File.exist?(iso_file)
-          if !iso_file.match(/repo-full/)
-            puts "Warning:\tISO "+iso_file+" does not appear to be a valid Solaris distribution"
-            exit
-          else
-            iso_list[0] = iso_file
-          end
-        else
-          iso_list = check_iso_base_dir(search_string)
-        end
-      else
-        iso_list = check_iso_base_dir(search_string)
-      end
-      # If we do have ISO use them to set up repositories
-      if iso_list.grep(/full/)
-        # If we have a repo ISO process it
-        iso_list.each do |iso_file_name|
-          iso_file_name = iso_file_name.chomp
-          mount_iso(iso_file_name)
-          # Get repo version from file name
-          # Eg sol-11_1-repo-full.iso
-          # Would be 11_1
-          # And sol-11_1_13_6_0-incr-repo.iso
-          # would be 11_1_13_6_0
-          iso_repo_version = File.basename(iso_file_name,".iso")
-          iso_repo_version = iso_repo_version.split(/-/)[1]
-          iso_repo_version = "sol_"+iso_repo_version
-          if !service_name.match(/[A-z|0-9]/)
-            service_base_name=iso_repo_version
-          else
-            service_base_name = get_service_base_name(service_name)
-          end
-          repo_version_dir = get_repo_version_dir(iso_repo_version)
-          if !iso_repo_version.match(/11/)
-            iso_repo_version = get_ai_solaris_release(repo_version_dir)
-          end
-          check_repo_version_dir(repo_version_dir)
-          copy_iso(iso_file_name,repo_version_dir)
-          ai_version_dir = check_ai_base_dir()
-          #repo_version  = get_repo_version()
-          read_only      = "true"
-          configure_ai_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
-          if $use_alt_repo == 1
-            alt_service_name=check_alt_service_name(service_name)
-            configure_ai_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
-          end
-          configure_ai_services(iso_repo_version,publisher_url,client_arch)
-        end
-      end
+      puts "Warning:\tISO "+iso_file+" does not exist"
+      exit
     end
-    fix_server_dhcpd_range(publisher_host)
+    iso_repo_version = File.basename(iso_file,".iso")
+    iso_repo_version = iso_repo_version.split(/-/)[1]
+    if iso_file.match(/beta/)
+      iso_repo_version = "sol_"+iso_repo_version+"_beta"
+    else
+      iso_repo_version = "sol_"+iso_repo_version
+    end
+    if !service_name.match(/[A-z|0-9]/)
+      service_base_name = iso_repo_version
+    else
+      service_base_name = get_service_base_name(service_name)
+    end
+    repo_version_dir = get_repo_version_dir(iso_repo_version)
+    if !iso_repo_version.match(/11/)
+      iso_repo_version = get_ai_solaris_release(repo_version_dir)
+    end
+    test_dir = repo_version_dir+"/publisher"
+    if !File.directory?(test_dir)
+      check_repo_version_dir(repo_version_dir)
+      copy_iso(iso_file_name,repo_version_dir)
+    end
+    check_ai_base_dir()
+    read_only = "true"
+    publisher_port = check_publisher_port(publisher_port)
+    configure_ai_pkg_repo(publisher_host,publisher_port,service_base_name,repo_version_dir,read_only)
+    if $use_alt_repo == 1
+      alt_service_name=check_alt_service_name(service_name)
+      configure_ai_alt_pkg_repo(publisher_host,publisher_port,alt_service_name)
+    end
+    publisher_url = get_ai_publisher_url(publisher_host,publisher_port)
+    configure_ai_services(iso_repo_version,publisher_url,client_arch)
+    configure_ai_client_services(client_arch,publisher_host,publisher_port,service_name)
   end
-  return
+  fix_server_dhcpd_range(publisher_host)
 end
 
 # List AI services
