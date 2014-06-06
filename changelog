@@ -301,3 +301,5 @@
 # Fixed bugs with Solaris 11 AI server configuration
 # 1.5.1: Fri  6 Jun 2014 08:31:50 EST
 # Fixed more bugs with AI server installation and de-installation
+# 1.5.2: Fri  6 Jun 2014 10:25:13 EST
+# Added option to set server size (e.g. small or large) for AI clients

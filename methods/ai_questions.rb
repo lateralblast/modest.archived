@@ -32,7 +32,7 @@ def populate_ai_manifest_questions(publisher_host,publisher_port)
   config=Ai.new(
     question  = "Server install",
     ask       = "yes",
-    value     = "pkg:/group/system/solaris-large-server",
+    value     = "pkg:/group/system/solaris-"+$default_server_size+"-server",
     valid     = "pkg:/group/system/solaris-large-server,pkg:/group/system/solaris-small-server",
     eval      = "no"
     )
@@ -46,17 +46,6 @@ def populate_ai_manifest_questions(publisher_host,publisher_port)
     ask       = "yes",
     value     = repo_url,
     valid     = "",
-    eval      = "no"
-    )
-  $q_struct[name]=config
-  $q_order.push(name)
-
-  name="server_install"
-  config=Ai.new(
-    question  = "Server install",
-    ask       = "yes",
-    value     = "pkg:/group/system/solaris-large-server",
-    valid     = "pkg:/group/system/solaris-large-server,pkg:/group/system/solaris-small-server",
     eval      = "no"
     )
   $q_struct[name]=config

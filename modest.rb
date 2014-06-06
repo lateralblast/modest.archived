@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.5.1
+# Version:      1.5.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -29,7 +29,7 @@ require 'pathname'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvwy"
+$options                = "a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvwy"
 $verbose_mode           = 0
 $test_mode              = 0
 $download_mode          = 1
@@ -132,6 +132,7 @@ $default_gdom_vnet      = "vnet0"
 $use_sudo               = 1
 $do_ssh_keys            = 0
 $default_vm_network     = "hostonly"
+$default_server_size    = "small"
 
 # Declare some package versions
 
@@ -202,7 +203,8 @@ def print_usage()
   puts "-Q: Copy SSH keys"
   puts "-k: Set VMware Fusion or VirtualBox networking type (e.g. bridged or hostonly)"
   puts "-w: Disable downloads"
-  puts "-x: Set VM network type (e.g. hostonly/bridged/nat)"
+  puts "-x: Set VM network type (e.g. hostonly or bridged or nat)"
+  puts "-q: Set server size for client (e.g. small or large)"
   puts
   exit
   return
@@ -424,6 +426,12 @@ end
 
 if opt["x"]
   $default_vm_network = opt["x"]
+end
+
+# If given -q set server size
+
+if opt["q"]
+  $default_server_size = opt["q"]
 end
 
 # If we building ESX set default memory to 4G and 2 vCPUs
