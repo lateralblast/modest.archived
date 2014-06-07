@@ -288,7 +288,7 @@ end
 
 # Main server routine called from modest main code
 
-def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
+def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,file_name)
   # Enable default package service
   clear_service("svc:/system/install/server:default")
   enable_service("svc:/system/install/server:default")
@@ -308,7 +308,7 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
     end
   end
   # Check we have ISO to get repository data from
-  if !iso_file.match(/[A-z|0-9]/)
+  if !file_name.match(/[A-z|0-9]/)
     if service_name.match(/[A-z]/)
       search_string = service_name.gsub(/i386|sparc/,"")
       search_string = search_string.gsub(/sol_/,"sol-")
@@ -319,7 +319,7 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,i
     end
     iso_list = check_iso_base_dir(search_string)
   else
-    iso_list[0] = iso_file
+    iso_list[0] = file_name
   end
   if !iso_list[0]
     puts "Warning:\tNo suitable ISOs found"

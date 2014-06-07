@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.5.2
+# Version:      1.5.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -25,6 +25,7 @@ require 'socket'
 require 'parseconfig'
 require 'unix_crypt'
 require 'pathname'
+require 'netaddr'
 
 # Set up some global variables/defaults
 
@@ -133,12 +134,22 @@ $use_sudo               = 1
 $do_ssh_keys            = 0
 $default_vm_network     = "hostonly"
 $default_server_size    = "small"
+$default_manifest_name  = "modest"
 
 # Declare some package versions
 
 $facter_version = "1.7.4"
 $hiera_version  = "1.3.1"
 $puppet_version = "3.4.2"
+
+# Calculate CIDR
+
+def netmask_to_cidr(netmask)
+  cidr = NetAddr::CIDR.create('0.0.0.0/'+netmask).netmask
+  return cidr
+end
+
+$default_cidr = netmask_to_cidr($default_netmask)
 
 # Load methods
 
@@ -228,6 +239,8 @@ def print_version()
   exit
 end
 
+# Generate a client MAC address if not given one
+
 def create_client_mac(client_mac)
   if !client_mac.match(/[0-9]/)
     client_mac = (1..6).map{"%0.2X"%rand(256)}.join(":")
@@ -272,27 +285,21 @@ def check_local_config(mode,opt)
   end
   # Get OS name and set system settings appropriately
   check_dir_exists($tmp_dir)
-  $os_name = %x[uname]
-  $os_name = $os_name.chomp
-  $os_arch = %x[uname -p]
-  $os_arch = $os_arch.chomp
-  $os_mach = %x[uname -m]
-  $os_mach = $os_mach.chomp
+  $os_name = %x[uname].chomp
+  $os_arch = %x[uname -p].chomp
+  $os_mach = %x[uname -m].chomp
   if $os_name.match(/SunOS|Darwin/)
-    $os_info = %x[uname -a]
-    $os_info = $os_info.chomp
-    $os_rel = %x[uname -r]
-    $os_rel = $os_rel.chomp
+    $os_info = %x[uname -a].chomp
+    $os_rel  = %x[uname -r].chomp
     if $os_rel.match(/5\.11/) and $os_name.match(/SunOS/)
+      $os_update   = %x[uname -a |awk '{print $4}'].chomp
       $default_net = "net0"
     end
   else
-    $os_info = %x[lsb_release -i]
-    $os_info = $os_info.chomp
+    $os_info = %x[lsb_release -i].chomp
   end
   if $os_name.match(/Linux/)
-    $os_rel = %x[lsb_release -r |awk '{print $2}']
-    $os_rel = $os_rel.chomp
+    $os_rel = %x[lsb_release -r |awk '{print $2}'].chomp
   end
   if $os_info.match(/Ubuntu/)
     $lxc_base_dir = "/var/lib/lxc"
@@ -309,7 +316,7 @@ def check_local_config(mode,opt)
     if $os_name.match(/Linux/)
       $default_net="eth0"
       command = "ifconfig #{$default_net} |grep 'inet ' |awk '{print $2}'"
-      test_ip = %x[#{command}]
+      test_ip = %x[#{command}].chomp
       if !test_ip.match(/inet/)
         command = "ifconfig lxcbr0 |grep 'inet ' |awk '{print $2}'"
       end
@@ -801,7 +808,7 @@ end
 
 if opt["O"]
   if $os_arch.match(/i386/)
-    $vm_disk_size = $vm_disk_size.gsub(/G/,"000")
+    $default_vm_size = $default_vm_size.gsub(/G/,"000")
     $use_sudo     = 0
     vfunct        = "vbox"
     if $verbose_mode == 1
@@ -826,7 +833,7 @@ end
 
 # VirtualBox and VMware Fusion functions (not create)
 
-if opt["O"] or opt["F"] and !opt["A"] and !opt["E"] and !opt["K"] and !opt["J"] and !opt["N"] and !opt["Y"] and !opt["U"] and !$os_arch.match(/sparc/)
+if opt["O"] or opt["F"] and $os_arch.match(/i386|x86_64/)
   if opt ["L"]
     search_string = ""
     if opt["c"]
@@ -854,11 +861,6 @@ if opt["O"] or opt["F"] and !opt["A"] and !opt["E"] and !opt["K"] and !opt["J"] 
     client_mac = opt["e"]
     check_client_mac(client_mac)
     eval"[change_#{vfunct}_vm_mac(client_name,client_mac)]"
-  end
-  exit
-else
-  if opt["F"] and opt["d"]
-    eval"[unconfigure_#{vfunct}_vm(client_name)]"
   end
 end
 
@@ -919,13 +921,17 @@ end
 
 # Handle Zones/Containers and LDoms
 
-if opt["Z"] or opt["O"] and !opt["S"]
-  if opt["O"] and !$os_mach.match(/sun4v/)
-    puts "Warning:\tArchitecture does not support LDoms"
-    exit
+if opt["Z"] and !opt["S"]
+  if opt["O"] and !$os_arch.match(/i386|x86_64/)
+    if opt["O"] and !$os_mach.match(/sun4v/)
+      puts "Warning:\tArchitecture does not support LDoms"
+      exit
+    end
   end
   if opt["c"]
-    eval"[configure_#{vfunct}(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host,image_file,service_name)]"
+    if !$os_arch.match(/i386|x86_64/)
+      eval"[configure_#{vfunct}(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host,image_file,service_name)]"
+    end
   end
   if opt["L"]
     eval"[list_#{vfunct}s()]"
@@ -968,7 +974,7 @@ end
 
 # Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE
 
-if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"]
+if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"] or opt["O"]
   # Set function
   if opt["A"]
     funct = "ai"
@@ -998,11 +1004,13 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
       funct = "lxc"
     end
   end
-  if opt["O"] or opt["F"] and !$os_arch.match(/sparc/)
+  if opt["O"] or opt["F"] and $os_arch.match(/i386|x86_64/)
     if opt["c"]
-      check_client_arch(client_arch)
-      client_mac = create_client_mac(client_mac)
-      check_client_mac(client_mac)
+      client_arch = check_client_arch(client_arch,opt)
+      if !opt["O"]
+        client_mac  = create_client_mac(client_mac)
+        check_client_mac(client_mac)
+      end
       eval"[configure_#{funct}_#{vfunct}_vm(client_name,client_mac,client_arch,client_os,client_rel)]"
     end
     if opt["L"]

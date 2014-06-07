@@ -310,6 +310,14 @@ def check_dhcpd_config(publisher_host)
     message = "Creating:\tDHCPd configuration file "+$dhcpd_file
     command = "cp #{tmp_file} #{$dhcpd_file}"
     execute_command(message,command)
+    if $os_name == "SunOS" and $os_rel == "5.11"
+      message = "Setting\tDHCPd listening interface to "+$default_net
+      command = "svccfg -s svc:/network/dhcp/server:ipv4 setprop config/listen_ifnames = astring: #{$default_net}"
+      execute_command(message,command)
+      message = "Refreshing\tDHCPd service"
+      command = "svcadm refresh svc:/network/dhcp/server:ipv4"
+      execute_command(message,command)
+    end
     restart_dhcpd()
   end
   return
@@ -918,13 +926,21 @@ end
 
 # Check client architecture
 
-def check_client_arch(client_arch)
+def check_client_arch(client_arch,opt)
+  if !client_arch.match(/i386|sparc|x86_64/)
+    if opt["F"] or opt["O"]
+      if opt["A"]
+        puts "Setting:\tArchitecture to x86_64"
+        client_arch = "x86_64"
+      end
+    end
+  end
   if !client_arch.match(/i386|sparc|x86_64/)
     puts "Warning:\tInvalid architecture specified"
     puts "Warning:\tUse -a i386, -a x86_64 or -a sparc"
     exit
   end
-  return
+  return client_arch
 end
 
 # Check client MAC

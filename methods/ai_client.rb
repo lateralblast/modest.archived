@@ -107,8 +107,11 @@ def import_ai_manifest(output_file,service_name)
       puts "AI manifest file "+output_file+" does not contain a valid XML manifest"
       puts output
     else
-      message = "Importing:\t"+output_file+" to service "+service_name
-      command = "installadm update-manifest -n #{base_name}_#{lc_arch} -m orig_default -f #{output_file}"
+      message = "Importing:\t"+output_file+" to service "+service_name+" as manifest named "+$default_manifest_name
+      command = "installadm create-manifest -n #{base_name}_#{lc_arch} -m #{$default_manifest_name} -f #{output_file}"
+      output  = execute_command(message,command)
+      message = "Setting:\tDefault manifest for service "+service_name+" to "+$default_manifest_name
+      command = "installadm set-service -o default-manifest=#{$default_manifest_name} #{base_name}_#{lc_arch}"
       output  = execute_command(message,command)
     end
   end

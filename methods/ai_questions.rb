@@ -338,11 +338,13 @@ name="system_environment"
   $q_struct[name]=config
   $q_order.push(name)
 
+  ipv4_address = client_ip+$default_cidr
+
   name="ipv4_static_address"
   config=Ai.new(
     question  = "IPv4 Static Address",
     ask       = "yes",
-    value     = client_ip,
+    value     = ipv4_address,
     valid     = "",
     eval      = "no"
     )

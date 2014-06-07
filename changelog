@@ -303,3 +303,13 @@
 # Fixed more bugs with AI server installation and de-installation
 # 1.5.2: Fri  6 Jun 2014 10:25:13 EST
 # Added option to set server size (e.g. small or large) for AI clients
+# 1.5.3: Sat  7 Jun 2014 11:07:35 EST
+# Added code to check listening interface is set up for DHCP on Solaris 11
+# 1.5.4: Sat  7 Jun 2014 11:26:34 EST
+# Added code to set default manifest to another manifest rather than updating the default
+# 1.5.5: Sat  7 Jun 2014 11:30:51 EST
+# Added code to set architecture for VMware Fusion VMs if not given for Solaris
+# 1.5.6: Sat  7 Jun 2014 20:46:20 EST
+# Fixed bugs with VirtualBox VM creation
+# 1.5.7: Sat  7 Jun 2014 20:59:13 EST
+# Improved handling of options with VMware Fusion and VirtualBox functions

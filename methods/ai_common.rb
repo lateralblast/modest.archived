@@ -48,9 +48,10 @@ end
 # Get publisher port for service
 
 def get_publisher_port(service_name)
-  message      = "Determining:\tPublisher port for service "+service_name
-  command      = "svcprop -a pkg/server |grep 'port count'"
-  ports_in_use = execute_command(message,command)
+  message     = "Determining:\tPublisher port for service "+service_name
+  command     = "svcprop -a pkg/server |grep 'port count'"
+  port_in_use = execute_command(message,command)
+  return port_in_use
 end
 
 # Get the repository URL

@@ -52,7 +52,7 @@ def print_examples(examples)
     puts "Create Preseed (Linux) VM:\t\t"+$script+" -U -F -c ubuntu1310vm01 -a x86_64 -e 08:00:27:BA:34:7C"
     puts "Create Autoyast (Linux) VM:\t\t"+$script+" -Y -F -c sles11sp2vm01 -a x86_64 -e 08:00:27:BA:34:7D"
     puts "Create Jumpstart (Solaris 10) VM:\t"+$script+" -J -F -c sol10u11vm01 -a i386 -e 00:0C:29:FA:0C:7F"
-    puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -F -c sol11u01vm03 -a i386 -e 00:50:56:26:92:D8"
+    puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -F -c sol11u01vm03 -e 00:50:56:26:92:D8"
     puts "Create vSphere (ESXi) VM:\t\t"+$script+" -E -F -c vmware55vm01 -e 08:00:27:61:B7:AD"
     puts "Create NT (Windows) VM:\t\t\t"+$script+" -N -F -c win2008r2vm01 -e 08:00:27:61:B7:AF"
     puts
