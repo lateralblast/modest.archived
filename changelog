@@ -317,3 +317,5 @@
 # Fixed bugs with AI client creation
 # 1.5.9: Sun  8 Jun 2014 05:09:06 EST
 # Added support for SAS controller to VirtualBox VMs and made it default
+# 1.6.0: Sun  8 Jun 2014 09:45:28 EST
+# Added code to automatically create hostonly network if not present on VirtualBox and attach Guest Additions ISO

@@ -75,11 +75,24 @@ def add_bridged_network_to_vbox_vm(client_name,nic_name)
   return
 end
 
+# Add non-bridged network to VirtualBox VM
+
+def add_nonbridged_network_to_vbox_vm(client_name,nic_name)
+  message = "Adding:\t\tNetwork "+nic_name+" to "+client_name
+  if nic_name.match(/vboxnet/)
+    command = "VBoxManage modifyvm #{client_name} --hostonlyadapter1 #{nic_name}"
+  else
+    command = "VBoxManage modifyvm #{client_name} --nic1 #{nic_name}"
+  end
+  execute_command(message,command)
+  return
+end
+
 # Set boot priority to network
 
 def set_vbox_vm_boot_priority(client_name)
-  message = "Setting:\tBoot priority for "+client_name+" to network"
-  command = "VBoxManage modifyvm #{client_name} --boot1 net"
+  message = "Setting:\tBoot priority for "+client_name+" to disk then network"
+  command = "VBoxManage modifyvm #{client_name} --boot1 disk --boot2 net"
   execute_command(message,command)
   return
 end
@@ -183,6 +196,20 @@ def add_hdd_to_vbox_vm(client_name,vbox_disk_name)
   message = "Attaching:\tStorage to VM "+client_name
   command = "VBoxManage storageattach \"#{client_name}\" --storagectl \"#{$vbox_disk_type}\" --port 0 --device 0 --type hdd --medium \"#{vbox_disk_name}\""
   execute_command(message,command)
+  return
+end
+
+# Add hard disk to VirtualBox VM
+
+def add_cdrom_to_vbox_vm(client_name)
+  message = "Attaching:\tCDROM to VM "+client_name
+  command = "VBoxManage storagectl \"#{client_name}\" --name \"cdrom\" --add \"sata\" --controller \"IntelAHCI\""
+  execute_command(message,command)
+  if File.exist?($vbox_additions_iso)
+    message = "Attaching:\tISO "+$vbox_additions_iso+" to VM "+client_name
+    command = "VBoxManage storageattach \"#{client_name}\" --storagectl \"cdrom\" --port 0 --device 0 --type dvddrive --medium \"#{$vbox_additions_iso}\""
+    execute_command(message,command)
+  end
   return
 end
 
@@ -330,9 +357,35 @@ def get_vbox_vm_mac(client_name)
   return vbox_vm_mac
 end
 
+def check_vbox_hostonly_network()
+  message = "Checking:\tVirtualBox hostonly network exists"
+  command = "VBoxManage list hostonlyifs |grep '^Name' |awk '{print $2}' |head -1"
+  if_name = execute_command(message,command)
+  if !if_name.match(/vboxnet/)
+    message = "Plumbing:\tVirtualBox hostonly network"
+    command = "VBoxManage hostonlyif create |grep '^interface' |awk '{print $2}'"
+    if_name = execute_command(message,command)
+    if_name = if_name.gsub(/'/,"")
+  end
+  message = "Checking:\tVirtualBox hostonly network "+if_name+" has address "+$default_hostonly_ip
+  command = "VBoxManage list hostonlyifs |grep 'IPAddress' |awk '{print $2}' |head -1"
+  host_ip = execute_command(message,command)
+  host_ip = host_ip.chomp
+  if host_ip != $default_hostonly_ip
+    message = "Configuring:\tVirtualBox hostonly network "+if_name+" with IP "+$default_hostonly_ip
+    command = "VBoxManage hostonlyif ipconfig #{if_name} --ip #{$default_hostonly_ip} --netmask #{$default_netmask}"
+    execute_command(message,command)
+  end
+  return if_name
+end
+
+
 # Configure a VirtualBox VM
 
 def configure_vbox_vm(client_name,client_mac,client_os)
+  if $default_vm_network.match(/hostonly/)
+    vbox_nic_name = check_vbox_hostonly_network()
+  end
   vbox_vm_dir      = get_vbox_vm_dir(client_name)
   vbox_disk_name   = vbox_vm_dir+"/"+client_name+".vdi"
   vbox_socket_name = "/tmp/#{client_name}"
@@ -345,9 +398,14 @@ def configure_vbox_vm(client_name,client_mac,client_os)
   add_memory_to_vbox_vm(client_name)
   vbox_socket_name = add_socket_to_vbox_vm(client_name)
   add_serial_to_vbox_vm(client_name)
-  vbox_nic_name = get_bridged_vbox_nic()
-  add_bridged_network_to_vbox_vm(client_name,vbox_nic_name)
+  if $default_vm_network.match(/bridged/)
+    vbox_nic_name = get_bridged_vbox_nic()
+    add_bridged_network_to_vbox_vm(client_name,vbox_nic_name)
+  else
+    add_nonbridged_network_to_vbox_vm(client_name,vbox_nic_name)
+  end
   set_vbox_vm_boot_priority(client_name)
+  add_cdrom_to_vbox_vm(client_name)
   if client_mac.match(/[0-9]/)
     change_vbox_vm_mac(client_name,client_mac)
   else
