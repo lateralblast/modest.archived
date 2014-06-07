@@ -315,3 +315,5 @@
 # Improved handling of options with VMware Fusion and VirtualBox functions
 # 1.5.8: Sun  8 Jun 2014 03:19:52 EST
 # Fixed bugs with AI client creation
+# 1.5.9: Sun  8 Jun 2014 05:09:06 EST
+# Added support for SAS controller to VirtualBox VMs and made it default

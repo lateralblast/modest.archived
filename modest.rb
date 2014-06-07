@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.5.8
+# Version:      1.5.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -113,7 +113,7 @@ $text_install           = 1
 $backup_dir             = ""
 $rpm2cpio_url           = "http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
 $rpm2cpio_bin           = ""
-$vbox_disk_type         = "ide"
+$vbox_disk_type         = "sas"
 $default_vm_size        = "12G"
 $default_vm_mem         = "1024"
 $default_vm_vcpu        = "1"

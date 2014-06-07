@@ -151,7 +151,10 @@ def get_vbox_controller()
     vbox_controller = "IntelAhci"
   end
   if $vbox_disk_type =~/scsi/
-    vbox_controller = "LsiLogic"
+    vbox_controller = "LSILogic"
+  end
+  if $vbox_disk_type =~/sas/
+    vbox_controller = "LSILogicSAS"
   end
   return vbox_controller
 end
