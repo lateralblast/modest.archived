@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby -w
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.5.7
+# Version:      1.5.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -859,7 +859,7 @@ if opt["O"] or opt["F"] and $os_arch.match(/i386|x86_64/)
   end
   if opt["e"]
     client_mac = opt["e"]
-    check_client_mac(client_mac)
+    client_mac = check_client_mac(client_mac)
     eval"[change_#{vfunct}_vm_mac(client_name,client_mac)]"
   end
 end
@@ -1008,8 +1008,8 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
     if opt["c"]
       client_arch = check_client_arch(client_arch,opt)
       if !opt["O"]
-        client_mac  = create_client_mac(client_mac)
-        check_client_mac(client_mac)
+        client_mac = create_client_mac(client_mac)
+        client_mac = check_client_mac(client_mac)
       end
       eval"[configure_#{funct}_#{vfunct}_vm(client_name,client_mac,client_arch,client_os,client_rel)]"
     end
@@ -1123,11 +1123,12 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
     end
     if opt["c"]
       if !opt["K"]
-        check_client_arch(client_arch)
+        check_client_arch(client_arch,opt)
       end
-      check_client_mac(client_mac)
-      if !opt["K"]
-        check_client_arch(client_arch)
+      client_mac = check_client_mac(client_mac)
+      if !opt["i"]
+        puts "Warning:\tNo IP Address given"
+        exit
       end
       check_client_ip(client_ip)
       eval"[configure_#{funct}_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)]"

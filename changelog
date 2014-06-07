@@ -313,3 +313,5 @@
 # Fixed bugs with VirtualBox VM creation
 # 1.5.7: Sat  7 Jun 2014 20:59:13 EST
 # Improved handling of options with VMware Fusion and VirtualBox functions
+# 1.5.8: Sun  8 Jun 2014 03:19:52 EST
+# Fixed bugs with AI client creation

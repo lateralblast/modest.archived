@@ -946,18 +946,27 @@ end
 # Check client MAC
 
 def check_client_mac(client_mac)
+  if !client_mac.match(/:/)
+    if client_mac.length != 12
+      puts "Invalid MAC address"
+      exit
+    else
+      chars      = client_mac.split(//)
+      client_mac = chars[0..1].join+":"+chars[2..3].join+":"+chars[4..5].join+":"+chars[6..7].join+":"+chars[8..9].join+":"+chars[10..11].join
+    end
+  end
   macs = client_mac.split(":")
   if macs.length != 6
     puts "Invalid MAC address"
     exit
   end
   macs.each do |mac|
-    if mac =~ /[G-Z]|[g-z]/ or mac.length > 2 or mac.length < 2
+    if mac =~ /[G-Z]|[g-z]/ or mac.length != 2
       puts "Invalid MAC address"
       exit
     end
   end
-  return
+  return client_mac
 end
 
 # Check client IP
