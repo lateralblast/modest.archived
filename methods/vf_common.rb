@@ -266,9 +266,47 @@ def configure_vs_fusion_vm(client_name,client_mac,client_arch,client_os,client_r
   return
 end
 
+# Check VMware Fusion is installed
+
+def check_fusion_is_installed()
+  app_dir = "/Applications/VMware Fusion.app"
+  if !File.directory?(app_dir)
+    puts "Warning:\tVMware Fusion is not installed"
+    exit
+  end
+end
+
+# Check VMware Fusion host only network
+
+def check_fusion_hostonly_network()
+  if_name = "vmnet1"
+  message = "Checking:\tVMware Fusion hostonly network "+if_name+" has address "+$default_hostonly_ip
+  command = "ifconfig en0 |grep inet |awk '{print $2}' |tail -1"
+  host_ip = execute_command(message,command)
+  host_ip = host_ip.chomp
+  gw_if_name = get_osx_gw_if_name()
+  if !host_ip.match(/#{$default_hostonly_ip}/)
+    message = "Configuring:\tVMware Fusion hostonly network "+if_name+" with IP "+$default_hostonly_ip
+    command = "ifconfig #{gw_if_name} inet #{$default_hostonly_ip} netmask #{$default_netmask} broadcast #{$deault_broadcast}"
+    execute_command(message,command)
+  end
+  check_osx_nat(gw_if_name,if_name)
+end
+
+# check VMware Fusion NAT
+
+def check_fusion_natd()
+  check_fusion_is_installed()
+  if $default_vm_network.match(/hostonly/)
+    check_fusion_hostonly_network()
+  end
+  return
+end
+
 # Unconfigure a VMware Fusion VM
 
 def unconfigure_fusion_vm(client_name)
+  check_fusion_is_installed()
   check_fusion_vm_exists(client_name)
   stop_fusion_vm(client_name)
   vmrun_bin        = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
@@ -308,6 +346,7 @@ end
 # Configure a VMware Fusion VM
 
 def configure_fusion_vm(client_name,client_mac,client_os)
+  check_fusion_is_installed()
   (fusion_vm_dir,fusion_vmx_file,fusion_disk_file) = check_fusion_vm_doesnt_exist(client_name)
   check_dir_exists(fusion_vm_dir)
   create_fusion_vm_vmx_file(client_name,client_mac,client_os,fusion_vmx_file)

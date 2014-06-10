@@ -1,7 +1,7 @@
-#!/usr/bin/env ruby -w
+#!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.6.0
+# Version:      1.6.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -562,6 +562,23 @@ end
 if opt["t"]
   $test_mode = 1
   puts "Information:\tRunning in test mode"
+end
+
+# Check NAT configuration
+
+if opt["G"]
+  test_arch = %x[uname -p].chomp
+  if opt ["O"] or opt["F"] and test_arch.match(/i386|x86_64/)
+    if opt["O"]
+      vfunct = "vbox"
+    else
+      vfunct = "fusion"
+    end
+    mode = "client"
+    check_local_config(mode,opt)
+    eval"[check_#{vfunct}_natd]"
+    exit
+  end
 end
 
 # Check local configuration

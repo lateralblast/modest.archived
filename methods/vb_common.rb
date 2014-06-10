@@ -375,7 +375,7 @@ def check_vbox_hostonly_network()
   command = "VBoxManage list hostonlyifs |grep 'IPAddress' |awk '{print $2}' |head -1"
   host_ip = execute_command(message,command)
   host_ip = host_ip.chomp
-  if host_ip != $default_hostonly_ip
+  if !host_ip.match(/#{$default_hostonly_ip}/)
     message = "Configuring:\tVirtualBox hostonly network "+if_name+" with IP "+$default_hostonly_ip
     command = "VBoxManage hostonlyif ipconfig #{if_name} --ip #{$default_hostonly_ip} --netmask #{$default_netmask}"
     execute_command(message,command)
@@ -385,15 +385,20 @@ def check_vbox_hostonly_network()
   return if_name
 end
 
+# Check VirtualBox is installed
+
+def check_vbox_is_installed()
+  app_dir = "/Applications/VirtualBox.app"
+  if !File.directory?(app_dir)
+    puts "Warning:\tVirtualbox not installed"
+    exit
+  end
+end
 
 # Configure a VirtualBox VM
 
 def configure_vbox_vm(client_name,client_mac,client_os)
-  app_dir = "/Applications/VirtualBox.app"
-  if !File.directory?(app_dir)
-    puts "Virtualbox not installed"
-    exit
-  end
+  check_vbox_is_installed()
   if $default_vm_network.match(/hostonly/)
     vbox_nic_name = check_vbox_hostonly_network()
   end
@@ -430,6 +435,7 @@ end
 # Check VirtualBox NATd
 
 def check_vbox_natd()
+  check_vbox_is_installed()
   if $default_vm_network.match(/hostonly/)
     check_vbox_hostonly_network()
   end
@@ -439,6 +445,7 @@ end
 # Unconfigure a Virtual Box VM
 
 def unconfigure_vbox_vm(client_name)
+  check_vbox_is_installed()
   check_vbox_vm_exists(client_name)
   stop_vbox_vm(client_name)
   message = "Deleting:\tVirtualBox VM "+client_name
