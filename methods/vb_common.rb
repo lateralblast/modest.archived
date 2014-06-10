@@ -105,7 +105,7 @@ def list_vbox_vms(search_string)
   vm_list = execute_command(message,command)
   vm_list = vm_list.split(/\n/)
   vm_list.each do |vm_name|
-    vm_mac = get_vbox_vm_mac(vbox_vm_name)
+    vm_mac = get_vbox_vm_mac(vm_name)
     output = vm_name+" "+vm_mac
     if search_string.match(/[A-z]/)
       if output.match(/#{search_string}/)
@@ -314,6 +314,7 @@ end
 # Boot VirtualBox VM
 
 def boot_vbox_vm(client_name)
+  check_vbox_hostonly_network()
   message = "Starting:\tVM "+client_name
   if $text_install == 1
     command = "VBoxManage startvm #{client_name} --type headless"
@@ -353,6 +354,7 @@ def get_vbox_vm_mac(client_name)
   message  = "Getting:\tMAC address for "+client_name
   command  = "VBoxManage showvminfo #{client_name} |grep MAC |awk '{print $4}'"
   vbox_vm_mac = execute_command(message,command)
+  vbox_vm_mac = vbox_vm_mac.chomp
   vbox_vm_mac = vbox_vm_mac.gsub(/\,/,"")
   return vbox_vm_mac
 end
@@ -361,10 +363,12 @@ def check_vbox_hostonly_network()
   message = "Checking:\tVirtualBox hostonly network exists"
   command = "VBoxManage list hostonlyifs |grep '^Name' |awk '{print $2}' |head -1"
   if_name = execute_command(message,command)
+  if_name = if_name.chomp
   if !if_name.match(/vboxnet/)
     message = "Plumbing:\tVirtualBox hostonly network"
     command = "VBoxManage hostonlyif create |grep '^interface' |awk '{print $2}'"
     if_name = execute_command(message,command)
+    if_name = if_name.chomp
     if_name = if_name.gsub(/'/,"")
   end
   message = "Checking:\tVirtualBox hostonly network "+if_name+" has address "+$default_hostonly_ip
@@ -376,6 +380,8 @@ def check_vbox_hostonly_network()
     command = "VBoxManage hostonlyif ipconfig #{if_name} --ip #{$default_hostonly_ip} --netmask #{$default_netmask}"
     execute_command(message,command)
   end
+  gw_if_name = get_osx_gw_if_name()
+  check_osx_nat(gw_if_name,if_name)
   return if_name
 end
 
@@ -383,6 +389,11 @@ end
 # Configure a VirtualBox VM
 
 def configure_vbox_vm(client_name,client_mac,client_os)
+  app_dir = "/Applications/VirtualBox.app"
+  if !File.directory?(app_dir)
+    puts "Virtualbox not installed"
+    exit
+  end
   if $default_vm_network.match(/hostonly/)
     vbox_nic_name = check_vbox_hostonly_network()
   end
@@ -415,6 +426,15 @@ def configure_vbox_vm(client_name,client_mac,client_os)
   return
 end
 
+
+# Check VirtualBox NATd
+
+def check_vbox_natd()
+  if $default_vm_network.match(/hostonly/)
+    check_vbox_hostonly_network()
+  end
+  return
+end
 
 # Unconfigure a Virtual Box VM
 

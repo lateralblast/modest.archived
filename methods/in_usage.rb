@@ -36,6 +36,7 @@ def print_examples(examples)
     puts "Boot non headless Linux VM:\t\t"+$script+" -O -b centos510vm01 -X"
     puts "Halt Linux VM:\t\t\t\t"+$script+" -O -s centos510vm01"
     puts "Modify VM MAC Address:\t\t\t"+$script+" -O -c centos510vm01 -e 00:50:56:34:4E:7A"
+    puts "Check VirtualBox Configuration:\t\t"+$script+" -G -O"
     puts
   end
   if examples.match(/fusion|all/)
