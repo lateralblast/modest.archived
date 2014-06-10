@@ -267,57 +267,57 @@ More Information
 
 For more information, including examples of usage refer to the wiki:
 
-https://github.com/richardatlateralblast/modest/wiki
+https://github.com/lateralblast/modest/wiki
 
 Solaris 11 AI Related Information
 =================================
 
-https://github.com/richardatlateralblast/modest/wiki/AIServerExamples
+https://github.com/lateralblast/modest/wiki/AIServerExamples
 
-https://github.com/richardatlateralblast/modest/wiki/AIClientExamples
+https://github.com/lateralblast/modest/wiki/AIClientExamples
 
 Kickstart, Preseed, and AutoYast Related Information
 ===================================================
 
-https://github.com/richardatlateralblast/modest/wiki/KSServerExamples
+https://github.com/lateralblast/modest/wiki/KSServerExamples
 
-https://github.com/richardatlateralblast/modest/wiki/KSClientExamples
+https://github.com/lateralblast/modest/wiki/KSClientExamples
 
 Solaris 10 (and earlier) Jumpstart Related Information
 ======================================================
 
-https://github.com/richardatlateralblast/modest/wiki/JSServerExamples
+https://github.com/lateralblast/modest/wiki/JSServerExamples
 
-https://github.com/richardatlateralblast/modest/wiki/JSClientExamples
+https://github.com/lateralblast/modest/wiki/JSClientExamples
 
 ESXi Related Information
 ========================
 
-https://github.com/richardatlateralblast/modest/wiki/VSServerExamples
+https://github.com/lateralblast/modest/wiki/VSServerExamples
 
-https://github.com/richardatlateralblast/modest/wiki/VSClientExamples
+https://github.com/lateralblast/modest/wiki/VSClientExamples
 
 Virtual Box Related Information
 ===============================
 
-https://github.com/richardatlateralblast/modest/wiki/VirtualBoxExamples
+https://github.com/lateralblast/modest/wiki/VirtualBoxExamples
 
 VMware Fusion Related Information
 =================================
 
-https://github.com/richardatlateralblast/modest/wiki/VMwareFusionExamples
+https://github.com/lateralblast/modest/wiki/VMwareFusionExamples
 
 Zone Related Information
 ========================
 
-https://github.com/richardatlateralblast/modest/wiki/ZoneExamples
+https://github.com/lateralblast/modest/wiki/ZoneExamples
 
 LDom Related Information
 ========================
 
-https://github.com/richardatlateralblast/modest/wiki/LDomExamples
+https://github.com/lateralblast/modest/wiki/LDomExamples
 
 Linux Container Information
 ===========================
 
-https://github.com/richardatlateralblast/modest/wiki/LXCExamples
+https://github.com/lateralblast/modest/wiki/LXCExamples
