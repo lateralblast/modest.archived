@@ -3,7 +3,7 @@
 Modest
 ======
 
-Multi Os Deployment Engine Server Tool
+Multi OS Deployment Engine Server Tool
 
 Introduction
 ------------
