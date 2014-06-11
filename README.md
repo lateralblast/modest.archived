@@ -54,7 +54,7 @@ Modest is designed to be used in a number of scenarios:
   - Pre and post install scripts
 - A environment for quickly deploying VMs for testing purposes
   - In a similar fashion to veewee or vagrant
-- An environment for quickly deploying servers in a Datacenter or testlabd via cross-over cable
+- An environment for quickly deploying servers in a Datacenter or testlab via cross-over cable
 
 Background
 ==========
