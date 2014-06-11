@@ -37,6 +37,13 @@ a cross-over cable. This is expecially useful for resolving issues with servers
 and installing firmware. It can be used in combination with the firmware and
 patch repository script (goofball) to install patches, firmware and SRUs.
 
+License
+=======
+
+This software is licensed as CC-BA (Creative Commons By Attrbution)
+
+http://creativecommons.org/licenses/by/4.0/legalcode
+
 Usage
 =====
 

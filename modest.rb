@@ -3,7 +3,7 @@
 # Name:         modest (Muti OS Deployment Engine Server Tool)
 # Version:      1.6.2
 # Release:      1
-# License:      Open Source
+# License:      CC-BA (Creative Commons By Attribution)
 # Group:        System
 # Source:       N/A
 # URL:          http://lateralblast.com.au/
@@ -12,6 +12,7 @@
 # Packager:     Richard Spindler <richard@lateralblast.com.au>
 # Description:  Script to automate creation of server configuration for
 #               Solaris and other OS
+#               http://creativecommons.org/licenses/by/4.0/legalcode
 
 # Additional notes:
 #
