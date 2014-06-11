@@ -1,6 +1,6 @@
 ![alt tag](https://raw.githubusercontent.com/lateralblast/modest/master/modest.jpg)
 
-Modest
+MODEST
 ======
 
 Multi OS Deployment Engine Server Tool
