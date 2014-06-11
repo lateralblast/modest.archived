@@ -284,55 +284,39 @@ For more information, including examples of usage refer to the wiki:
 
 https://github.com/lateralblast/modest/wiki
 
-Solaris 11 AI Related Information
----------------------------------
+Wiki Index
+----------
 
-https://github.com/lateralblast/modest/wiki/AIServerExamples
+[Background](https://github.com/lateralblast/modest/wiki/AIServerExamples/1.-Background)
 
-https://github.com/lateralblast/modest/wiki/AIClientExamples
+[Features](https://github.com/lateralblast/modest/wiki/AIServerExamples/2.-Features)
 
-Kickstart, Preseed, and AutoYast Related Information
----------------------------------------------------
+[Usage](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.-Usage)
 
-https://github.com/lateralblast/modest/wiki/KSServerExamples
+- [VirtualBox](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.1.-VirtualBox-Examples)
+- [VMware Fusion](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.2.-VMware-Fusion-Examples)
 
-https://github.com/lateralblast/modest/wiki/KSClientExamples
+[Server](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.-Server)
 
-Solaris 10 (and earlier) Jumpstart Related Information
-------------------------------------------------------
+- [AI](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.1.-AI-Server-Examples)
+- [Jumpstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.2.-Jumpstart-Server-Examples)
+- [Kickstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.3.-Kickstart-Server-Examples)
+- [LDom](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.4.-LDom-Server-Examples)
+- [LXC](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.5.-Linux-Container-Server-Examples)
+- [Preseed](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.6.-Preseed-Server-Examples)
+- [vShpere](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.7.-Sphere-Server-Examples)
+- [Zones](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.8.-Zone-Server-Examples)
 
-https://github.com/lateralblast/modest/wiki/JSServerExamples
+[Client](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.-Client)
 
-https://github.com/lateralblast/modest/wiki/JSClientExamples
+- [AI](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.1.-AI-Client-Example)
+- [Jumpstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.2.-Jumpstart-Client-Examples)
+- [Kickstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.3.-Kickstart-Client-Examples)
+- [LDom](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.4.-LDom-Client-Examples)
+- [LXC](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.5.-Linux-Container-Client-Examples)
+- [Preseed](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.6.-Preseed-Client-Examples)
+- [vSphere](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.7.-vSphere-Client_Examples)
+- [Zones](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.8.-Zone-Client-Examples)
 
-ESXi Related Information
-------------------------
 
-https://github.com/lateralblast/modest/wiki/VSServerExamples
 
-https://github.com/lateralblast/modest/wiki/VSClientExamples
-
-Virtual Box Related Information
--------------------------------
-
-https://github.com/lateralblast/modest/wiki/VirtualBoxExamples
-
-VMware Fusion Related Information
----------------------------------
-
-https://github.com/lateralblast/modest/wiki/VMwareFusionExamples
-
-Zone Related Information
-------------------------
-
-https://github.com/lateralblast/modest/wiki/ZoneExamples
-
-LDom Related Information
-------------------------
-
-https://github.com/lateralblast/modest/wiki/LDomExamples
-
-Linux Container Information
----------------------------
-
-https://github.com/lateralblast/modest/wiki/LXCExamples
