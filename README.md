@@ -240,7 +240,7 @@ All:
 
 Kickstart, AutoYast, and Preseed Services:
 
-- Solaris 11, Linux (In progress), or OS X
+- Solaris 11, Linux, or OS X
 
 AI Services:
 
