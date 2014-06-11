@@ -61,6 +61,9 @@ Modest is designed to be used in a number of scenarios:
   - In a similar fashion to veewee or vagrant
 - An environment for quickly deploying servers in a Datacenter or testlab via cross-over cable
 
+A good place to get started is the [Usage](https://github.com/lateralblast/modest/wiki/3.-Usage)
+page which includes a section on getting started.
+
 Background
 ----------
 
