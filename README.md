@@ -1,9 +1,12 @@
 ![alt tag](https://raw.githubusercontent.com/lateralblast/modest/master/modest.jpg)
 
-Overview
-========
+Modest
+======
 
-Modest: Multi Os Deployment Engine Server Tool
+Multi Os Deployment Engine Server Tool
+
+Introduction
+------------
 
 A Ruby script to configure server and client configuration for PXE/DHCP and
 BOOTP based install services, eg:
@@ -40,14 +43,14 @@ and installing firmware. It can be used in combination with the firmware and
 patch repository script (goofball) to install patches, firmware and SRUs.
 
 License
-=======
+-------
 
 This software is licensed as CC-BA (Creative Commons By Attrbution)
 
 http://creativecommons.org/licenses/by/4.0/legalcode
 
 Usage
-=====
+-----
 
 Modest is designed to be used in a number of scenarios:
 
@@ -59,7 +62,7 @@ Modest is designed to be used in a number of scenarios:
 - An environment for quickly deploying servers in a Datacenter or testlab via cross-over cable
 
 Background
-==========
+----------
 
 Modest grew out of the need for a tool I could use for both testing and real
 deployments. The reality of modern IT and large projects is things often don't
@@ -110,7 +113,7 @@ time and reduces the likely hood of error. It also makes sure sensible settings
 (such as security) are in place when the OS is installed.
 
 Features
-========
+--------
 
 Linux Container Creation
 
@@ -195,7 +198,7 @@ All:
 - Post installation scripting to perform tasks such as patching and security
 
 Architecture
-============
+------------
 
 The architecture of modest is made up of the following layers:
 
@@ -223,7 +226,7 @@ started section, but basically the process of deploying a VM is as follows:
 - Boot the VM on the host machine and let it PXE boot and install
 
 Requirements
-============
+------------
 
 All:
 
@@ -272,61 +275,61 @@ use flar based installs as the performance of the OS X NFS server being so
 utterly useless.
 
 More Information
-================
+----------------
 
 For more information, including examples of usage refer to the wiki:
 
 https://github.com/lateralblast/modest/wiki
 
 Solaris 11 AI Related Information
-=================================
+---------------------------------
 
 https://github.com/lateralblast/modest/wiki/AIServerExamples
 
 https://github.com/lateralblast/modest/wiki/AIClientExamples
 
 Kickstart, Preseed, and AutoYast Related Information
-===================================================
+---------------------------------------------------
 
 https://github.com/lateralblast/modest/wiki/KSServerExamples
 
 https://github.com/lateralblast/modest/wiki/KSClientExamples
 
 Solaris 10 (and earlier) Jumpstart Related Information
-======================================================
+------------------------------------------------------
 
 https://github.com/lateralblast/modest/wiki/JSServerExamples
 
 https://github.com/lateralblast/modest/wiki/JSClientExamples
 
 ESXi Related Information
-========================
+------------------------
 
 https://github.com/lateralblast/modest/wiki/VSServerExamples
 
 https://github.com/lateralblast/modest/wiki/VSClientExamples
 
 Virtual Box Related Information
-===============================
+-------------------------------
 
 https://github.com/lateralblast/modest/wiki/VirtualBoxExamples
 
 VMware Fusion Related Information
-=================================
+---------------------------------
 
 https://github.com/lateralblast/modest/wiki/VMwareFusionExamples
 
 Zone Related Information
-========================
+------------------------
 
 https://github.com/lateralblast/modest/wiki/ZoneExamples
 
 LDom Related Information
-========================
+------------------------
 
 https://github.com/lateralblast/modest/wiki/LDomExamples
 
 Linux Container Information
-===========================
+---------------------------
 
 https://github.com/lateralblast/modest/wiki/LXCExamples
