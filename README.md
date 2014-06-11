@@ -64,56 +64,39 @@ Modest is designed to be used in a number of scenarios:
 A good place to get started is the [Usage](https://github.com/lateralblast/modest/wiki/3.-Usage)
 Wiki page which includes a section on getting started.
 
-Background
+Wiki Index
 ----------
 
-Modest grew out of the need for a tool I could use for both testing and real
-deployments. The reality of modern IT and large projects is things often don't
-go according to plan, things don't always run in sync, and valuable time can
-often be lost waiting for processes to kick in and start. In grew from the need
-to be proactive and test new OS deployment technologies as soon as they became
-available so I knew what had changed from the previous release.
+[Background](https://github.com/lateralblast/modest/wiki/AIServerExamples/1.-Background)
 
-It also grew out of a need for me not to be reliant on anyone else's processess.
-For example, although every organisation has a process for getting machines into
-a Datacenter and networked, some of the necessary tasks like approval from the
-Security team before a network port can be enabled means a server can be delivered
-and sit in a rack for a long time before you get a chance to commission it.
+[Features](https://github.com/lateralblast/modest/wiki/AIServerExamples/2.-Features)
 
-Eventually you get connectivity and you find you are on the critical path to
-deliver an OS on a machine that hasn't been burned in and components can fail.
-This is obviously highly risky to the project and the organisation, but I see it
-happen over and over again. I couldn't possibly count the number of times I've
-been burned by processes in IT organisations that never get externally validated
-and require an a specialist to get them over the line.
+[Usage](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.-Usage)
 
-Using this script I can go into the Datacenter with a laptop and a cross-over
-cable and deploy an OS to a machine and make sure it's been run up and burned in.
-I can update the firmware and configure the network so once the network becomes
-available it's ready to go. This saves me the stress of being on anyones critical
-path due to poorly implemented processes or projects.
+- [VirtualBox](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.1.-VirtualBox-Examples)
+- [VMware Fusion](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.2.-VMware-Fusion-Examples)
 
-This script is intended to work as a wrapper script on top of Solaris AI and
-other install services. It manages the configuration of the install server and
-the addition of clients.
+[Server](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.-Server)
 
-Although vendors package server and client configuration scrips for their
-Operating Systems, additional modification is required to modify it for
-customer environments. For example adding local software packages and
-configurations.
+- [AI](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.1.-AI-Server-Examples)
+- [Jumpstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.2.-Jumpstart-Server-Examples)
+- [Kickstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.3.-Kickstart-Server-Examples)
+- [LDom](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.4.-LDom-Server-Examples)
+- [LXC](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.5.-Linux-Container-Server-Examples)
+- [Preseed](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.6.-Preseed-Server-Examples)
+- [vShpere](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.7.-Sphere-Server-Examples)
+- [Zones](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.8.-Zone-Server-Examples)
 
-In the case of Solaris AI and Jumpstart although the software has installers
-and scripts, there are a number of manual operations that must be performed.
-This leads to the possibility of human error and wasted time debugging the
-error. There are also a number of defaults that are unsatisfactory for a lot of
-customer installs, for example using vendor software repositories that are
-unavailable behind firewalls.
+[Client](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.-Client)
 
-Similarly although vendors provide example configurations, copying them and
-editing them leads to the possibility of human error. This script asks a basic
-set of questions and output a valid error checked configuration file. This saves
-time and reduces the likely hood of error. It also makes sure sensible settings
-(such as security) are in place when the OS is installed.
+- [AI](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.1.-AI-Client-Example)
+- [Jumpstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.2.-Jumpstart-Client-Examples)
+- [Kickstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.3.-Kickstart-Client-Examples)
+- [LDom](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.4.-LDom-Client-Examples)
+- [LXC](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.5.-Linux-Container-Client-Examples)
+- [Preseed](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.6.-Preseed-Client-Examples)
+- [vSphere](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.7.-vSphere-Client_Examples)
+- [Zones](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.8.-Zone-Client-Examples)
 
 Features
 --------
@@ -284,39 +267,8 @@ For more information, including examples of usage refer to the wiki:
 
 https://github.com/lateralblast/modest/wiki
 
-Wiki Index
-----------
 
-[Background](https://github.com/lateralblast/modest/wiki/AIServerExamples/1.-Background)
 
-[Features](https://github.com/lateralblast/modest/wiki/AIServerExamples/2.-Features)
-
-[Usage](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.-Usage)
-
-- [VirtualBox](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.1.-VirtualBox-Examples)
-- [VMware Fusion](https://github.com/lateralblast/modest/wiki/AIServerExamples/3.2.-VMware-Fusion-Examples)
-
-[Server](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.-Server)
-
-- [AI](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.1.-AI-Server-Examples)
-- [Jumpstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.2.-Jumpstart-Server-Examples)
-- [Kickstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.3.-Kickstart-Server-Examples)
-- [LDom](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.4.-LDom-Server-Examples)
-- [LXC](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.5.-Linux-Container-Server-Examples)
-- [Preseed](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.6.-Preseed-Server-Examples)
-- [vShpere](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.7.-Sphere-Server-Examples)
-- [Zones](https://github.com/lateralblast/modest/wiki/AIServerExamples/4.8.-Zone-Server-Examples)
-
-[Client](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.-Client)
-
-- [AI](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.1.-AI-Client-Example)
-- [Jumpstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.2.-Jumpstart-Client-Examples)
-- [Kickstart](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.3.-Kickstart-Client-Examples)
-- [LDom](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.4.-LDom-Client-Examples)
-- [LXC](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.5.-Linux-Container-Client-Examples)
-- [Preseed](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.6.-Preseed-Client-Examples)
-- [vSphere](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.7.-vSphere-Client_Examples)
-- [Zones](https://github.com/lateralblast/modest/wiki/AIServerExamples/5.8.-Zone-Client-Examples)
 
 
 
