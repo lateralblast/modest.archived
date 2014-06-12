@@ -319,31 +319,6 @@ def get_linux_version_info(iso_file_name)
   return linux_distro,iso_version,iso_arch
 end
 
-
-# List ISOs
-
-def list_linux_isos(search_string)
-  iso_list      = check_iso_base_dir(search_string)
-  iso_list.each do |iso_file_name|
-    iso_file_name = iso_file_name.chomp
-    (linux_distro,iso_version,iso_arch) = get_linux_version_info(iso_file_name)
-    puts "ISO file:\t"+iso_file_name
-    puts "Distribution:\t"+linux_distro
-    puts "Version:\t"+iso_version
-    puts "Architecture:\t"+iso_arch
-    iso_version      = iso_version.gsub(/\./,"_")
-    service_name     = linux_distro+"_"+iso_version+"_"+iso_arch
-    repo_version_dir = $repo_base_dir+"/"+service_name
-    if File.directory?(repo_version_dir)
-      puts "Service Name:\t"+service_name+" (exists)"
-    else
-      puts "Service Name:\t"+service_name
-    end
-    puts
-  end
-  return
-end
-
 # Check DHCPd config
 
 def check_dhcpd_config(publisher_host)
@@ -390,9 +365,11 @@ def check_dhcpd_config(publisher_host)
     file.write("}\n")
     file.write("\n")
     file.close
-    message = "Archiving:\tDHCPd configuration file "+$dhcpd_file+" to "+backup_file
-    command = "cp #{$dhcpd_file} #{backup_file}"
-    execute_command(message,command)
+    if File.exist?($dhcpd_file)
+      message = "Archiving:\tDHCPd configuration file "+$dhcpd_file+" to "+backup_file
+      command = "cp #{$dhcpd_file} #{backup_file}"
+      execute_command(message,command)
+    end
     message = "Creating:\tDHCPd configuration file "+$dhcpd_file
     command = "cp #{tmp_file} #{$dhcpd_file}"
     execute_command(message,command)
@@ -996,7 +973,7 @@ def check_iso_base_dir(search_string)
   end
   check_zfs_fs_exists($iso_base_dir)
   message  = "Getting:\t"+$iso_base_dir+" contents"
-  command  = "ls #{$iso_base_dir}/*.iso |egrep '#{search_string}' |grep -v '2.iso'"
+  command  = "ls #{$iso_base_dir}/*.iso |egrep '#{search_string}' |grep -v '2.iso' |grep -v 'supp-server'"
   iso_list = execute_command(message,command)
   if search_string.match(/sol_11/)
     if !iso_list.grep(/full/)

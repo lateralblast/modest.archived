@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.6.2
+# Version:      1.6.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -310,7 +310,7 @@ def check_local_config(mode,opt)
   if !$default_host.match(/[0-9]/)
     message = "Determining:\tDefault host IP"
     if $os_name.match(/SunOS/)
-      command = "ipadm show-addr #{$default_net}/v4 |grep net |awk '{print $4}' |cut -f1 -d'/'"
+      command = "ipadm show-addr #{$default_net} |grep net |awk '{print $4}' |cut -f1 -d'/'"
     end
     if $os_name.match(/Darwin/)
       $default_net="en0"
@@ -405,14 +405,12 @@ def check_local_config(mode,opt)
       system("chmod +x #{$rpm2cpio_bin}")
     end
   end
-  if $os_name.match(/SunOS/)
+  if $os_name.match(/SunOS/) and $os_rel.match(/11/)
     message = "Checking:\tPackage lftp installed"
     command = "which lftp"
     output  = execute_command(message,command)
-    if !output.match(/lftp/)
-      message = "Installing:\tPackage lftp"
-      command = "pkg install lftp"
-      execute_command(message,command)
+    if output.match(/no lftp/)
+      #install_sol11_pkg("lftp")
     end
   end
   check_zfs_fs_exists($pkg_base_dir)

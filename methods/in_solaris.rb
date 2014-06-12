@@ -106,12 +106,17 @@ end
 
 def install_sol11_pkg(pkg_name)
   message = "Checking:\tPackage "+pkg_name+" is installed"
-  command = "pkg info #{pkg_name} | grep 'Name:' |awk '{print $3}'"
+  command = "pkg info #{pkg_name} 2>&1| grep 'Name:' |awk '{print $3}'"
   output  = execute_command(message,command)
-  if output.match(/#{pkg_name}/)
-    message = "Installing:\tPackage "+pkg_name
-    command = "pkg install #{pkg_name}"
-    execute_command(message,command)
+  if !output.match(/#{pkg_name}/)
+    message = "Checking:\tPtublisher is online"
+    command = "pkg publisher | grep online"
+    output  = execute_command(message,command)
+    if output.match(/online/)
+      message = "Installing:\tPackage "+pkg_name
+      command = "pkg install #{pkg_name}"
+      execute_command(message,command)
+    end
   end
   return
 end
@@ -261,6 +266,9 @@ def import_smf_manifest(service,xml_file)
   message = "Importing:\tService manifest for "+service
   command = "svccfg import #{xml_file}"
   execute_command(message,command)
+  message = "Starting:\tService manifest for "+service
+  command = "svcadm restart #{service}"
+  execute_command(message,command)
   return
 end
 
@@ -316,7 +324,7 @@ def create_sol11_puppet_manifest(service)
   execute_command(message,command)
   print_contents_of_file(xml_file)
   service = "puppet"+service
-  import(service,xml_file)
+  import_smf_manifest(service,xml_file)
   service = "svc:/network/"+service
   enable_smf_service(service)
   return
@@ -329,6 +337,7 @@ def check_sol_puppet()
   puppet_bin  = "/var/ruby/1.8/gem_home/bin/puppet"
   puppet_dir  = "/var/lib/puppet"
   if !File.exist?(puppet_bin)
+    %x[mkdir -p #{puppet_dir}]
     message = "Installing:\tPuppet"
     command = "gem install puppet"
     execute_command(message,command)
@@ -360,7 +369,7 @@ def check_sol_puppet()
     command = "svcs -a |grep 'puppet#{service}'"
     output  = execute_command(message,command)
     if !output.match(/#{service}/)
-      eval"[create_sol11_puppet_#{service}_manifest(service)]"
+      create_sol11_puppet_manifest(service)
     end
     if output.match(/disabled/)
       service = "svc:/network/puppet"+service
