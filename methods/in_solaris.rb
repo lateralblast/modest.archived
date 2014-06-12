@@ -38,6 +38,41 @@ def check_solaris_install()
   return
 end
 
+# Check local publisher is configured
+
+def check_local_publisher()
+  message = "Checking:\tPtublisher is online"
+  command = "pkg publisher | grep online"
+  output  = execute_command(message,command)
+  if !output.match(/online/)
+    puts "Warning:\tNo local publisher online"
+    repo_version_dir = $repo_base_dir+"/sol_"+$os_update.gsub(/\./,"_")
+    publisher_dir    = repo_version_dir+"/publisher"
+    if !File.directory?(publisher_dir)
+      puts "Warning:\tNo local repository"
+      iso_file = $iso_base_dir+"/sol-"+$os_update.gsub(/\./,"_")+"-repo-full.iso"
+      if File.exist?(iso_file)
+        mount_iso(iso_file)
+        copy_iso(iso_file,repo_version_dir)
+        if File.directory?(publisher_dir)
+          message = "Refreshing:\tRepository at "+repo_version_dir
+          command = "pkgrepo -s #{repo_version_dir} refresh"
+          execute_command(message,command)
+          message = "Enabling:\tRepository at "+repo_version_dir
+          command = "pkg set-publisher -G '*' -g #{repo_version_dir} solaris"
+          execute_command(message,command)
+        else
+          puts "Warning:\tNo local publisher directory found at: "+publisher_dir
+          exit
+        end
+      else
+        puts "Warning:\tNo local repository ISO file "+iso_file
+        exit
+      end
+    end
+  end
+end
+
 # Handle SMF service
 
 def handle_smf_service(function,smf_service_name)

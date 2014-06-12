@@ -1260,7 +1260,7 @@ def copy_iso(iso_file,repo_version_dir)
         end
       end
     end
-    test_dir     = repo_version_dir+"/publisher"
+    test_dir = repo_version_dir+"/publisher"
   else
     iso_repo_dir = $iso_mount_dir
     if iso_file.match(/CentOS|rhel|OracleLinux/)

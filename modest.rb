@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.6.3
+# Version:      1.6.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -31,7 +31,7 @@ require 'netaddr'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtvwy"
+$options                = "a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtuvwy"
 $verbose_mode           = 0
 $test_mode              = 0
 $download_mode          = 1
@@ -219,6 +219,7 @@ def print_usage()
   puts "-w: Disable downloads"
   puts "-x: Set VM network type (e.g. hostonly or bridged or nat)"
   puts "-q: Set server size for client (e.g. small or large)"
+  puts "-u: Check local configuration"
   puts
   exit
   return
@@ -280,6 +281,9 @@ def check_local_config(mode,opt)
     puts "Information:\tSetting work directory to "+$work_dir
   end
   check_dir_exists($work_dir)
+    [ $iso_base_dir, $repo_base_dir, $image_base_dir, $pkg_base_dir ].each do |dir_name|
+    check_zfs_fs_exists(dir_name)
+  end
   if !$tmp_dir.match(/[A-z]/)
     $tmp_dir = $work_dir+"/tmp"
   end
@@ -295,7 +299,7 @@ def check_local_config(mode,opt)
     $os_info = %x[uname -a].chomp
     $os_rel  = %x[uname -r].chomp
     if $os_rel.match(/5\.11/) and $os_name.match(/SunOS/)
-      $os_update   = %x[uname -a |awk '{print $4}'].chomp
+      $os_update   = %x[uname -v].chomp
       $default_net = "net0"
     end
   else
@@ -334,6 +338,9 @@ def check_local_config(mode,opt)
     $default_apache_allow=$default_host.split(/\./)[0..2].join(".")
   end
   if mode == "server"
+    if $os_name.match(/SunOS/) and $os_rel.match(/11/)
+      check_local_publisher()
+    end
     if $verbose_mode == 1
       puts "Information:\tSetting apache allow range to "+$default_apache_allow
     end
@@ -413,7 +420,6 @@ def check_local_config(mode,opt)
       #install_sol11_pkg("lftp")
     end
   end
-  check_zfs_fs_exists($pkg_base_dir)
   return
 end
 
@@ -561,6 +567,12 @@ end
 if opt["t"]
   $test_mode = 1
   puts "Information:\tRunning in test mode"
+end
+
+if opt["u"]
+  mode = "server"
+  check_local_config(mode,opt)
+  exit
 end
 
 # Check NAT configuration

@@ -325,3 +325,5 @@
 # Cleaned up code to check hostonly networking
 # 1.6.3: Friday, 13 June 2014 05:19:16 AM EST
 # Cleaned up server setup code
+# 1.6.4: Fri 13 Jun 2014 08:38:02 EST
+# Added code to setup a local package repository if it doesn't exist
