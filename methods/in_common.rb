@@ -8,7 +8,7 @@ def list_clients(service_type)
   puts "Available "+service_type+" Clients:"
   puts
   if service_type.match(/Kickstart/)
-    search_string = "centos|redhat|rhel|scientific"
+    search_string = "centos|redhat|rhel|scientific|fedora"
   end
   if service_type.match(/Preseed/)
     search_string = "debian|ubuntu"
@@ -348,8 +348,13 @@ def get_linux_version_info(iso_file_name)
       end
     end
   else
-    iso_version = iso_info[2]
-    iso_arch    = iso_info[3]
+    if linux_distro.match(/fedora/)
+      iso_version = iso_info[1]
+      iso_arch    = iso_info[2]
+    else
+      iso_version = iso_info[2]
+      iso_arch    = iso_info[3]
+    end
   end
   return linux_distro,iso_version,iso_arch
 end
@@ -790,7 +795,7 @@ def check_zfs_fs_exists(dir_name)
       else
         mount_dir = dir_name
       end
-      message      = "Information:\tRepository for "+service_name+" being mounted under "+mount_dir
+      message      = "Information:\tCreating "+dir_name+" with mount point "+mount_dir
       command      = "zfs create -o mountpoint=#{mount_dir} #{zfs_name}"
       execute_command(message,command)
       if dir_name.match(/vmware_|openbsd_/)
@@ -1278,7 +1283,7 @@ def mount_iso(iso_file)
     if iso_file.match(/CentOS|SL/)
       iso_test_dir = $iso_mount_dir+"/repodata"
     else
-      if iso_file.match(/rhel|OracleLinux/)
+      if iso_file.match(/rhel|OracleLinux|Fedora/)
         iso_test_dir = $iso_mount_dir+"/Packages"
       else
         if iso_file.match(/VM/)
@@ -1345,7 +1350,7 @@ def copy_iso(iso_file,repo_version_dir)
     test_dir = repo_version_dir+"/publisher"
   else
     iso_repo_dir = $iso_mount_dir
-    if iso_file.match(/CentOS|rhel|OracleLinux/)
+    if iso_file.match(/CentOS|rhel|OracleLinux|Fedora/)
       test_dir = repo_version_dir+"/isolinux"
     else
       if iso_file.match(/VM/)

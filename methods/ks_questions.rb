@@ -253,7 +253,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  if !service_name.match(/rhel|centos_6|sl_6|oel_6/)
+  if !service_name.match(/fedora|rhel|centos_6|sl_6|oel_6/)
 
     name = "support_language"
     config = Ks.new(
@@ -756,7 +756,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_order.push(name)
 
   name = "zerombr"
-  if service_name.match(/rhel/)
+  if service_name.match(/fedora|rhel/)
     config = Ks.new(
       type      = "output",
       question  = "Zero MBR",

@@ -158,7 +158,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     output_file = client_dir+"/"+client_name+".cfg"
   end
   delete_file(output_file)
-  if service_name.match(/rhel|centos|sl_|oel/)
+  if service_name.match(/fedora|fedora|rhel|centos|sl_|oel/)
     populate_ks_questions(service_name,client_name,client_ip)
     process_questions()
     output_ks_header(client_name,output_file)
@@ -231,11 +231,11 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("echo 'nameserver #{$default_nameserver}' >> #{resolv_conf}")
   post_list.push("echo 'search local' >> #{resolv_conf}")
   post_list.push("")
-  if service_name.match(/centos|rhel|sl_|oel/)
-    if service_name.match(/centos_5|rhel_5|sl_5|oel_5/)
+  if service_name.match(/centos|fedora|rhel|sl_|oel/)
+    if service_name.match(/centos_5|fedora_18|rhel_5|sl_5|oel_5/)
       epel_url = "http://"+$local_epel_mirror+"/pub/epel/5/i386/epel-release-5-4.noarch.rpm"
     end
-    if service_name.match(/centos_6|rhel_6|sl_6|oel_6/)
+    if service_name.match(/centos_6|fedora_19|fedora_20|rhel_6|sl_6|oel_6/)
       epel_url = "http://"+$local_epel_mirror+"/pub/epel/6/i386/epel-release-6-8.noarch.rpm"
     end
     if service_name.match(/centos/)
@@ -384,7 +384,7 @@ end
 
 def populate_ks_pkg_list(service_name)
   pkg_list = []
-  if service_name.match(/centos|rhel|sl_|oel/)
+  if service_name.match(/centos|fedora|rhel|sl_|oel/)
     pkg_list.push("@base")
     pkg_list.push("@core")
     if service_name.match(/[a-z]_6/)
@@ -394,7 +394,7 @@ def populate_ks_pkg_list(service_name)
     if !service_name.match(/sl_6/) and !service_name.match(/[a-z]_5/)
       pkg_list.push("@network-file-system-client")
     end
-    if service_name.match(/centos_6|rhel_6|oel_6/)
+    if service_name.match(/centos_6|fedora_18|rhel_6|oel_6/)
       pkg_list.push("redhat-lsb-core")
       pkg_list.push("ruby")
       pkg_list.push("ruby-irb")
@@ -403,7 +403,7 @@ def populate_ks_pkg_list(service_name)
       pkg_list.push("augeas-libs")
       pkg_list.push("augeas")
     end
-    if !service_name.match(/rhel_7/)
+    if !service_name.match(/fedora_19|fedora_20|rhel_7/)
       pkg_list.push("grub")
       pkg_list.push("libselinux-ruby")
     end
@@ -458,7 +458,7 @@ def output_ks_pkg_list(client_name,pkg_list,output_file,service_name)
     output = pkg_name+"\n"
     file.write(output)
   end
-  if service_name.match(/rhel_7/)
+  if service_name.match(/fedora_19|fedora_20|rhel_7/)
     output   = "\n%end\n"
     file.write(output)
   end
@@ -473,7 +473,7 @@ end
 
 def output_ks_post_list(client_name,post_list,output_file,service_name)
   tmp_file = "/tmp/postinstall_"+client_name
-  if service_name.match(/centos|rhel|sl_|oel/)
+  if service_name.match(/centos|fedora|rhel|sl_|oel/)
     message = "Appending:\tPost install script "+output_file
     command = "cp #{output_file} #{tmp_file}"
     file=File.open(tmp_file, 'a')
@@ -489,7 +489,7 @@ def output_ks_post_list(client_name,post_list,output_file,service_name)
     output = line+"\n"
     file.write(output)
   end
-  if service_name.match(/rhel_7/)
+  if service_name.match(/fedora_19|fedora_20|rhel_7/)
     output   = "\n%end\n"
     file.write(output)
   end

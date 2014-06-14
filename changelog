@@ -333,3 +333,5 @@
 # Added code to set up BSD server
 # 1.6.7: Sun 15 Jun 2014 09:23:34 EST
 # Inital OpenBSD support
+# 1.6.8: Sun 15 Jun 2014 09:54:12 EST
+# Initial Fedora support

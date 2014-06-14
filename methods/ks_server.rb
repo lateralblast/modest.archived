@@ -4,7 +4,7 @@
 # List available Kiskstart ISOs
 
 def list_ks_isos()
-  search_string = "CentOS|rhel|SL|OracleLinux"
+  search_string = "CentOS|rhel|SL|OracleLinux|Fedora"
   list_linux_isos(search_string)
   return
 end
@@ -81,7 +81,7 @@ end
 
 def configure_ks_pxe_boot(service_name,iso_arch)
   pxe_boot_dir = $tftp_dir+"/"+service_name
-  if service_name.match(/centos|rhel|sles|sl_|oel/)
+  if service_name.match(/centos|rhel|fedora|sles|sl_|oel/)
     test_dir     = pxe_boot_dir+"/usr"
     if !File.directory?(test_dir)
       if service_name.match(/centos/)
@@ -99,7 +99,7 @@ def configure_ks_pxe_boot(service_name,iso_arch)
           rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
         end
       end
-      if service_name.match(/oel|rhel/)
+      if service_name.match(/oel|rhel|fedora/)
         rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
       end
       if File.directory?(rpm_dir)
@@ -191,7 +191,7 @@ def configure_ks_server(client_arch,publisher_host,publisher_port,service_name,i
       search_string = "OracleLinux"
     end
   else
-    search_string = "CentOS|rhel|SL|OracleLinux"
+    search_string = "CentOS|rhel|SL|OracleLinux|Fedora"
   end
   configure_linux_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
   return
@@ -204,11 +204,11 @@ def configure_ks_vmware_repo(service_name,client_arch)
   add_apache_alias(vmware_dir)
   repodata_dir = vmware_dir+"/repodata"
   vmware_url   = "http://packages.vmware.com/tools/esx/latest"
-  if service_name.match(/centos_5|rhel_5|sl_5|oel_5/)
+  if service_name.match(/centos_5|rhel_5|sl_5|oel_5|fedora_18/)
     vmware_url   = vmware_url+"/rhel5/"+client_arch+"/"
     repodata_url = vmware_url+"repodata/"
   end
-  if service_name.match(/centos_6|rhel_6|sl_6|oel_6|rhel_7/)
+  if service_name.match(/centos_6|rhel_6|sl_6|oel_6|rhel_7|fedora_19|fedora_20/)
     vmware_url   = vmware_url+"/rhel6/"+client_arch+"/"
     repodata_url = vmware_url+"repodata/"
   end
@@ -260,7 +260,7 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
   check_dhcpd_config(publisher_host)
   if iso_file.match(/[A-z]/)
     if File.exist?(iso_file)
-      if !iso_file.match(/CentOS|rhel|SL|OracleLinux|ubuntu/)
+      if !iso_file.match(/CentOS|rhel|Fedora|SL|OracleLinux|ubuntu/)
         puts "Warning:\tISO "+iso_file+" does not appear to be a valid Linux distribution"
         exit
       else
@@ -283,7 +283,7 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
         add_apache_alias(service_name)
         configure_ks_repo(iso_file_name,repo_version_dir)
         configure_ks_pxe_boot(service_name,iso_arch)
-        if service_name.match(/centos|rhel|sl_|oel/)
+        if service_name.match(/centos|fedora|rhel|sl_|oel/)
           configure_ks_vmware_repo(service_name,iso_arch)
         end
         configure_ks_puppet_repo(service_name,iso_arch)
@@ -301,7 +301,7 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
       end
       add_apache_alias(service_name)
       configure_ks_pxe_boot(service_name,client_arch)
-      if service_name.match(/centos|rhel|sl_|oel/)
+      if service_name.match(/centos|fedora|rhel|sl_|oel/)
         configure_ks_vmware_repo(service_name,client_arch)
       end
       configure_ks_puppet_repo(service_name,client_arch)
@@ -321,7 +321,7 @@ def list_ks_services()
   puts
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
-    if service_name.match(/centos|rhel|sl_|oel/)
+    if service_name.match(/centos|fedora|rhel|sl_|oel/)
       puts service_name
     end
   end
