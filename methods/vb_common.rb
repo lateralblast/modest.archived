@@ -80,7 +80,7 @@ end
 def add_nonbridged_network_to_vbox_vm(client_name,nic_name)
   message = "Adding:\t\tNetwork "+nic_name+" to "+client_name
   if nic_name.match(/vboxnet/)
-    command = "VBoxManage modifyvm #{client_name} --hostonlyadapter1 #{nic_name}"
+    command = "VBoxManage modifyvm #{client_name} --hostonlyadapter1 #{nic_name} ; VBoxManage modifyvm #{client_name} --nic1 hostonly"
   else
     command = "VBoxManage modifyvm #{client_name} --nic1 #{nic_name}"
   end

@@ -1,5 +1,12 @@
 # Code for Preseed clients
 
+# List Preseed clients
+
+def list_ps_clients()
+  service_type = "Preseed"
+  list_clients(service_type)
+end
+
 # Configure Preseed client
 
 def configure_ps_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)

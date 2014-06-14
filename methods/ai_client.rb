@@ -4,7 +4,9 @@
 # List AI services
 
 def list_ai_clients()
+  puts
   puts "Current AI clients:"
+  puts
   client_info  = %x[installadm list -p |grep -v '^--' |grep -v '^Service']
   client_info  = client_info.split(/\n/)
   service_name = ""
@@ -16,9 +18,10 @@ def list_ai_clients()
       client_name = line
       client_name = client_name.gsub(/^\s+/,"")
       client_name = client_name.gsub(/\s+/," ")
-      puts client_name+" service = "+service_name
+      puts client_name+" [ service = "+service_name+" ] "
     end
   end
+  puts
   return
 end
 
@@ -134,7 +137,7 @@ def update_ai_client_grub_cfg(client_mac)
   netboot_mac = client_mac.gsub(/:/,"")
   netboot_mac = "01"+netboot_mac
   netboot_mac = netboot_mac.upcase
-  grub_file   = "/etc/netboot/grub.cfg."+netboot_mac
+  grub_file   = $tftp_dir+"/grub.cfg."+netboot_mac
   if $verbose_mode == 1
     puts "Updating:\tGrub config file "+grub_file
   end

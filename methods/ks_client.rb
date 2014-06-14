@@ -4,20 +4,8 @@
 # List ks clients
 
 def list_ks_clients()
-  puts "Available Kickstart clients:"
-  puts
-  service_list = Dir.entries($repo_base_dir)
-  service_list.each do |service_name|
-    if service_name.match(/centos|redhat/)
-      repo_version_dir = $repo_base_dir+"/"+service_name
-      client_list      = Dir.entries(repo_version_dir)
-      client_list.each do |client_name|
-        if client_name.match(/\.cfg$/)
-          puts client_name+" service = "+service_name
-        end
-      end
-    end
-  end
+  service_type = "Kickstart"
+  list_clients(service_type)
   return
 end
 
@@ -82,7 +70,7 @@ def configure_ks_pxe_client(client_name,client_ip,client_mac,client_arch,service
     if service_name.match(/sles/)
       append_string = "  APPEND initrd=#{initrd_file} install=#{install_url} autoyast=#{autoyast_url} language=#{$default_language}"
     else
-      append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url} ksdevice=#{$default_net} ip=#{client_ip} netmask=#{$default_netmask}"
+      append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url} ksdevice=bootif ip=#{client_ip} netmask=#{$default_netmask}"
     end
   end
   if $text_install == 1
@@ -415,7 +403,7 @@ def populate_ks_pkg_list(service_name)
       pkg_list.push("augeas-libs")
       pkg_list.push("augeas")
     end
-    if !service_name.match(/rhel/)
+    if !service_name.match(/rhel_7/)
       pkg_list.push("grub")
       pkg_list.push("libselinux-ruby")
     end
@@ -470,8 +458,9 @@ def output_ks_pkg_list(client_name,pkg_list,output_file,service_name)
     output = pkg_name+"\n"
     file.write(output)
   end
-  if service_name.match(/rhel/)
+  if service_name.match(/rhel_7/)
     output   = "\n%end\n"
+    file.write(output)
   end
   file.close
   message = "Updating:\tKickstart file "+output_file
@@ -500,7 +489,7 @@ def output_ks_post_list(client_name,post_list,output_file,service_name)
     output = line+"\n"
     file.write(output)
   end
-  if service_name.match(/rhel/)
+  if service_name.match(/rhel_7/)
     output   = "\n%end\n"
     file.write(output)
   end

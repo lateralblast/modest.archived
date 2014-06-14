@@ -37,7 +37,7 @@ def unconfigure_ai_server(service_name)
   if $os_name.match(/SunOS/)
     service_base_name = get_service_base_name(service_name)
     smf_service_name  = "svc:/application/pkg/server:"+service_base_name
-    smf_service_test  = %x[svcs -a |grep '#{smf_service_name}']
+    smf_service_test  = %x[svcs -a |grep "#{smf_service_name}"]
     if smf_service_test.match(/pkg/)
       unconfigure_ai_pkg_repo(smf_service_name)
     end
@@ -366,7 +366,7 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,f
     end
     publisher_url = get_ai_publisher_url(publisher_host,publisher_port)
     configure_ai_services(iso_repo_version,publisher_url,client_arch)
-    configure_ai_client_services(client_arch,publisher_host,publisher_port,service_name)
+    configure_ai_client_services(client_arch,publisher_host,publisher_port,service_base_name)
   end
   fix_server_dhcpd_range(publisher_host)
 end

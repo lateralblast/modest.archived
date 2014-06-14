@@ -1,6 +1,41 @@
 
 # Code common to all services
 
+# List ks clients
+
+def list_clients(service_type)
+  puts
+  puts "Available "+service_type+" Clients:"
+  puts
+  if service_type.match(/Kickstart/)
+    search_string = "centos|redhat|rhel|scientific"
+  end
+  if service_type.match(/Preseed/)
+    search_string = "debian|ubuntu"
+  end
+  if service_type.match(/ESX/)
+    search_string = "vmware"
+  end
+  if service_type.match(/AutoYast/)
+    search_string = "suse|sles"
+  end
+  service_list = Dir.entries($repo_base_dir)
+  service_list.each do |service_name|
+    if service_name.match(search_string)
+      repo_version_dir = $client_base_dir+"/"+service_name
+      client_list      = Dir.entries(repo_version_dir)
+      client_list.each do |client_dir|
+        if client_dir.match(/[A-z]|[0-9]/)
+          client_name = File.basename(client_dir)
+          puts client_name+" [ service = "+service_name+" ] "
+        end
+      end
+    end
+  end
+  puts
+  return
+end
+
 # Get OSX default rotute interface
 
 def get_osx_gw_if_name()
@@ -348,6 +383,11 @@ def check_dhcpd_config(publisher_host)
     file.write("\n")
     file.write("class \"PXEBoot\" {\n")
     file.write("  match if (substring(option vendor-class-identifier, 0, 9) = \"PXEClient\");\n")
+    file.write("  if option arch = 00:00 {\n")
+    file.write("    filename \"default-i386/boot/grub/pxegrub2\";\n")
+    file.write("  } else if option arch = 00:07 {\n")
+    file.write("    filename \"default-i386/boot/grub/grub2netx64.efi\";\n")
+    file.write("  }\n")
     file.write("}\n")
     file.write("\n")
     file.write("class \"SPARC\" {\n")
@@ -490,9 +530,33 @@ def restart_tftpd()
   refresh_service(service)
 end
 
+# Check tftpd directory
+
+def check_tftpd_dir()
+  if $os_name.match(/SunOS/)
+    old_tftp_dir = "/tftpboot"
+    if !File.symlink?(old_tftp_dir)
+      File.symlink($tftp_dir,old_tftp_dir)
+    end
+    message = "Checking:\tTFTPd service boot directory configuration"
+    command = "svcprop -p inetd_start/exec svc:network/tftp/udp6"
+    output  = execute_command(message,command)
+    if !output.match(/netboot/)
+      message = "Setting:\tTFTPd boot directory to "+$tftp_dir
+      command = "svccfg -s svc:network/tftp/udp6 setprop inetd_start/exec = astring: '(\"/usr/sbin/in.tftpd\\ -s\\ /etc/netboot\")'"
+      execute_command(message,command)
+    end
+  end
+  return
+end
+
 # Check tftpd
 
 def check_tftpd()
+  check_tftpd_dir()
+  if $os_name.match(/SunOS/)
+    enable_service("svc:/network/tftp/udp6:default")
+  end
   if $os_name.match(/Darwin/)
     check_osx_tftpd()
   end
@@ -596,6 +660,7 @@ def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
     restart_dhcpd()
   end
   check_dhcpd()
+  check_tftpd()
   return
 end
 
@@ -848,6 +913,11 @@ def check_dhcpd()
   if $os_name.match(/SunOS/)
     command = "svcs -l svc:/network/dhcp/server:ipv4"
     output  = execute_command(message,command)
+    if output.match(/disabled/)
+      function         = "enable"
+      smf_service_name = "svc:/network/dhcp/server:ipv4"
+      output           = handle_smf_service(function,smf_service_name)
+    end
     if output.match(/maintenance/)
       function         = "refresh"
       smf_service_name = "svc:/network/dhcp/server:ipv4"

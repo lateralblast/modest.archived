@@ -140,17 +140,20 @@ end
 # Check Solaris 11 package
 
 def install_sol11_pkg(pkg_name)
-  message = "Checking:\tPackage "+pkg_name+" is installed"
-  command = "pkg info #{pkg_name} 2>&1| grep 'Name:' |awk '{print $3}'"
-  output  = execute_command(message,command)
-  if !output.match(/#{pkg_name}/)
-    message = "Checking:\tPtublisher is online"
-    command = "pkg publisher | grep online"
+  pkg_test = %x[which #{pkg_name}]
+  if pkg_test.match(/no #{pkg_name}/)
+    message = "Checking:\tPackage "+pkg_name+" is installed"
+    command = "pkg info #{pkg_name} 2>&1| grep 'Name:' |awk '{print $3}'"
     output  = execute_command(message,command)
-    if output.match(/online/)
-      message = "Installing:\tPackage "+pkg_name
-      command = "pkg install #{pkg_name}"
-      execute_command(message,command)
+    if !output.match(/#{pkg_name}/)
+      message = "Checking:\tPtublisher is online"
+      command = "pkg publisher | grep online"
+      output  = execute_command(message,command)
+      if output.match(/online/)
+        message = "Installing:\tPackage "+pkg_name
+        command = "pkg install #{pkg_name}"
+        execute_command(message,command)
+      end
     end
   end
   return
@@ -200,6 +203,7 @@ def create_named_conf()
   host_segment = $default_host.split(".")[3]
   reverse_file = "/etc/namedb/master/"+net_address+".db"
   if !File.exist?(named_conf)
+    install_sol11_pkg("service/network/dns/bind")
     file = File.open(tmp_file,"w")
     file.write("\n")
     file.write("# named config\n")
@@ -219,7 +223,7 @@ def create_named_conf()
     file.write("\n")
     file.write("zone \"#{net_address}.in-addr.arpa\" {\n")
     file.write("  type master;\n")
-    file.write("  file \"/etc/namedb/master/1.168.192.db\";\n")
+    file.write("  file \"/etc/namedb/master/#{net_address}.db\";\n")
     file.write("};\n")
     file.write("\n")
     file.write("\n")

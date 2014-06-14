@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.6.4
+# Version:      1.6.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -281,7 +281,7 @@ def check_local_config(mode,opt)
     puts "Information:\tSetting work directory to "+$work_dir
   end
   check_dir_exists($work_dir)
-    [ $iso_base_dir, $repo_base_dir, $image_base_dir, $pkg_base_dir ].each do |dir_name|
+    [ $iso_base_dir, $repo_base_dir, $image_base_dir, $pkg_base_dir, $client_base_dir ].each do |dir_name|
     check_zfs_fs_exists(dir_name)
   end
   if !$tmp_dir.match(/[A-z]/)
@@ -339,7 +339,11 @@ def check_local_config(mode,opt)
   end
   if mode == "server"
     if $os_name.match(/SunOS/) and $os_rel.match(/11/)
+      check_tftpd()
       check_local_publisher()
+      install_sol11_pkg("pkg:/system/boot/network")
+      install_sol11_pkg("installadm")
+      install_sol11_pkg("lftp")
     end
     if $verbose_mode == 1
       puts "Information:\tSetting apache allow range to "+$default_apache_allow
@@ -410,14 +414,6 @@ def check_local_config(mode,opt)
       command = "wget '#{$rpm2cpio_url}' -O #{$rpm2cpio_bin} ; chown #{$id} #{$rpm2cpio_bin} ; chmod +x #{$rpm2cpio_bin}"
       execute_command(message,command)
       system("chmod +x #{$rpm2cpio_bin}")
-    end
-  end
-  if $os_name.match(/SunOS/) and $os_rel.match(/11/)
-    message = "Checking:\tPackage lftp installed"
-    command = "which lftp"
-    output  = execute_command(message,command)
-    if output.match(/no lftp/)
-      #install_sol11_pkg("lftp")
     end
   end
   return
@@ -569,6 +565,14 @@ if opt["t"]
   puts "Information:\tRunning in test mode"
 end
 
+# Verbose output
+
+if $verbose_mode == 1 and opt["I"]
+   puts "Information:\tSetting publisher host to "+publisher_port
+end
+
+# Base server configuration
+
 if opt["u"]
   mode = "server"
   check_local_config(mode,opt)
@@ -603,6 +607,23 @@ if $verbose_mode == 1
   puts "Information     Running in "+mode+" mode"
 end
 check_local_config(mode,opt)
+
+# Get/set publisher port
+
+if opt["p"]
+  publisher_port = opt["p"]
+else
+  publisher_port = $default_ai_port
+end
+
+# Get/set publisher host
+
+if opt["l"]
+  publisher_host = opt["l"]
+else
+  publisher_host = $default_host
+end
+
 
 # If given -y assume yes to all questions
 
@@ -689,30 +710,6 @@ if !opt["d"]
       puts "Information:\tSetting install type to text based"
     end
   end
-end
-
-# Get/set publisher port
-
-if opt["p"]
-  publisher_port = opt["p"]
-else
-  publisher_port = $default_ai_port
-end
-
-if $verbose_mode == 1 and opt["I"]
-   puts "Information:\tSetting publisher port to "+publisher_port
-end
-
-# Get/set publisher host
-
-if opt["l"]
-  publisher_host = opt["l"]
-else
-  publisher_host = $default_host
-end
-
-if $verbose_mode == 1 and opt["I"]
-   puts "Information:\tSetting publisher host to "+publisher_port
 end
 
 # Get IP address if given
@@ -991,7 +988,7 @@ end
 
 # If client configuration is being done, ensure there is a service name and a client architecture
 
-if opt["C"] and !opt["d"]
+if opt["C"] and !opt["d"] and !opt["L"]
   if !opt["n"]
     puts "Warning:\tService name not specified"
     exit

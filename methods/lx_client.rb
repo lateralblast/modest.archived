@@ -3,6 +3,7 @@
 # List availabel clients
 
 def list_lxcs()
+  puts
   puts "Available LXC clients:"
   puts
   client_list = %x[lxc-ls]
