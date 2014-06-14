@@ -291,6 +291,29 @@ def configure_ay_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel
   return
 end
 
+# Configure an OpenBSD VM
+
+def configure_ob_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "OpenBSD"
+  if client_arch.match(/x86_64/)
+    client_os = client_os+"_64"
+  end
+  configure_vbox_vm(client_name,client_mac,client_os)
+  return
+end
+
+# Configure a NetBSD VM
+
+def configure_nb_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "NetBSD"
+  if client_arch.match(/x86_64/)
+    client_os = client_os+"_64"
+  end
+  configure_vbox_vm(client_name,client_mac,client_os)
+  return
+end
+
+
 # Configure a ESX VirtualBox VM
 
 def configure_vs_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)

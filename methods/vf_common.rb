@@ -212,6 +212,24 @@ def configure_ay_fusion_vm(client_name,client_mac,client_arch,client_os,client_r
   return
 end
 
+# Configure a NetBSB VMware Fusion VM
+
+def configure_nb_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "freebsd"
+  if !client_arch.match(/i386/) and !client_arch.match(/64/)
+    client_os = client_os+"-64"
+  end
+  configure_fusion_vm(client_name,client_mac,client_os)
+  return
+end
+
+# Configure an OpenBSD VMware Fusion VM
+
+def configure_ob_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  configure_nb_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  return
+end
+
 # Configure an Ubuntu VMware Fusion VM
 
 def configure_ps_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)

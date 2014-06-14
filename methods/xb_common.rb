@@ -24,13 +24,21 @@ def list_bsd_isos(search_string)
   return
 end
 
-# Get BSD version infor from the ISO
+# Get BSD version info from the ISO
 
 def get_bsd_version_info(iso_file)
   if iso_file.match(/install/)
     bsd_distro  = "OpenBSD"
-    iso_arch    = "i386"
-    iso_version = File.basename(iso_file,".iso").gsub(/install/,"").split(//).join(".")
+    if !iso_file.match(/i386|x86_64|amd64/)
+      iso_arch = %x[strings #{iso_file} |head -2 |tail -1 |awk '{print $2}'].split(/\//)[1].chomp
+      iso_version = File.basename(iso_file,".iso").gsub(/install/,"").split(//).join(".")
+    else
+      iso_arch = File.basename(iso_file,".iso").split(/-/)[1]
+      if iso_arch.match(/amd64/)
+        iso_arch = "x86_64"
+      end
+      iso_version = File.basename(iso_file,".iso").split(/-/)[0].gsub(/install/,"").split(//).join(".")
+    end
   else
     iso_info    = File.basename(iso_file).split(/-/)
     bsd_distro  = iso_info[0]

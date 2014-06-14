@@ -40,7 +40,7 @@ def unconfigure_ks_repo(service_name)
   return
 end
 
-# Copy Linux ISO contents to
+# Copy Linux ISO contents to repo
 
 def configure_ks_repo(iso_file,repo_version_dir)
   check_zfs_fs_exists(repo_version_dir)
@@ -316,6 +316,7 @@ end
 # List kickstart services
 
 def list_ks_services()
+  puts
   puts "Kickstart services:"
   puts
   service_list = Dir.entries($repo_base_dir)
@@ -324,5 +325,6 @@ def list_ks_services()
       puts service_name
     end
   end
+  puts
   return
 end

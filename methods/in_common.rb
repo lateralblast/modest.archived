@@ -631,7 +631,11 @@ def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
     if service_name.match(/sol/)
       suffix = ".bios"
     else
-      suffix = ".pxelinux"
+      if service_name.match(/bsd/)
+        suffix = ".pxeboot"
+      else
+        suffix = ".pxelinux"
+      end
     end
     tftp_pxe_file = "01"+tftp_pxe_file+suffix
   else
@@ -772,20 +776,24 @@ def check_zfs_fs_exists(dir_name)
   output = ""
   if !File.directory?(dir_name)
     if $os_name.match(/SunOS/)
-      message = "Warning:\t"+dir_name+" does not exist"
       if dir_name.match(/ldoms|zones/)
         zfs_name = $default_dpool+dir_name
       else
         zfs_name = $default_zpool+dir_name
       end
-      command = "zfs create #{zfs_name}"
-      output  = execute_command(message,command)
-      if dir_name.match(/vmware_/)
+      if dir_name.match(/vmware_|openbsd_/)
         service_name = File.basename(dir_name)
         mount_dir    = $tftp_dir+"/"+service_name
-        message      = "Information:\tVMware repository being mounted under "+mount_dir
-        command      = "zfs set mountpoint=#{mount_dir} #{zfs_name}"
-        execute_command(message,command)
+        if !File.directory?(mount_dir)
+          Dir.mkdir(mount_dir)
+        end
+      else
+        mount_dir = dir_name
+      end
+      message      = "Information:\tRepository for "+service_name+" being mounted under "+mount_dir
+      command      = "zfs create -o mountpoint=#{mount_dir} #{zfs_name}"
+      execute_command(message,command)
+      if dir_name.match(/vmware_|openbsd_/)
         message = "Information:\tSymlinking "+mount_dir+" to "+dir_name
         command = "ln -s #{mount_dir} #{dir_name}"
         execute_command(message,command)

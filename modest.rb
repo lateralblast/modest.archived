@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.6.6
+# Version:      1.6.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -138,6 +138,7 @@ $default_hostonly_ip    = "192.168.2.1"
 $default_server_size    = "small"
 $default_manifest_name  = "modest"
 $vbox_additions_iso     = "/Applications/VirtualBox.app//Contents/MacOS/VBoxGuestAdditions.iso"
+$openbsd_base_url       = "http://ftp.openbsd.org/pub/OpenBSD"
 
 # Declare some package versions
 
@@ -515,7 +516,7 @@ if opt["H"]
   if opt["Y"]
     examples = "ay"
   end
-  if opt["B"]
+  if opt["B"] or opt["N"]
     examples = "xb"
   end
   if opt["Z"]
@@ -600,7 +601,7 @@ end
 
 # Check local configuration
 
-if opt["S"] or opt["W"] or opt["G"]
+if opt["S"] or opt["W"] or opt["G"] and !opt["O"] and !opt["F"]
   mode = "server"
 else
   mode = "client"
@@ -799,7 +800,7 @@ if opt["T"]
   $text_install = 1
 end
 
-# If given -B use serial based install
+# If given -u use serial based install
 
 if opt["u"]
   $text_install = 1
@@ -1023,10 +1024,10 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
   if opt["E"]
     funct = "vs"
   end
-  if opt["N"]
+  if opt["W"]
     funct = "pe"
   end
-  if opt["B"]
+  if opt["B"] or opt["N"]
     funct = "xb"
   end
   if opt["Z"]
@@ -1042,6 +1043,12 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
       if !opt["O"]
         client_mac = create_client_mac(client_mac)
         client_mac = check_client_mac(client_mac)
+      end
+      if opt["B"]
+        funct = "ob"
+      end
+      if opt["N"]
+        funct = "nb"
       end
       eval"[configure_#{funct}_#{vfunct}_vm(client_name,client_mac,client_arch,client_os,client_rel)]"
     end

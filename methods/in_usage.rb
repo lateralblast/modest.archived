@@ -21,6 +21,8 @@ def print_examples(examples)
     puts "Create Jumpstart (Solaris 10) VM:\t"+$script+" -J -O -c sol10u11vm01 -a i386 -e 00:0C:29:FA:0C:7F"
     puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -O -c sol11u01vm03 -a i386 -e 00:50:56:26:92:D8"
     puts "Create vSphere (ESXi) VM:\t\t"+$script+" -E -O -c vmware55vm01 -e 08:00:27:61:B7:AD"
+    puts "Create OpenBSD VM:\t\t\t"+$script+" -B -O -c openbsd55vm01 -a x86_64 -e 08:00:27:61:B7:AA"
+    puts "Create NetBSD VM:\t\t\t"+$script+" -B -O -c netbsd10vm01 -a x86_64 -e 08:00:27:61:B7:AB"
     puts
     puts "Deleting VirtualBox VM examples:"
     puts
@@ -55,7 +57,9 @@ def print_examples(examples)
     puts "Create Jumpstart (Solaris 10) VM:\t"+$script+" -J -F -c sol10u11vm01 -a i386 -e 00:0C:29:FA:0C:7F"
     puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -F -c sol11u01vm03 -e 00:50:56:26:92:D8"
     puts "Create vSphere (ESXi) VM:\t\t"+$script+" -E -F -c vmware55vm01 -e 08:00:27:61:B7:AD"
-    puts "Create NT (Windows) VM:\t\t\t"+$script+" -N -F -c win2008r2vm01 -e 08:00:27:61:B7:AF"
+    puts "Create NT (Windows) VM:\t\t\t"+$script+" -W -F -c win2008r2vm01 -e 08:00:27:61:B7:AF"
+    puts "Create OpenBSD VM:\t\t\t"+$script+" -B -F -c openbsd55vm01 -e 08:00:27:61:B7:AA"
+    puts "Create NetBSD VM:\t\t\t"+$script+" -N -F -c netbsd10vm01 -e 08:00:27:61:B7:AB"
     puts
     puts "Deleting VMware Fusion VM examples:"
     puts
@@ -109,6 +113,15 @@ def print_examples(examples)
     puts "List all Preseed services:\t\t"+$script+" -U -S -L"
     puts "Configure all Preseed services:\t\t"+$script+" -U -S"
     puts "Configure a Preseed service (from ISO):\t"+$script+" -U -S -f /export/isos/ubuntu-13.10-server-amd64.iso"
+    puts
+  end
+  if examples.match(/server|xb|ob|nb|all/)
+    puts "*BSD server related examples:"
+    puts
+    puts "List all *BSD services:\t\t\t"+$script+" -B -S -L"
+    puts "Configure all *BSD services:\t\t"+$script+" -B -S"
+    puts "Configure a NetBSD service (from ISO):\t"+$script+" -B -S -f /export/isos/install55-i386.iso"
+    puts "Configure a FreeBSD service (from ISO):\t"+$script+" -B -S -f /export/isos/FreeBSD-10.0-RELEASE-amd64-dvd1.iso"
     puts
   end
   if examples.match(/server|js|all/)
@@ -200,6 +213,15 @@ def print_examples(examples)
     puts "List AI clients:\t\t\t"+$script+" -A -C -L"
     puts "Create AI client:\t\t\t"+$script+" -A -C -c sol11u01vm03 -e 00:50:56:26:92:d8 -a i386 -i 192.168.1.193"
     puts "Delete AI client:\t\t\t"+$script+" -A -C -d sol11u01vm03"
+    puts
+  end
+  if examples.match(/client|xb|ob|nb|all/)
+    puts "*BSD client related examples:"
+    puts
+    puts "List *BSD clients:\t\t\t"+$script+" -B -C -L"
+    puts "Create OpenBSD client:\t\t\t"+$script+" -B -C -c openbsd55vm01 -e 00:50:56:26:92:d8 -a x86_64 -i 192.168.1.193 -n openbsd_5_5_x86_64"
+    puts "Create FreeBSD client:\t\t\t"+$script+" -B -C -c freebsd10vm01 -e 00:50:56:26:92:d7 -a x86_64 -i 192.168.1.194 -n netbsd_10_0_x86_64"
+    puts "Delete FreeBSD client:\t\t\t"+$script+" -B -C -d freebsd10vm01"
     puts
   end
   if examples.match(/client|ps|all/)
