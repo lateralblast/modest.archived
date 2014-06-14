@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.6.5
+# Version:      1.6.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -182,6 +182,7 @@ def print_usage()
   puts "-E: Configure VSphere"
   puts "-Z: Configure Zone"
   puts "-M: Configure MAAS"
+  puts "-B: Configure BSD"
   puts "-G: Maintenance mode"
   puts "-a: Architecture"
   puts "-e: Client MAC Address"
@@ -210,7 +211,7 @@ def print_usage()
   puts "-y: Override (destroy ZFS filesystem as part of uninstallation and delete clients)"
   puts "-D: Use default values for questions"
   puts "-T: Use text mode install"
-  puts "-B: Use serial connectivity (emulated)"
+  puts "-u: Use serial connectivity (emulated)"
   puts "-X: X Windows based install (default is text based)"
   puts "    or run VM in GUI mode (default is headless)"
   puts "-H: Provide detailed examples"
@@ -219,7 +220,7 @@ def print_usage()
   puts "-w: Disable downloads"
   puts "-x: Set VM network type (e.g. hostonly or bridged or nat)"
   puts "-q: Set server size for client (e.g. small or large)"
-  puts "-u: Check local configuration"
+  puts "-1: Check local configuration"
   puts
   exit
   return
@@ -432,6 +433,12 @@ rescue
   print_usage()
 end
 
+if opt["1"]
+  mode = "server"
+  check_local_config(mode,opt)
+  exit
+end
+
 # If given -x set network type
 
 if opt["x"]
@@ -508,6 +515,9 @@ if opt["H"]
   if opt["Y"]
     examples = "ay"
   end
+  if opt["B"]
+    examples = "xb"
+  end
   if opt["Z"]
     if $os_name.match(/SunOS/)
       examples = "zone"
@@ -569,14 +579,6 @@ end
 
 if $verbose_mode == 1 and opt["I"]
    puts "Information:\tSetting publisher host to "+publisher_port
-end
-
-# Base server configuration
-
-if opt["u"]
-  mode = "server"
-  check_local_config(mode,opt)
-  exit
 end
 
 # Check NAT configuration
@@ -799,7 +801,7 @@ end
 
 # If given -B use serial based install
 
-if opt["B"]
+if opt["u"]
   $text_install = 1
   $use_serial   = 1
   if $verbose_mode == 1
@@ -1001,7 +1003,7 @@ end
 
 # Handle AI, Jumpstart, Kickstart/Preseed, ESXi, and PE
 
-if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"] or opt["O"]
+if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["Y"] or opt["S"] or opt["Z"] or opt["O"] or opt["B"]
   # Set function
   if opt["A"]
     funct = "ai"
@@ -1023,6 +1025,9 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
   end
   if opt["N"]
     funct = "pe"
+  end
+  if opt["B"]
+    funct = "xb"
   end
   if opt["Z"]
     if $os_name.match(/SunOS/)

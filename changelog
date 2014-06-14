@@ -329,3 +329,5 @@
 # Added code to setup a local package repository if it doesn't exist
 # 1.6.5: Sat 14 Jun 2014 12:33:10 EST
 # Numerous bug fixes and RHEL 7 support
+# 1.6.6: Sat 14 Jun 2014 17:28:40 EST
+# Added code to set up BSD server

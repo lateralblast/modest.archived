@@ -1279,7 +1279,11 @@ def mount_iso(iso_file)
           if iso_file.match(/SLES/)
             iso_test_dir = $iso_mount_dir+"/suse"
           else
-            iso_test_dir = $iso_mount_dir+"/install"
+            if iso_file.match(/install|FreeBSD/)
+              iso_test_dir = $iso_mount_dir+"/etc"
+            else
+              iso_test_dir = $iso_mount_dir+"/install"
+            end
           end
         end
       end
@@ -1339,7 +1343,11 @@ def copy_iso(iso_file,repo_version_dir)
       if iso_file.match(/VM/)
         test_dir = repo_version_dir+"/upgrade"
       else
-        test_dir = repo_version_dir+"/install"
+        if iso_file.match(/install|FreeBSD/)
+          test_dir = repo_version_dir+"/etc"
+        else
+          test_dir = repo_version_dir+"/install"
+        end
       end
     end
   end
