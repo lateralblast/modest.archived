@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.6.9
+# Version:      1.7.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -134,7 +134,7 @@ $default_gdom_vnet      = "vnet0"
 $use_sudo               = 1
 $do_ssh_keys            = 0
 $default_vm_network     = "hostonly"
-$default_hostonly_ip    = "192.168.2.1"
+$default_hostonly_ip    = "192.168.2.254"
 $default_server_size    = "small"
 $default_manifest_name  = "modest"
 $vbox_additions_iso     = "/Applications/VirtualBox.app//Contents/MacOS/VBoxGuestAdditions.iso"

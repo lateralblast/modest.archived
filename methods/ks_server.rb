@@ -103,7 +103,7 @@ def configure_ks_pxe_boot(service_name,iso_arch)
         rpm_dir = $repo_base_dir+"/"+service_name+"/Packages"
       end
       if File.directory?(rpm_dir)
-        if !service_name.match(/sl_/)
+        if !service_name.match(/sl_|fedora_19/)
           message  = "Locating:\tSyslinux package"
           command  = "cd #{rpm_dir} ; find . -name 'syslinux-[0-9]*' |grep '#{iso_arch}'"
           output   = execute_command(message,command)
@@ -208,7 +208,7 @@ def configure_ks_vmware_repo(service_name,client_arch)
     vmware_url   = vmware_url+"/rhel5/"+client_arch+"/"
     repodata_url = vmware_url+"repodata/"
   end
-  if service_name.match(/centos_6|rhel_6|sl_6|oel_6|rhel_7|fedora_19|fedora_20/)
+  if service_name.match(/centos_6|rhel_6|sl_6|oel_6|rhel_7|fedora_[19,20]/)
     vmware_url   = vmware_url+"/rhel6/"+client_arch+"/"
     repodata_url = vmware_url+"repodata/"
   end

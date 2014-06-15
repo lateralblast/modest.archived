@@ -389,7 +389,7 @@ end
 def populate_ks_pkg_list(service_name)
   pkg_list = []
   if service_name.match(/centos|fedora|rhel|sl_|oel/)
-    if !service_name.match(/fedora_20/)
+    if !service_name.match(/fedora_[19,20]/)
       pkg_list.push("@base")
     end
     pkg_list.push("@core")
@@ -397,7 +397,7 @@ def populate_ks_pkg_list(service_name)
       pkg_list.push("@console-internet")
       pkg_list.push("@system-admin-tools")
     end
-    if !service_name.match(/sl_6/) and !service_name.match(/[a-z]_5/) and !service_name.match(/fedora_20/)
+    if !service_name.match(/sl_6|[a-z]_5|fedora_[19,20]/)
       pkg_list.push("@network-file-system-client")
     end
     if service_name.match(/centos_6|fedora_18|rhel_6|oel_6/)
@@ -409,7 +409,7 @@ def populate_ks_pkg_list(service_name)
       pkg_list.push("augeas-libs")
       pkg_list.push("augeas")
     end
-    if !service_name.match(/fedora_19|fedora_20|rhel_7/)
+    if !service_name.match(/fedora_[19,20]|rhel_7/)
       pkg_list.push("grub")
       pkg_list.push("libselinux-ruby")
     end
@@ -422,7 +422,11 @@ def populate_ks_pkg_list(service_name)
     pkg_list.push("dos2unix")
     pkg_list.push("unix2dos")
     pkg_list.push("avahi")
-    if !service_name.match(/fedora_20/)
+    if service_name.match(/fedora_[19,20]/)
+      pkg_list.push("net-tools")
+      pkg_list.push("bind-utils")
+    end
+    if !service_name.match(/fedora_[19,20]/)
       pkg_list.push("ntp")
     end
     pkg_list.push("rsync")
@@ -466,7 +470,7 @@ def output_ks_pkg_list(client_name,pkg_list,output_file,service_name)
     output = pkg_name+"\n"
     file.write(output)
   end
-  if service_name.match(/fedora_19|fedora_20|rhel_7/)
+  if service_name.match(/fedora_[19,20]|rhel_7/)
     output   = "\n%end\n"
     file.write(output)
   end
@@ -497,7 +501,7 @@ def output_ks_post_list(client_name,post_list,output_file,service_name)
     output = line+"\n"
     file.write(output)
   end
-  if service_name.match(/fedora_19|fedora_20|rhel_7/)
+  if service_name.match(/fedora_[19,20]|rhel_7/)
     output   = "\n%end\n"
     file.write(output)
   end
