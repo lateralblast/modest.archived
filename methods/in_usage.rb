@@ -22,7 +22,7 @@ def print_examples(examples)
     puts "Create AI (Solaris 11) VM:\t\t"+$script+" -A -O -c sol11u01vm03 -a i386 -e 00:50:56:26:92:D8"
     puts "Create vSphere (ESXi) VM:\t\t"+$script+" -E -O -c vmware55vm01 -e 08:00:27:61:B7:AD"
     puts "Create OpenBSD VM:\t\t\t"+$script+" -B -O -c openbsd55vm01 -a x86_64 -e 08:00:27:61:B7:AA"
-    puts "Create NetBSD VM:\t\t\t"+$script+" -B -O -c netbsd10vm01 -a x86_64 -e 08:00:27:61:B7:AB"
+    puts "Create NetBSD VM:\t\t\t"+$script+" -N -O -c netbsd10vm01 -a x86_64 -e 08:00:27:61:B7:AB"
     puts
     puts "Deleting VirtualBox VM examples:"
     puts
@@ -45,10 +45,11 @@ def print_examples(examples)
     puts "Creating Kickstart VMware Fusion VM examples:"
     puts
     puts "Create Kickstart (Linux) VM:\t\t"+$script+" -K -F -c centos510vm01 -a x86_64 -e 00:50:56:34:4E:7A"
-    puts "Create Kickstart (Linxu) VM:\t\t"+$script+" -K -F -c centos65vm01 -e 00:50:56:34:4E:7B -a x86_64"
-    puts "Create Kickstart (Linxu) VM:\t\t"+$script+" -K -F -c sl64vm01 -e 00:50:56:34:4E:FB -a x86_64"
-    puts "Create Kickstart (Linxu) VM:\t\t"+$script+" -K -F -c oel65vm01 -e 00:50:56:34:4E:BB -a x86_64"
-    puts "Create Kickstart (Linxu) VM:\t\t"+$script+" -K -F -c rhel63vm01 -e 00:50:56:34:4E:AA -a x86_64"
+    puts "Create Kickstart (Linux) VM:\t\t"+$script+" -K -F -c centos65vm01 -e 00:50:56:34:4E:7B -a x86_64"
+    puts "Create Kickstart (Linux) VM:\t\t"+$script+" -K -F -c sl64vm01 -e 00:50:56:34:4E:FB -a x86_64"
+    puts "Create Kickstart (Linux) VM:\t\t"+$script+" -K -F -c oel65vm01 -e 00:50:56:34:4E:BB -a x86_64"
+    puts "Create Kickstart (Linux) VM:\t\t"+$script+" -K -F -c rhel63vm01 -e 00:50:56:34:4E:AA -a x86_64"
+    puts "Create Kickstart (Linux) VM:\t\t"+$script+" -K -F -c fedora20vm01 -e 00:50:56:34:4E:AB -a x86_64"
     puts
     puts "Creating other VMware Fusion VM examples:"
     puts
@@ -95,6 +96,7 @@ def print_examples(examples)
     puts "List Kickstart services:\t\t"+$script+" -K -S -L"
     puts "List Kickstart ISOs:\t\t\t"+$script+" -K -S -I"
     puts "Configure Kickstart services:\t\t"+$script+" -K -S"
+    puts "Configure Kickstart service (from ISO):\t"+$script+" -K -S -f /export/isos/Fedora-20-x86_64-DVD.iso"
     puts "Unconfigure Kickstart service:\t\t"+$script+" -K -S -z centos_5_10_i386"
     puts "Delete Kickstart service:\t\t"+$script+" -K -S -z centos_5_10_i386 -y"
     puts
@@ -197,6 +199,11 @@ def print_examples(examples)
     puts "Create Kickstart client:\t\t"+$script+" -K -C -c sl64vm01 -e 00:50:56:34:4E:FB -a x86_64 -i 192.168.1.185 -n sl_6_4_x86_64"
     puts "Create Kickstart client:\t\t"+$script+" -K -C -c oel65vm01 -e 00:50:56:34:4E:BB -a x86_64 -i 192.168.1.186 -n oel_6_5_x86_64"
     puts "Create Kickstart client:\t\t"+$script+" -K -C -c rhel63vm01 -e 00:50:56:34:4E:AA -a x86_64 -i 192.168.1.187 -n rhel_6_3_x86_64"
+    puts "Create Kickstart client:\t\t"+$script+" -K -C -c rhel70vm01 -e 00:50:56:34:4E:AB -a x86_64 -i 192.168.1.188 -n rhel_7_0_x86_64"
+    puts "Create Kickstart client:\t\t"+$script+" -K -C -c fedora20vm01 -e 00:50:56:34:4E:AC -a x86_64 -i 192.168.1.189 -n fedora_20_x86_64"
+    puts
+    puts "Kickstart client modification examples:"
+    puts
     puts "Configure Kickstart client PXE:\t\t"+$script+" -K -P -c centos510vm01 -e 00:50:56:34:4E:7A -i 192.168.1.194 -n centos_5_10_x86_64"
     puts
     puts "Kickstart client deletion related examples:"

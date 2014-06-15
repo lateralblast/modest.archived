@@ -335,3 +335,5 @@
 # Inital OpenBSD support
 # 1.6.8: Sun 15 Jun 2014 09:54:12 EST
 # Initial Fedora support
+# 1.6.9: Sun 15 Jun 2014 13:18:38 EST
+# Fedora 20 client support

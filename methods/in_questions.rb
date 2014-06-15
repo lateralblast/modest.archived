@@ -1,7 +1,7 @@
 
 # Process questions (array of structs)
 
-def process_questions()
+def process_questions(service_name)
   $q_order.each do |key|
     if $verbose_mode == 1
       puts "Processing:\tValue for "+key
@@ -15,12 +15,12 @@ def process_questions()
           $q_struct[key].value = new_value.join
         end
         if $use_defaults == 0
-          question=$q_struct[key].question+"? [ "+$q_struct[key].value+" ] "
+          question = $q_struct[key].question+"? [ "+$q_struct[key].value+" ] "
           print question
           answer = $stdin.gets.chomp
         else
           answer = $q_struct[key].value
-          evaluate_answer(key,answer)
+          evaluate_answer(key,answer,service_name)
           correct = 1
         end
         if answer != ""
@@ -33,7 +33,7 @@ def process_questions()
                 end
               end
             else
-              correct = evaluate_answer(key,answer)
+              correct = evaluate_answer(key,answer,service_name)
               if correct == 1
                 $q_struct[key].value = answer
               end
@@ -41,7 +41,7 @@ def process_questions()
           end
         else
           answer = $q_struct[key].value
-          correct = evaluate_answer(key,answer)
+          correct = evaluate_answer(key,answer,service_name)
           correct = 1
         end
       end
@@ -58,7 +58,7 @@ end
 
 # Code to check answers
 
-def evaluate_answer(key,answer)
+def evaluate_answer(key,answer,service_name)
   correct = 1
   if $q_struct[key].eval != "no"
     new_value = $q_struct[key].eval

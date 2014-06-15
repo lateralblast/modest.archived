@@ -17,11 +17,15 @@ end
 
 # Construct ks network line
 
-def get_ks_network()
+def get_ks_network(service_name)
   if $q_struct["bootproto"].value == "dhcp"
     result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value
   else
-    result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value+" --ip="+$q_struct["ip"].value+" --netmask="+$q_struct["netmask"].value+" --gateway "+$q_struct["gateway"].value+" --nameserver="+$q_struct["nameserver"].value+" --hostname="+$q_struct["hostname"].value
+    if service_name.match(/fedora_20/)
+      result = "--bootproto="+$q_struct["bootproto"].value+" --ip="+$q_struct["ip"].value+" --netmask="+$q_struct["netmask"].value+" --gateway "+$q_struct["gateway"].value+" --nameserver="+$q_struct["nameserver"].value+" --hostname="+$q_struct["hostname"].value
+    else
+      result = "--device="+$q_struct["nic"].value+" --bootproto="+$q_struct["bootproto"].value+" --ip="+$q_struct["ip"].value+" --netmask="+$q_struct["netmask"].value+" --gateway "+$q_struct["gateway"].value+" --nameserver="+$q_struct["nameserver"].value+" --hostname="+$q_struct["hostname"].value
+    end
   end
   if $q_struct["service_name"].value.match(/oel/)
     result = result+" --onboot=on"
@@ -373,18 +377,20 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "nic"
-  config = Ks.new(
-    type      = "",
-    question  = "Primary Network Interface",
-    ask       = "yes",
-    parameter = "",
-    value     = "eth0",
-    valid     = "",
-    eval      = "no"
-    )
-  $q_struct[name] = config
-  $q_order.push(name)
+  if !service_name.match(/fedora_20/)
+    name = "nic"
+    config = Ks.new(
+      type      = "",
+      question  = "Primary Network Interface",
+      ask       = "yes",
+      parameter = "",
+      value     = "eth0",
+      valid     = "",
+      eval      = "no"
+      )
+    $q_struct[name] = config
+    $q_order.push(name)
+  end
 
   name = "bootproto"
   config = Ks.new(
@@ -502,9 +508,9 @@ def populate_ks_questions(service_name,client_name,client_ip)
     question  = "Network Configuration",
     ask       = "yes",
     parameter = "network",
-    value     = "get_ks_network()",
+    value     = "get_ks_network(service_name)",
     valid     = "",
-    eval      = "get_ks_network()"
+    eval      = "get_ks_network(service_name)"
     )
   $q_struct[name] = config
   $q_order.push(name)

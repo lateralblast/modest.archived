@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.6.8
+# Version:      1.6.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -1036,6 +1036,10 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
     else
       funct = "lxc"
     end
+  end
+  if !funct
+    puts "Warning:\tNo VM type specified"
+    exit
   end
   if opt["O"] or opt["F"] and $os_arch.match(/i386|x86_64/)
     if opt["c"]

@@ -70,7 +70,11 @@ def configure_ks_pxe_client(client_name,client_ip,client_mac,client_arch,service
     if service_name.match(/sles/)
       append_string = "  APPEND initrd=#{initrd_file} install=#{install_url} autoyast=#{autoyast_url} language=#{$default_language}"
     else
-      append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url} ksdevice=bootif ip=#{client_ip} netmask=#{$default_netmask}"
+      if service_name.match(/fedora_20/)
+        append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url} ip=#{client_ip} netmask=#{$default_netmask}"
+      else
+        append_string = "  APPEND initrd=#{initrd_file} ks=#{ks_url} ksdevice=bootif ip=#{client_ip} netmask=#{$default_netmask}"
+      end
     end
   end
   if $text_install == 1
@@ -160,7 +164,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
   delete_file(output_file)
   if service_name.match(/fedora|fedora|rhel|centos|sl_|oel/)
     populate_ks_questions(service_name,client_name,client_ip)
-    process_questions()
+    process_questions(service_name)
     output_ks_header(client_name,output_file)
     pkg_list  = populate_ks_pkg_list(service_name)
     output_ks_pkg_list(client_name,pkg_list,output_file,service_name)
@@ -169,12 +173,12 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
   else
     if service_name.match(/sles/)
       populate_ks_questions(service_name,client_name,client_ip)
-      process_questions()
+      process_questions(service_name)
       output_ay_client_profile(client_name,client_ip,client_mac,output_file)
     else
       if service_name.match(/ubuntu/)
         populate_ps_questions(service_name,client_name,client_ip)
-        process_questions
+        process_questions(service_name)
         output_ps_header(client_name,output_file)
         output_file = client_dir+"/"+client_name+"_post.sh"
         post_list   = populate_ps_post_list(client_name,service_name)
@@ -385,13 +389,15 @@ end
 def populate_ks_pkg_list(service_name)
   pkg_list = []
   if service_name.match(/centos|fedora|rhel|sl_|oel/)
-    pkg_list.push("@base")
+    if !service_name.match(/fedora_20/)
+      pkg_list.push("@base")
+    end
     pkg_list.push("@core")
     if service_name.match(/[a-z]_6/)
       pkg_list.push("@console-internet")
       pkg_list.push("@system-admin-tools")
     end
-    if !service_name.match(/sl_6/) and !service_name.match(/[a-z]_5/)
+    if !service_name.match(/sl_6/) and !service_name.match(/[a-z]_5/) and !service_name.match(/fedora_20/)
       pkg_list.push("@network-file-system-client")
     end
     if service_name.match(/centos_6|fedora_18|rhel_6|oel_6/)
@@ -416,7 +422,9 @@ def populate_ks_pkg_list(service_name)
     pkg_list.push("dos2unix")
     pkg_list.push("unix2dos")
     pkg_list.push("avahi")
-    pkg_list.push("ntp")
+    if !service_name.match(/fedora_20/)
+      pkg_list.push("ntp")
+    end
     pkg_list.push("rsync")
     if service_name.match(/sl_6/)
       pkg_list.push("-samba-client")
