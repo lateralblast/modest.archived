@@ -24,6 +24,7 @@ BOOTP based install services, eg:
 - Simplify creation of Solaris VM Server for SPARC Guest Domains
 - Linux Containers (Currently Ubuntu support only)
 - OpenBSD PXE boot service
+- Initial CoreOS PXE boot support
 
 This script is a wrapper which sits on top of the exisitng tools. It changes
 defaults to be more suitable to customer environments, and sanity checks server

@@ -786,7 +786,7 @@ def check_zfs_fs_exists(dir_name)
       else
         zfs_name = $default_zpool+dir_name
       end
-      if dir_name.match(/vmware_|openbsd_/)
+      if dir_name.match(/vmware_|openbsd_|coreos_/)
         service_name = File.basename(dir_name)
         mount_dir    = $tftp_dir+"/"+service_name
         if !File.directory?(mount_dir)
@@ -798,7 +798,7 @@ def check_zfs_fs_exists(dir_name)
       message      = "Information:\tCreating "+dir_name+" with mount point "+mount_dir
       command      = "zfs create -o mountpoint=#{mount_dir} #{zfs_name}"
       execute_command(message,command)
-      if dir_name.match(/vmware_|openbsd_/)
+      if dir_name.match(/vmware_|openbsd_|coreos_/)
         message = "Information:\tSymlinking "+mount_dir+" to "+dir_name
         command = "ln -s #{mount_dir} #{dir_name}"
         execute_command(message,command)
@@ -819,18 +819,20 @@ def destroy_zfs_fs(dir_name)
   else
     zfs_name = $default_zpool+dir_name
   end
-  if $destroy_fs !~ /y|n/
-    while $destroy_fs !~ /y|n/
-      print "Destroy ZFS filesystem "+zfs_name+" [y/n]: "
-      $destroy_fs = gets.chomp
+  zfs_list = %x[zfs list |grep -v NAME |awk '{print $1}' |grep "^#{zfs_name}$"]
+  if zfs_list.match(/#{zfs_name}/)
+    if $destroy_fs !~ /y|n/
+      while $destroy_fs !~ /y|n/
+        print "Destroy ZFS filesystem "+zfs_name+" [y/n]: "
+        $destroy_fs = gets.chomp
+      end
     end
-  end
-  if $destroy_fs == "y"
-    if File.directory?(dir_name)
-      message = "Warning:\tDestroying "+dir_name
-
-      command = "zfs destroy -r #{zfs_name}"
-      output  = execute_command(message,command)
+    if $destroy_fs == "y"
+      if File.directory?(dir_name)
+        message = "Warning:\tDestroying "+dir_name
+        command = "zfs destroy -r #{zfs_name}"
+        output  = execute_command(message,command)
+      end
     end
   end
   return output
@@ -1080,6 +1082,13 @@ def check_client_arch(client_arch,opt)
         client_arch = "x86_64"
       end
     end
+    if opt["n"]
+      service_name = opt["n"]
+      service_arch = service_name.split("_")[-1]
+      if service_arch.match(/i386|sparc|x86_64/)
+        client_arch = service_arch
+      end
+    end
   end
   if !client_arch.match(/i386|sparc|x86_64/)
     puts "Warning:\tInvalid architecture specified"
@@ -1280,26 +1289,21 @@ def mount_iso(iso_file)
       iso_test_dir = $iso_mount_dir+"/repo"
     end
   else
-    if iso_file.match(/CentOS|SL/)
+    case iso_file
+    when /CentOS|SL/
       iso_test_dir = $iso_mount_dir+"/repodata"
+    when /rhel|OracleLinux|Fedora/
+      iso_test_dir = $iso_mount_dir+"/Packages"
+    when /VM/
+      iso_test_dir = $iso_mount_dir+"/upgrade"
+    when /SLES/
+      iso_test_dir = $iso_mount_dir+"/suse"
+    when /install|FreeBSD/
+      iso_test_dir = $iso_mount_dir+"/etc"
+    when /coreos/
+      iso_test_dir = $iso_mount_dir+"/coreos"
     else
-      if iso_file.match(/rhel|OracleLinux|Fedora/)
-        iso_test_dir = $iso_mount_dir+"/Packages"
-      else
-        if iso_file.match(/VM/)
-          iso_test_dir = $iso_mount_dir+"/upgrade"
-        else
-          if iso_file.match(/SLES/)
-            iso_test_dir = $iso_mount_dir+"/suse"
-          else
-            if iso_file.match(/install|FreeBSD/)
-              iso_test_dir = $iso_mount_dir+"/etc"
-            else
-              iso_test_dir = $iso_mount_dir+"/install"
-            end
-          end
-        end
-      end
+      iso_test_dir = $iso_mount_dir+"/install"
     end
   end
   if !File.directory?(iso_test_dir) and !iso_file.match(/DVD2\.iso|2of2\.iso|repo-full/)
@@ -1350,18 +1354,17 @@ def copy_iso(iso_file,repo_version_dir)
     test_dir = repo_version_dir+"/publisher"
   else
     iso_repo_dir = $iso_mount_dir
-    if iso_file.match(/CentOS|rhel|OracleLinux|Fedora/)
+    case iso_file
+    when /CentOS|rhel|OracleLinux|Fedora/
       test_dir = repo_version_dir+"/isolinux"
+    when /VM/
+      test_dir = repo_version_dir+"/upgrade"
+    when /install|FreeBSD/
+      test_dir = repo_version_dir+"/etc"
+    when /coreos/
+      test_dir = repo_version_dir+"/coreos"
     else
-      if iso_file.match(/VM/)
-        test_dir = repo_version_dir+"/upgrade"
-      else
-        if iso_file.match(/install|FreeBSD/)
-          test_dir = repo_version_dir+"/etc"
-        else
-          test_dir = repo_version_dir+"/install"
-        end
-      end
+      test_dir = repo_version_dir+"/install"
     end
   end
   if !File.directory?(repo_version_dir) and !File.symlink?(repo_version_dir) and !iso_file.match(/2\.iso/)

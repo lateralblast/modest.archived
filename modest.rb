@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.7.0
+# Version:      1.7.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -139,6 +139,9 @@ $default_server_size    = "small"
 $default_manifest_name  = "modest"
 $vbox_additions_iso     = "/Applications/VirtualBox.app//Contents/MacOS/VBoxGuestAdditions.iso"
 $openbsd_base_url       = "http://ftp.openbsd.org/pub/OpenBSD"
+$default_x86_virtual    = "VirtualBox"
+$default_x86_vm_net     = "enp0s3"
+$default_ext_network    = "192.168.1.0"
 
 # Declare some package versions
 
@@ -337,7 +340,11 @@ def check_local_config(mode,opt)
     end
   end
   if !$default_apache_allow.match(/[0-9]/)
-    $default_apache_allow=$default_host.split(/\./)[0..2].join(".")
+    if $default_ext_network.match(/[0-9]/)
+      $default_apache_allow = $default_host.split(/\./)[0..2].join(".")+" "+$default_ext_network
+    else
+      $default_apache_allow = $default_host.split(/\./)[0..2].join(".")
+    end
   end
   if mode == "server"
     if $os_name.match(/SunOS/) and $os_rel.match(/11/)
@@ -902,10 +909,15 @@ else
   server_type = "public"
 end
 
-# Force architecture to 64 bit for ESX
+# Force architecture
 
-if opt["E"]
-  client_arch = "x86_64"
+if opt["E"] or opt["B"]
+  if opt["E"]
+    client_arch = "x86_64"
+  end
+  if opt["B"]
+    client_arch = "i386"
+  end
   if $verbose_mode == 1
     puts "Setting:\tArchitecture to "+client_arch
   end
@@ -996,7 +1008,7 @@ if opt["C"] and !opt["d"] and !opt["L"]
     puts "Warning:\tService name not specified"
     exit
   end
-  if !opt["a"]
+  if !opt["a"] and !client_arch.match(/[A-z]/)
     puts "Warning:\tClient architecture not specified"
     exit
   end

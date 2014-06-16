@@ -226,7 +226,8 @@ end
 # Configure an OpenBSD VMware Fusion VM
 
 def configure_ob_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
-  configure_nb_fusion_vm(client_name,client_mac,client_arch,client_os,client_rel)
+  client_os = "otherlinux-64"
+  configure_fusion_vm(client_name,client_mac,client_os)
   return
 end
 

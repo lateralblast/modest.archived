@@ -339,3 +339,5 @@
 # Fedora 20 client support
 # 1.7.0: Sun 15 Jun 2014 15:25:54 EST
 # Fedora 20 fixes and Fedora 19 support
+# 1.7.1: Mon 16 Jun 2014 22:25:55 EST
+# Added initial CoreOS PXE boot support

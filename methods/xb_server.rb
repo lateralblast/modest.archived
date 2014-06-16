@@ -1,10 +1,10 @@
-# Server code for *BSD PXE boot
+# Server code for *BSD and other (e.g. CoreOS) PXE boot
 
 # List available *BSD ISOs
 
 def list_xb_isos()
-  search_string = "install|FreeBSD"
-  list_bsd_isos(search_string)
+  search_string = "install|FreeBSD|coreos"
+  list_other_isos(search_string)
   return
 end
 
@@ -12,24 +12,31 @@ end
 
 def configure_xb_server(client_arch,publisher_host,publisher_port,service_name,iso_file)
   if service_name.match(/[A-z]/)
-    if service_name.downcase.match(/openbsd/)
+    case service_name
+    when /openbsd/
       search_string = "install"
-    end
-    if service_name.downcase.match(/freebsd/)
+    when /freebsd/
       search_string = "FreeBSD"
+    when /coreos/
+      search_string = "coreos"
     end
   else
-    search_string = "install|FreeBSD"
+    search_string = "install|FreeBSD|coreos"
   end
-  configure_bsd_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
+  configure_other_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
   return
 end
 
 # Copy Linux ISO contents to repo
 
-def configure_xb_repo(iso_file,repo_version_dir)
+def configure_xb_repo(iso_file,repo_version_dir,service_name)
   check_zfs_fs_exists(repo_version_dir)
-  check_dir = repo_version_dir+"/etc"
+  case service_name
+  when /openbsd|freebsd/
+    check_dir = repo_version_dir+"/etc"
+  when /coreos/
+    check_dir = repo_version_dir+"/coreos"
+  end
   if $verbose_mode == 1
     puts "Checking:\tDirectory "+check_dir+" exits"
   end
@@ -66,20 +73,20 @@ def unconfigure_xb_server(service_name)
     File.delete(repo_version_dir)
   end
   if File.directory?(pxe_boot_dir)
-    File.rmdir(pxe_boot_dir)
+    Dir.rmdir(pxe_boot_dir)
   end
   return
 end
 
 # Configue BSD server
 
-def configure_bsd_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
+def configure_other_server(client_arch,publisher_host,publisher_port,service_name,iso_file,search_string)
   iso_list = []
   check_dhcpd_config(publisher_host)
   if iso_file.match(/[A-z]/)
     if File.exist?(iso_file)
-      if !iso_file.match(/install|FreeBSD/)
-        puts "Warning:\tISO "+iso_file+" does not appear to be a valid Linux distribution"
+      if !iso_file.match(/install|FreeBSD|coreos/)
+        puts "Warning:\tISO "+iso_file+" does not appear to be a valid distribution"
         exit
       else
         iso_list[0] = iso_file
@@ -93,12 +100,12 @@ def configure_bsd_server(client_arch,publisher_host,publisher_port,service_name,
   if iso_list[0]
     iso_list.each do |iso_file_name|
       iso_file_name = iso_file_name.chomp
-      (bsd_distro,iso_version,iso_arch) = get_bsd_version_info(iso_file_name)
-      service_name = bsd_distro.downcase+"_"+iso_version.gsub(/\./,"_")+"_"+iso_arch
+      (other_distro,iso_version,iso_arch) = get_other_version_info(iso_file_name)
+      service_name = other_distro.downcase+"_"+iso_version.gsub(/\./,"_")+"_"+iso_arch
       pxe_boot_dir = $tftp_dir+"/"+service_name
       repo_version_dir  = $repo_base_dir+"/"+service_name
       add_apache_alias(service_name)
-      configure_xb_repo(iso_file_name,repo_version_dir)
+      configure_xb_repo(iso_file_name,repo_version_dir,service_name)
       configure_xb_pxe_boot(iso_arch,iso_version,service_name,pxe_boot_dir,repo_version_dir)
     end
   else
@@ -125,7 +132,7 @@ def list_xb_services()
   puts
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
-    if service_name.match(/bsd/)
+    if service_name.match(/bsd|coreos/)
       puts service_name
     end
   end

@@ -294,10 +294,7 @@ end
 # Configure an OpenBSD VM
 
 def configure_ob_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel)
-  client_os = "OpenBSD"
-  if client_arch.match(/x86_64/)
-    client_os = client_os+"_64"
-  end
+  client_os = "Linux_64"
   configure_vbox_vm(client_name,client_mac,client_os)
   return
 end
@@ -393,6 +390,9 @@ def check_vbox_hostonly_network()
     if_name = execute_command(message,command)
     if_name = if_name.chomp
     if_name = if_name.gsub(/'/,"")
+    message = "Disabling:\tDHCP on "+if_name
+    command = "VBoxManage dhcpserver remove --ifname #{if_name}"
+    execute_command(message,command)
   end
   message = "Checking:\tVirtualBox hostonly network "+if_name+" has address "+$default_hostonly_ip
   command = "VBoxManage list hostonlyifs |grep 'IPAddress' |awk '{print $2}' |head -1"
