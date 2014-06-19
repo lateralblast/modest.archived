@@ -354,6 +354,7 @@ def configure_ai_server(client_arch,publisher_host,publisher_port,service_name,f
     test_dir = repo_version_dir+"/publisher"
     if !File.directory?(test_dir)
       check_repo_version_dir(repo_version_dir)
+      mount_iso(iso_file)
       copy_iso(iso_file,repo_version_dir)
     end
     check_ai_base_dir()
