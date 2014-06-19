@@ -284,13 +284,13 @@ def configure_js_client(client_name,client_arch,client_mac,client_ip,client_mode
   os_update        = get_js_iso_update(repo_version_dir,os_version)
   # Populate sysid questions and process them
   populate_js_sysid_questions(client_name,client_ip,client_arch,client_model,os_version,os_update)
-  process_questions()
+  process_questions(service_name)
   # Create sysid file
   sysid_file = client_dir+"/sysidcfg"
   create_js_sysid_file(client_name,sysid_file)
   # Populate machine questions
   populate_js_machine_questions(client_model,client_karch,publisher_host,service_name,os_version,os_update,image_file)
-  process_questions()
+  process_questions(service_name)
   machine_file = client_dir+"/machine."+client_name
   create_js_machine_file(client_name,machine_file)
   # Create rules file

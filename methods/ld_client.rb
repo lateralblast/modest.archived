@@ -177,6 +177,7 @@ end
 # Configure Guest domain
 
 def configure_gdom(client_name,client_ip,client_mac,client_arch,client_os,client_rel,publisher_host)
+  service_name = ""
   check_gdom_doesnt_exist(client_name)
   if !File.directory?($ldom_base_dir)
     check_zfs_fs_exists($ldom_base_dir)
@@ -192,7 +193,7 @@ def configure_gdom(client_name,client_ip,client_mac,client_arch,client_os,client
     execute_command(message,command)
   end
   populate_gdom_questions(client_name)
-  process_questions()
+  process_questions(service_name)
   create_gdom_disk(client_name)
   create_gdom(client_name)
   bind_gdom(client_name)

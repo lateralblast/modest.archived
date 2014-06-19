@@ -361,7 +361,7 @@ def configure_lxc(client_name,client_ip,client_mac,client_arch,client_os,client_
     puts "Warning:\tIf this is the first time you have run this command it may take a while"
     puts "Information:\tCreating standard container"
     populate_lxc_client_questions(client_ip)
-    process_questions()
+    process_questions(service_name)
     create_standard_lxc(client_name)
     if $os_info.match(/Ubuntu/)
       create_ubuntu_lxc_config(client_name,client_ip,client_mac)

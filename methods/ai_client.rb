@@ -168,7 +168,7 @@ def configure_ai_client_services(client_arch,publisher_host,publisher_port,servi
   # Populate questions for AI manifest
   populate_ai_manifest_questions(publisher_host,publisher_port)
   # Process questions
-  process_questions()
+  process_questions(service_name)
   # Set name of AI manifest file to create and import
   if service_name.match(/i386|sparc/)
     service_list[0] = service_name
@@ -253,7 +253,7 @@ def configure_ai_client(client_name,client_arch,client_mac,client_ip,client_mode
   end
   check_ai_client_doesnt_exist(client_name,client_mac,service_name)
   populate_ai_client_profile_questions(client_ip,client_name)
-  process_questions()
+  process_questions(service_name)
   if $os_name.match(/Darwin/)
     tftp_version_dir = $tftp_dir+"/"+service_name
     check_osx_iso_mount(tftp_version_dir,iso_file)

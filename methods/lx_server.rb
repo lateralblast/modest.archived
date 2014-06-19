@@ -86,8 +86,9 @@ end
 # Configure LXC Server
 
 def configure_lxc_server(server_type)
+  service_name = ""
   populate_lxc_server_questions()
-  process_questions()
+  process_questions(service_name)
   if $os_info.match(/Ubuntu/)
     configure_ubuntu_lxc_server(server_type)
   end

@@ -136,7 +136,7 @@ def configure_vs_client(client_name,client_arch,client_mac,client_ip,client_mode
     exit
   end
   populate_vs_questions(service_name,client_name,client_ip)
-  process_questions()
+  process_questions(service_name)
   output_file=repo_version_dir+"/"+client_name+".cfg"
   if File.exists?(output_file)
     File.delete(output_file)

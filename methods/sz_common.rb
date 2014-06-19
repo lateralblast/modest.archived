@@ -451,10 +451,10 @@ def configure_zone(client_name,client_ip,client_mac,client_arch,client_os,client
   end
   if client_rel.match(/11/)
     populate_ai_client_profile_questions(client_ip,client_name)
-    process_questions()
+    process_questions(service_name)
   else
     populate_js_client_profile_questions(client_ip,client_name)
-    process_questions()
+    process_questions(service_name)
     if image_file.match(/[A-z]/)
       (client_rel,client_arch,service_name) = get_zone_image_info(image_file)
       check_same_arch(client_arch)

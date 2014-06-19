@@ -117,9 +117,10 @@ end
 # Configure LDom Control (primary) domain
 
 def configure_cdom(publisher_host)
+  service_name = ""
   check_dhcpd_config(publisher_host)
   populate_cdom_questions()
-  process_questions()
+  process_questions(service_name)
   check_cdom_install()
   check_cdom_vcc()
   check_cdom_vds()
