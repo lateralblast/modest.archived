@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.7.4
+# Version:      1.7.5
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -444,6 +444,16 @@ end
 if opt["1"]
   mode = "server"
   check_local_config(mode,opt)
+  if opt["F"] or opt["O"]
+    if opt["F"]
+      if_name = "vmnet1"
+    end
+    if opt["O"]
+      if_name = "vboxnet0"
+    end
+    gw_if_name = get_osx_gw_if_name()
+    check_osx_nat(gw_if_name,if_name)
+  end
   exit
 end
 

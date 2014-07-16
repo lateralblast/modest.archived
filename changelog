@@ -347,3 +347,5 @@
 # Fixed bug with mounting CDs for AI
 # 1.7.4: Wed 16 Jul 2014 12:29:39 EST
 # Fixed bugs with local config check on OS X
+# 1.7.5: Wed 16 Jul 2014 14:07:39 EST
+# Fixed bug with IP forwarding check

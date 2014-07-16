@@ -80,48 +80,6 @@ def check_dir_owner(dir_name,uid)
   return
 end
 
-# check NATd is running and configured on OS X 10.9 and earlier
-# Useful info on pfctl here http://patrik-en.blogspot.com.au/2009/10/nat-in-virtualbox-with-freebsd-and-pf.html
-
-def check_osx_nat(gw_if_name,if_name)
-  message = "Checking:\tIP forwarding is enabled"
-  command = "sudo sysctl -a net.inet.ip.forwarding |awk '{print $2}'"
-  output  = execute_command(message,command)
-  output  = output.chomp
-  if command == "0"
-    message = "Enabling:\tIP forwarding"
-    command = "sudo sysctl net.inet.ip.forwarding=1"
-    execute_command(message,command)
-  end
-  message = "Checking:\tRule for IP forwarding has been created"
-  if $os_rel.match(/^14/)
-    command = "sudo pfctl -a '*' -sr 2>&1 |grep 'pass quick on #{gw_if_name}'"
-  else
-    command = "sudo ipfw list |grep 'any to any via #{gw_if_name}'"
-  end
-  output  = execute_command(message,command)
-  if !output.match(/#{gw_if_name}/)
-    message = "Enabling:\tNATd to forward traffic on "+gw_if_name
-    if $os_rel.match(/^14/)
-      check_osx_pfctl(gw_if_name,if_name)
-    else
-      command "sudo ipfw add 100 divert natd ip from any to any via #{gw_if_name}"
-      execute_command(message,command)
-    end
-  end
-  if !$os_rel.match(/^14/)
-    message = "Checking:\tNATd is running"
-    command = "ps -ef |grep '#{gw_if_name}' |grep natd |grep 'same_ports'"
-    output  = execute_command(message,command)
-    if !output.match(/natd/)
-      message = "Starting:\tNATd to foward packets between "+if_name+" and "+gw_if_name
-      command = "sudo /usr/sbin/natd -interface #{gw_if_name} -use_sockets -same_ports -unregistered_only -dynamic -clamp_mss -enable_natportmap -natportmap_interface #{if_name}"
-      execute_command(message,command)
-    end
-  end
-  return
-end
-
 # Print contents of file
 
 def print_contents_of_file(file_name)
