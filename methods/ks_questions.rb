@@ -762,7 +762,7 @@ def populate_ks_questions(service_name,client_name,client_ip)
   $q_order.push(name)
 
   name = "zerombr"
-  if service_name.match(/fedora|rhel|centos_7|oel_7/)
+  if service_name.match(/fedora|rhel|centos_7|oel_7|sl_7/)
     config = Ks.new(
       type      = "output",
       question  = "Zero MBR",

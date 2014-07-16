@@ -122,6 +122,7 @@ def configure_ks_pxe_boot(service_name,iso_arch)
             wget_file(rpm_url,rpm_file)
           end
         end
+        check_dir_exists(pxe_boot_dir)
         message = "Copying:\tPXE boot files from "+rpm_file+" to "+pxe_boot_dir
         command = "cd #{pxe_boot_dir} ; #{$rpm2cpio_bin} #{rpm_file} | cpio -iud"
         output  = execute_command(message,command)

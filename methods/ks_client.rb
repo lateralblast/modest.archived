@@ -470,7 +470,7 @@ def output_ks_pkg_list(client_name,pkg_list,output_file,service_name)
     output = pkg_name+"\n"
     file.write(output)
   end
-  if service_name.match(/fedora_[19,20]|[centos,rhel,oel]_7/)
+  if service_name.match(/fedora_[19,20]|[centos,rhel,oel,sl]_7/)
     output   = "\n%end\n"
     file.write(output)
   end
@@ -501,7 +501,7 @@ def output_ks_post_list(client_name,post_list,output_file,service_name)
     output = line+"\n"
     file.write(output)
   end
-  if service_name.match(/fedora_[19,20]|[centos,rhel]_7/)
+  if service_name.match(/fedora_[19,20]|[centos,rhel,sl]_7/)
     output   = "\n%end\n"
     file.write(output)
   end

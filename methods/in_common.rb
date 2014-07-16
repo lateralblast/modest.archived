@@ -234,6 +234,9 @@ def get_linux_version_info(iso_file_name)
     else
       if linux_distro.match(/sl$/)
         iso_version = iso_info[1].split(//).join(".")
+        if iso_version.length == 1
+          iso_version = iso_version+".0"
+        end
       else
         if linux_distro.match(/oel|rhel/)
           if iso_file_name =~ /-rc-/
