@@ -36,8 +36,6 @@ def list_clients(service_type)
   return
 end
 
-# Check directory ownership
-
 def check_dir_owner(dir_name,uid)
   test_uid = File.stat(dir_name).uid
   if test_uid != "#{uid}"

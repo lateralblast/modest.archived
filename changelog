@@ -351,3 +351,5 @@
 # Fixed bug with IP forwarding check
 # 1.7.6: Wed 16 Jul 2014 16:20:33 EST
 # Added support for Centos 7
+# 1.7.7: Thu 17 Jul 2014 03:54:44 EST
+# Added support for OEL 7
