@@ -36,38 +36,6 @@ def list_clients(service_type)
   return
 end
 
-# Get OSX default rotute interface
-
-def get_osx_gw_if_name()
-  message    = "Getting:\tInterface name of default router"
-  command    = "netstat -rn |grep ^default |head -1 |awk '{print $6}'"
-  gw_if_name = execute_command(message,command)
-  gw_if_name = gw_if_name.chomp
-  return gw_if_name
-end
-
-# Check PF is configure on OS X 10.10
-
-def check_osx_pfctl(gw_if_name,if_name)
-  pf_file = $work_dir+"/pfctl_config"
-  if File.exist?(pf_file)
-    File.delete(pf_file)
-  end
-  output = File.open(pf_file,"w")
-  output.write("nat on #{gw_if_name} from #{if_name}:network to any -> (#{gw_if_name})\n")
-  output.write("pass inet proto icmp all\n")
-  output.write("pass in on #{if_name} proto udp from any to any port domain keep state\n")
-  output.write("pass quick on #{gw_if_name} proto udp from any to any port domain keep state\n")
-  output.close
-  message = "Enabling:\tPacket filtering"
-  command = "sudo pfctl -e"
-  execute_command(message,command)
-  message = "Loading:\yFilters from "+pf_file
-  command = "sudo pfctl -F all -f #{pf_file}"
-  execute_command(message,command)
-  return
-end
-
 # Check directory ownership
 
 def check_dir_owner(dir_name,uid)

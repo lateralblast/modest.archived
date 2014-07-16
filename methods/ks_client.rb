@@ -409,7 +409,7 @@ def populate_ks_pkg_list(service_name)
       pkg_list.push("augeas-libs")
       pkg_list.push("augeas")
     end
-    if !service_name.match(/fedora_[19,20]|rhel_7/)
+    if !service_name.match(/fedora_[19,20]|[rhel,centos]_7/)
       pkg_list.push("grub")
       pkg_list.push("libselinux-ruby")
     end
@@ -470,7 +470,7 @@ def output_ks_pkg_list(client_name,pkg_list,output_file,service_name)
     output = pkg_name+"\n"
     file.write(output)
   end
-  if service_name.match(/fedora_[19,20]|rhel_7/)
+  if service_name.match(/fedora_[19,20]|[centos,rhel]_7/)
     output   = "\n%end\n"
     file.write(output)
   end
@@ -501,7 +501,7 @@ def output_ks_post_list(client_name,post_list,output_file,service_name)
     output = line+"\n"
     file.write(output)
   end
-  if service_name.match(/fedora_[19,20]|rhel_7/)
+  if service_name.match(/fedora_[19,20]|[centos,rhel]_7/)
     output   = "\n%end\n"
     file.write(output)
   end

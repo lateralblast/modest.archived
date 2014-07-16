@@ -349,3 +349,5 @@
 # Fixed bugs with local config check on OS X
 # 1.7.5: Wed 16 Jul 2014 14:07:39 EST
 # Fixed bug with IP forwarding check
+# 1.7.6: Wed 16 Jul 2014 16:20:33 EST
+# Added support for Centos 7
