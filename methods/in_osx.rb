@@ -218,6 +218,18 @@ def create_osx_puppet_master_plist()
   return
 end
 
+# Create OS X Puppet Agent plist
+
+def create_osx_puppet_plist()
+  return
+end
+
+# Create OS X Puppet Master plist
+
+def create_osx_puppet_master_plist()
+  return
+end
+
 # Check OX X Puppet plist
 
 def check_osx_puppet_plist()
@@ -294,6 +306,12 @@ def create_osx_puppet_config()
     execute_command(message,command)
     print_contents_of_file(puppet_file)
   end
+  return
+end
+
+# Create OS X Puppet config
+
+def create_osx_puppet_config()
   return
 end
 
