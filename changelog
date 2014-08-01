@@ -359,3 +359,5 @@
 # Fixed -j switch
 # 1.8.0: Sat  2 Aug 2014 05:54:16 EST
 # Cleaned up local config output
+# 1.8.1: Sat  2 Aug 2014 09:48:34 EST
+# Updated code for Solaris 11.2

@@ -373,8 +373,16 @@ end
 
 def check_sol_puppet()
   puppet_conf = "/etc/puppet/puppet.conf"
-  puppet_bin  = "/var/ruby/1.8/gem_home/bin/puppet"
+  puppet_bins = [ '/usr/sbin/puppet', '/usr/local/bin/puppet',
+                  '/var/ruby/1.8/gem_home/bin/puppet',
+                  '/usr/ruby/1.9/bin/puppet' ]
   puppet_dir  = "/var/lib/puppet"
+  puppet_bin  = "/usr/sbin/puppet"
+  puppet_bins.each do |test_bin|
+    if File.exist?(test_bin)
+      puppet_bin = test_bin
+    end
+  end
   if !File.exist?(puppet_bin)
     %x[mkdir -p #{puppet_dir}]
     message = "Installing:\tPuppet"
@@ -405,12 +413,15 @@ def check_sol_puppet()
   end
   ["master","agent"].each do |service|
     message = "Checking:\tService "+service
-    command = "svcs -a |grep 'puppet#{service}'"
+    command = "svcs -a |grep '#{service}' |grep puppet"
     output  = execute_command(message,command)
     if !output.match(/#{service}/)
       create_sol11_puppet_manifest(service)
     end
     if output.match(/disabled/)
+      service = output.split(/\s+/)[2]
+      enable_smf_service(service)
+    else
       service = "svc:/network/puppet"+service
       enable_smf_service(service)
     end

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.8.0
+# Version:      1.8.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -610,7 +610,7 @@ end
 
 # Verbose output
 
-if $verbose_mode == 1 and opt["I"]
+if $verbose_mode == 1 and !opt["I"]
    puts "Information:\tSetting publisher host to "+publisher_port
 end
 
