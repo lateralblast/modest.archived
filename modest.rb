@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.7.9
+# Version:      1.8.0
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -31,7 +31,7 @@ require 'netaddr'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtuvwy1"
+$options                = "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtuvwy12"
 $verbose_mode           = 0
 $test_mode              = 0
 $download_mode          = 1
@@ -225,6 +225,7 @@ def print_usage()
   puts "-x: Set VM network type (e.g. hostonly or bridged or nat)"
   puts "-q: Set server size for client (e.g. small or large)"
   puts "-1: Check local configuration"
+  puts "-2: Check server functions on OS X"
   puts
   exit
   return
@@ -347,6 +348,10 @@ def check_local_config(mode,opt)
     end
   end
   if mode == "server"
+    if $os_name == "Darwin"
+      $tftp_dir   = "/private/tftpboot"
+      $dhcpd_file = "/usr/local/etc/dhcpd.conf"
+    end
     if $os_name.match(/SunOS/) and $os_rel.match(/11/)
       check_tftpd()
       check_local_publisher()
@@ -373,14 +378,6 @@ def check_local_config(mode,opt)
         $tftp_dir   = "/tftpboot"
         $dhcpd_file = "/etc/dhcp/dhcpd.conf"
       end
-    end
-    if $os_name.match(/Darwin/)
-      check_osx_dnsmasq()
-      check_osx_tftpd()
-      check_osx_dhcpd()
-      check_osx_puppet()
-      $tftp_dir   = "/private/tftpboot"
-      $dhcpd_file = "/usr/local/etc/dhcpd.conf"
     end
   else
     if $os_name.match(/Linux/)
@@ -439,6 +436,15 @@ begin
   opt = Getopt::Std.getopts($options)
 rescue
   print_usage()
+end
+
+if opt["2"]
+  if $os_name.match(/Darwin/)
+    check_osx_dnsmasq()
+    check_osx_tftpd()
+    check_osx_dhcpd()
+    check_osx_puppet()
+  end
 end
 
 if opt["1"]

@@ -45,7 +45,7 @@ def check_osx_nat(gw_if_name,if_name)
   command = "sudo sysctl -a net.inet.ip.forwarding |awk '{print $2}'"
   output  = execute_command(message,command)
   output  = output.chomp
-  if output == "0"
+  if output =~ /0/
     message = "Enabling:\tIP forwarding"
     command = "sudo sysctl net.inet.ip.forwarding=1"
     execute_command(message,command)

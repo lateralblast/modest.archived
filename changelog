@@ -357,3 +357,5 @@
 # Added support for Scientific Linux 7
 # 1.7.9: Sat  2 Aug 2014 05:35:40 EST
 # Fixed -j switch
+# 1.8.0: Sat  2 Aug 2014 05:54:16 EST
+# Cleaned up local config output
