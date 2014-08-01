@@ -18,6 +18,9 @@ def check_osx_pfctl(gw_if_name,if_name)
     File.delete(pf_file)
   end
   output = File.open(pf_file,"w")
+  if $verbose_mode == 1
+    puts "Enabling forwarding between "+gw_if_name+" and "+if_name
+  end
   output.write("nat on #{gw_if_name} from #{if_name}:network to any -> (#{gw_if_name})\n")
   output.write("pass inet proto icmp all\n")
   output.write("pass in on #{if_name} proto udp from any to any port domain keep state\n")

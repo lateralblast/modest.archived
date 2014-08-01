@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.7.8
+# Version:      1.7.9
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -31,7 +31,7 @@ require 'netaddr'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtuvwy1"
+$options                = "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtuvwy1"
 $verbose_mode           = 0
 $test_mode              = 0
 $download_mode          = 1
@@ -482,6 +482,15 @@ if opt["w"]
   $download_mode = 0
 else
   $download_mode = 1
+end
+
+# Change VM disk size
+
+if opt["j"]
+  $default_vm_size = opt["j"]
+  if !$default_vm_size.match(/G$/)
+    $default_vm_size = $default_vm_size+"G"
+  end
 end
 
 # Print examples

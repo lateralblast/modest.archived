@@ -400,7 +400,7 @@ def populate_ks_pkg_list(service_name)
     if !service_name.match(/sl_6|[a-z]_5|fedora_[19,20]/)
       pkg_list.push("@network-file-system-client")
     end
-    if service_name.match(/centos_6|fedora_18|rhel_6|oel_6/)
+    if service_name.match(/centos_6|fedora_18|rhel_[6,7]|oel_[6,7]/)
       pkg_list.push("redhat-lsb-core")
       pkg_list.push("ruby")
       pkg_list.push("ruby-irb")
