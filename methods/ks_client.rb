@@ -271,9 +271,6 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("sed -i 's,#{$default_epel_mirror},#{$local_epel_mirror},g' #{epel_file}")
   post_list.push("yum -y update")
   post_list.push("")
-  if service_name.match(/sl_/)
-    post_list.push("yum -y install redhat-lsb-core")
-  end
   #post_list.push("yum -y install nss-mdns")
   rpm_list = populate_puppet_rpm_list(service_name,client_arch)
   rpm_list.each do |rpm_url|
@@ -400,7 +397,7 @@ def populate_ks_pkg_list(service_name)
     if !service_name.match(/sl_6|[a-z]_5|fedora_[19,20]/)
       pkg_list.push("@network-file-system-client")
     end
-    if service_name.match(/centos_6|fedora_18|rhel_[6,7]|oel_[6,7]/)
+    if service_name.match(/centos_[6,7]|fedora_[18,19,20]|rhel_[6,7]|oel_[6,7]|sl_[6,7]/)
       pkg_list.push("redhat-lsb-core")
       pkg_list.push("ruby")
       pkg_list.push("ruby-irb")

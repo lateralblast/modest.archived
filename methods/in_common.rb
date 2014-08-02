@@ -682,9 +682,11 @@ end
 def check_dir_exists(dir_name)
   output  = ""
   if !File.directory?(dir_name) and !File.symlink?(dir_name)
-    message = "Creating:\t"+dir_name
-    command = "mkdir -p '#{dir_name}'"
-    output  = execute_command(message,command)
+    if dir_name.match(/[A-z]/)
+      message = "Creating:\t"+dir_name
+      command = "mkdir -p '#{dir_name}'"
+      output  = execute_command(message,command)
+    end
   end
   return output
 end

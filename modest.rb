@@ -169,6 +169,13 @@ if File.directory?("./methods")
   end
 end
 
+# Create required directories
+
+check_dir_exists($work_dir)
+[ $iso_base_dir, $repo_base_dir, $image_base_dir, $pkg_base_dir, $client_base_dir ].each do |dir_name|
+  check_zfs_fs_exists(dir_name)
+end
+
 # Print script usage information
 
 def print_usage()
@@ -285,10 +292,6 @@ def check_local_config(mode,opt)
   end
   if $verbose_mode == 1
     puts "Information:\tSetting work directory to "+$work_dir
-  end
-  check_dir_exists($work_dir)
-    [ $iso_base_dir, $repo_base_dir, $image_base_dir, $pkg_base_dir, $client_base_dir ].each do |dir_name|
-    check_zfs_fs_exists(dir_name)
   end
   if !$tmp_dir.match(/[A-z]/)
     $tmp_dir = $work_dir+"/tmp"

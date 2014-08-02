@@ -215,7 +215,7 @@ def configure_ks_vmware_repo(service_name,client_arch)
   end
   if $download_mode == 1
     if !File.directory?(vmware_dir)
-      check_zfs_fs_exists(vmware_dir)
+      check_dir_exists(vmware_dir)
       message = "Fetching:\tVMware RPMs"
       command = "cd #{vmware_dir} ; lftp -e 'mget * ; quit' #{vmware_url}"
       execute_command(message,command)
