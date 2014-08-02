@@ -323,7 +323,7 @@ def check_local_config(mode,opt)
   if !$default_host.match(/[0-9]/)
     message = "Determining:\tDefault host IP"
     if $os_name.match(/SunOS/)
-      command = "ipadm show-addr #{$default_net} |grep net |awk '{print $4}' |cut -f1 -d'/'"
+      command = "ipadm show-addr #{$default_net} |grep net |head -1 |awk '{print $4}' |cut -f1 -d'/'"
     end
     if $os_name.match(/Darwin/)
       $default_net="en0"
@@ -1214,6 +1214,7 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
         exit
       end
       check_client_ip(client_ip)
+      check_dhcpd_config(publisher_host)
       eval"[configure_#{funct}_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)]"
     end
   end

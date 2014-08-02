@@ -337,11 +337,9 @@ def check_dhcpd_config(publisher_host)
     file.write("}\n")
     file.write("\n")
     file.close
-    if File.exist?($dhcpd_file)
-      message = "Archiving:\tDHCPd configuration file "+$dhcpd_file+" to "+backup_file
-      command = "cp #{$dhcpd_file} #{backup_file}"
-      execute_command(message,command)
-    end
+    message = "Archiving:\tDHCPd configuration file "+$dhcpd_file+" to "+backup_file
+    command = "cp #{$dhcpd_file} #{backup_file}"
+    execute_command(message,command)
     message = "Creating:\tDHCPd configuration file "+$dhcpd_file
     command = "cp #{tmp_file} #{$dhcpd_file}"
     execute_command(message,command)
