@@ -361,3 +361,5 @@
 # Cleaned up local config output
 # 1.8.1: Sat  2 Aug 2014 09:48:34 EST
 # Updated code for Solaris 11.2
+# 1.8.2: Sat  2 Aug 2014 13:29:46 EST
+# Removed/added packages for RHEL 7 based releases
