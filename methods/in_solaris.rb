@@ -418,11 +418,12 @@ def check_sol_puppet()
     if !output.match(/#{service}/)
       create_sol11_puppet_manifest(service)
     end
-    if output.match(/disabled/)
-      service = output.split(/\s+/)[2]
-      enable_smf_service(service)
-    else
+    if output.match(/puppet#{service}/)
       service = "svc:/network/puppet"+service
+    else
+      service = output.split(/\s+/)[2]
+    end
+    if output.match(/disabled/)
       enable_smf_service(service)
     end
   end
