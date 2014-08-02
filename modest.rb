@@ -608,6 +608,14 @@ if opt["t"]
   puts "Information:\tRunning in test mode"
 end
 
+# Get/set publisher port
+
+if opt["p"]
+  publisher_port = opt["p"]
+else
+  publisher_port = $default_ai_port
+end
+
 # Verbose output
 
 if $verbose_mode == 1 and !opt["I"]
@@ -642,14 +650,6 @@ if $verbose_mode == 1
   puts "Information     Running in "+mode+" mode"
 end
 check_local_config(mode,opt)
-
-# Get/set publisher port
-
-if opt["p"]
-  publisher_port = opt["p"]
-else
-  publisher_port = $default_ai_port
-end
 
 # Get/set publisher host
 
