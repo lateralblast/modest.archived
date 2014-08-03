@@ -306,6 +306,8 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
     end
   end
   post_list.push("")
+  post_list.push("# Avahi daemon for mDNS")
+  post_list.push("")
   post_list.push("chkconfig avahi-daemon on")
   post_list.push("service avahi-daemon start")
   post_list.push("")
