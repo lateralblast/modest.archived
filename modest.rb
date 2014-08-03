@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Muti OS Deployment Engine Server Tool)
-# Version:      1.8.2
+# Version:      1.8.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -27,6 +27,10 @@ require 'parseconfig'
 require 'unix_crypt'
 require 'pathname'
 require 'netaddr'
+require 'net/http'
+require 'uri'
+require 'nokogiri'
+require 'mechanize'
 
 # Set up some global variables/defaults
 
@@ -142,6 +146,8 @@ $openbsd_base_url       = "http://ftp.openbsd.org/pub/OpenBSD"
 $default_x86_virtual    = "VirtualBox"
 $default_x86_vm_net     = "enp0s3"
 $default_ext_network    = "192.168.1.0"
+$puppet_rpm_base_url    = "http://yum.puppetlabs.com"
+$centos_rpm_base_url    = "http://"+$local_centos_mirror+"/centos"
 
 # Declare some package versions
 

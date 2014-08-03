@@ -363,3 +363,5 @@
 # Updated code for Solaris 11.2
 # 1.8.2: Sat  2 Aug 2014 13:29:46 EST
 # Removed/added packages for RHEL 7 based releases
+# 1.8.3: Mon  4 Aug 2014 07:34:41 EST
+# Cleaned up puppet mirror and kickstart code

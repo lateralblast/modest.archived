@@ -206,6 +206,7 @@ end
 # Populate post commands
 
 def populate_ks_post_list(client_arch,service_name,publisher_host)
+  gateway_ip  = $default_host.split(/\./)[0..2].join(".")+".254"
   post_list   = []
   admin_group = $q_struct["admin_group"].value
   admin_user  = $q_struct["admin_user"].value
@@ -235,6 +236,9 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("echo 'nameserver #{$default_nameserver}' >> #{resolv_conf}")
   post_list.push("echo 'search local' >> #{resolv_conf}")
   post_list.push("")
+  post_list.push("route add default gw #{gateway_ip}")
+  post_list.push("echo 'GATEWAY=#{gateway_ip}' > /etc/sysconfig/network")
+  post_list.push("")
   if service_name.match(/centos|fedora|rhel|sl_|oel/)
     if service_name.match(/centos_5|fedora_18|rhel_5|sl_5|oel_5/)
       epel_url = "http://"+$local_epel_mirror+"/pub/epel/5/i386/epel-release-5-4.noarch.rpm"
@@ -248,11 +252,13 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
     if service_name.match(/sl_/)
       repo_file = "/etc/yum.repos.d/sl.repo"
     end
+    if service_name.match(/centos|sl_/)
+      post_list.push("# Change mirror for yum")
+      post_list.push("")
+      post_list.push("echo 'Changing default mirror for yum'")
+      post_list.push("cp #{repo_file} #{repo_file}.orig")
+    end
   end
-  post_list.push("# Change mirror for yum")
-  post_list.push("")
-  post_list.push("echo 'Changing default mirror for yum'")
-  post_list.push("cp #{repo_file} #{repo_file}.orig")
   if service_name.match(/centos/)
     post_list.push("sed -i 's/^mirror./#&/g' #{repo_file}")
     post_list.push("sed -i 's/^#\\(baseurl\\)/\\1/g' #{repo_file}")
@@ -261,22 +267,43 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   if service_name.match(/sl_/)
     post_list.push("sed -i 's,#{$default_sl_mirror},#{$local_sl_mirror},g' #{repo_file}")
   end
-  post_list.push("")
-  post_list.push("# Configure Epel repo")
-  post_list.push("")
-  post_list.push("rpm -i #{epel_url}")
-  post_list.push("cp #{epel_file} #{epel_file}.orig")
-  post_list.push("sed -i 's/^mirror./#&/g' #{epel_file}")
-  post_list.push("sed -i 's/^#\\(baseurl\\)/\\1/g' #{epel_file}")
-  post_list.push("sed -i 's,#{$default_epel_mirror},#{$local_epel_mirror},g' #{epel_file}")
-  post_list.push("yum -y update")
-  post_list.push("")
-  #post_list.push("yum -y install nss-mdns")
-  rpm_list = populate_puppet_rpm_list(service_name,client_arch)
-  rpm_list.each do |rpm_url|
-    rpm_file  = File.basename(rpm_url)
-    local_url = "http://"+publisher_host+"/puppet/"+rpm_file
-    post_list.push("rpm -i #{local_url}")
+  if service_name.match(/_[5,6]/)
+    if service_name.match(/_5/)
+      epel_url = "http://"+$local_epel_mirror+"/pub/epel/5/"+client_arch+"/epel-release-5-4.noarch.rpm"
+    end
+    if service_name.match(/_6/)
+      epel_url = "http://"+$local_epel_mirror+"/pub/epel/6/"+client_arch+"/epel-release-6-8.noarch.rpm"
+    end
+    if service_name.match(/_7/)
+      epel_url = "http://"+$local_epel_mirror+"/pub/epel/beta/7/"+client_arch+"/epel-release-7-0.2.noarch.rpm"
+    end
+    post_list.push("")
+    post_list.push("# Configure Epel repo")
+    post_list.push("")
+    post_list.push("rpm -i #{epel_url}")
+    post_list.push("cp #{epel_file} #{epel_file}.orig")
+    post_list.push("sed -i 's/^mirror./#&/g' #{epel_file}")
+    post_list.push("sed -i 's/^#\\(baseurl\\)/\\1/g' #{epel_file}")
+    post_list.push("sed -i 's/7/beta\\/7/g' #{epel_file}")
+    post_list.push("sed -i 's,#{$default_epel_mirror},#{$local_epel_mirror},g' #{epel_file}")
+    post_list.push("yum -y update")
+    post_list.push("")
+  end
+  rpm_list  = populate_puppet_rpm_list(service_name,client_arch)
+  rpm_file  = rpm_list.grep(/facter/)[0]
+  rpm_file  = rpm_file.split(/\//)[1..-1].join("/")
+  local_url = "http://"+publisher_host+"/puppet/"+rpm_file
+  post_list.push("rpm -i #{local_url}")
+  rpm_file  = rpm_list.grep(/hiera/)[0]
+  rpm_file  = rpm_file.split(/\//)[1..-1].join("/")
+  local_url = "http://"+publisher_host+"/puppet/"+rpm_file
+  post_list.push("rpm -i #{local_url}")
+  rpm_list.each do |rpm_file|
+    if !rpm_file.match(/facter|hiera/)
+      rpm_file  = rpm_file.split(/\//)[1..-1].join("/")
+      local_url = "http://"+publisher_host+"/puppet/"+rpm_file
+      post_list.push("rpm -i #{local_url}")
+    end
   end
   post_list.push("")
   post_list.push("chkconfig avahi-daemon on")
@@ -354,6 +381,17 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("")
   post_list.push("puppet agent --test")
   post_list.push("")
+  post_list.push("")
+  post_list.push("# Install VirtualBox Tools")
+  post_list.push("")
+  post_list.push("mkdir /mnt/cdrom")
+  post_list.push("if [ \"`dmidecode |grep VirtualBox`\" ]; then")
+  post_list.push("  echo 'Installing VirtualBox Guest Additions'")
+  post_list.push("  mount /dev/cdrom /mnt/cdrom")
+  post_list.push("  /cdrom/VBoxLinuxAdditions.run")
+  post_list.push("  umount /mnt/cdrom")
+  post_list.push("fi")
+  post_list.push("")
   if $use_alt_repo == 1
     post_list.push("mkdir /tmp/rpms")
     post_list.push("cd /tmp/rpms")
@@ -401,6 +439,7 @@ def populate_ks_pkg_list(service_name)
       pkg_list.push("redhat-lsb-core")
       pkg_list.push("ruby")
       pkg_list.push("ruby-irb")
+      pkg_list.push("ruby-libs")
       if !service_name.match(/_7/)
         pkg_list.push("ruby-rdoc")
         pkg_list.push("augeas")
@@ -421,6 +460,9 @@ def populate_ks_pkg_list(service_name)
     pkg_list.push("dos2unix")
     pkg_list.push("unix2dos")
     pkg_list.push("avahi")
+    pkg_list.push("gcc")
+    pkg_list.push("autoconf")
+    pkg_list.push("automake")
     if service_name.match(/fedora_[19,20]/)
       pkg_list.push("net-tools")
       pkg_list.push("bind-utils")

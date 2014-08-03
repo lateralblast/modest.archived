@@ -231,22 +231,47 @@ end
 # Configure local Puppet repo
 
 def configure_ks_puppet_repo(service_name,iso_arch)
-  puppet_dir = $pkg_base_dir+"/puppet"
+  puppet_rpm_list = {}
+  puppet_base_dir = $pkg_base_dir+"/puppet"
+  puppet_rpm_list["products"]     = []
+  puppet_rpm_list["dependencies"] = []
+  puppet_rpm_list["products"].push("facter")
+  puppet_rpm_list["products"].push("hiera")
+  puppet_rpm_list["products"].push("puppet")
+  puppet_rpm_list["dependencies"].push("ruby-augeas")
+  puppet_rpm_list["dependencies"].push("ruby-json")
+  puppet_rpm_list["dependencies"].push("ruby-shadow")
+  puppet_rpm_list["dependencies"].push("ruby-rgen")
+  puppet_rpm_list["dependencies"].push("libselinux-ruby")
   check_zfs_fs_exists(puppet_dir)
   add_apache_alias(puppet_dir)
   rpm_list   = populate_puppet_rpm_list(service_name,iso_arch)
   if !File.directory?(puppet_dir)
     check_dir_exists(puppet_dir)
   end
-  rpm_list.each do |rpm_url|
-    rpm_file = File.basename(rpm_url)
-    rpm_file = puppet_dir+"/"+rpm_file
-    if !File.exist?(rpm_file)
-      wget_file(rpm_url,rpm_file)
-    else
-      file_size = File.size(rpm_file)
-      if file_size == 0
-        wget_file(rpm_url,rpm_file)
+  release    = service_name.split(/_/)[1]
+  [ "products", "dependency" ].each do |remote_dir|
+    puppet_rpm_list[sub_dir].each do |pkg_name|
+      if pkg_name.match(/libselinux-ruby/)
+        remote_url = $puppet_rpm_base_url+"/el/"+release+"/"+remote_dir+"/"+iso_arch+"/"
+      else
+        remote_url = $centos_rpm_base_url+"/"+release+"/os/"+iso_arch+"/Packages/"
+      end
+      rpm_urls = Nokogiri::HTML.parse(remote_url).css('td a')
+      pkg_file = rpm_urls.grep(/^#{pkg_name}-[0-9]/)[-1]
+      if pkg_file.to_s.match(/href/)
+        pkg_file   = URI.parse(pkg_file).to_s
+        pkg_url    = puppet_rpm_url+pkg_file
+        local_file = puppet_local_dir+"/"+pkg_file
+        if !File.exist?(local_file) or File.size(local_file) == 0
+          if $verbose_mode == 1
+            puts "Fetching "+pkg_url+" to "+local_file
+          end
+          agent = Mechanize.new
+          agent.redirect_ok = true
+          agent.pluggable_parser.default = Mechanize::Download
+          agent.get(pkg_url).save(local_file)
+        end
       end
     end
   end
