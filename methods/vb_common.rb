@@ -386,7 +386,10 @@ def check_vbox_hostonly_network()
   if_name = if_name.chomp
   if !if_name.match(/vboxnet/)
     message = "Plumbing:\tVirtualBox hostonly network"
-    command = "VBoxManage hostonlyif create |grep '^interface' |awk '{print $2}'"
+    command = "VBoxManage hostonlyif create"
+    execute_command(message,command)
+    message = "Finding:\tVirtualBox hostonly network name"
+    command = "VBoxManage list hostonlyifs |grep '^Name' |awk '{print $2}' |head -1"
     if_name = execute_command(message,command)
     if_name = if_name.chomp
     if_name = if_name.gsub(/'/,"")

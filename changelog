@@ -365,3 +365,5 @@
 # Removed/added packages for RHEL 7 based releases
 # 1.8.3: Mon  4 Aug 2014 07:34:41 EST
 # Cleaned up puppet mirror and kickstart code
+# 1.8.4: Tue 26 Aug 2014 16:36:25 EST
+# Fixed plumbing of vboxnet interface

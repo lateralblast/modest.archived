@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.8.3
+# Version:      1.8.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -306,6 +306,7 @@ def check_local_config(mode,opt)
     puts "Information:\tSetting temporary directory to "+$work_dir
   end
   # Get OS name and set system settings appropriately
+  check_dir_exists($work_dir)
   check_dir_exists($tmp_dir)
   $os_name = %x[uname].chomp
   $os_arch = %x[uname -p].chomp
@@ -467,6 +468,7 @@ if opt["1"]
       if_name = "vboxnet0"
     end
     gw_if_name = get_osx_gw_if_name()
+    check_vbox_hostonly_network()
     check_osx_nat(gw_if_name,if_name)
   end
   exit
