@@ -117,6 +117,7 @@ Oracle VM Server for SPARC
 VirtualBox and VMware Fusion VM creation
 
 - Can create VMs to speed up the automation of testing new images
+- Can run VMs headless and connect via serial allowing remote installation
 
 Solaris Zone Creation
 
