@@ -25,7 +25,7 @@ def boot_lxc(client_name)
     message = "Starting:\tClient "+client_name
     command = "lxc-start -n #{client_name} -d"
     execute_command(message,command)
-    if $use_serial == 1
+    if $serial_mode == 1
       system("lxc-console -n #{client_name}")
     end
   end

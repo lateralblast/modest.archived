@@ -367,3 +367,7 @@
 # Cleaned up puppet mirror and kickstart code
 # 1.8.4: Tue 26 Aug 2014 16:36:25 EST
 # Fixed plumbing of vboxnet interface
+# 1.8.5: Wed 27 Aug 2014 10:22:01 EST
+# Improved addition and removal of hosts
+# 1.8.6: Wed 27 Aug 2014 17:39:03 EST
+# Improved VirtualBox serial connectivity

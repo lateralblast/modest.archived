@@ -90,13 +90,13 @@ def boot_fusion_vm(client_name)
   fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
   fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
   message          = "Starting:\tVM "+client_name
-  if $text_install == 1
+  if $text_mode == 1
     command = "'#{vmrun_bin}' -T fusion start '#{fusion_vmx_file}' nogui"
   else
     command = "'#{vmrun_bin}' -T fusion start '#{fusion_vmx_file}'"
   end
   execute_command(message,command)
-  if $use_serial == 1
+  if $serial_mode == 1
     if $verbose_mode == 1
       puts "Information:\tConnecting to serial port of "+client_name
     end

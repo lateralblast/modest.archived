@@ -77,13 +77,13 @@ def configure_ks_pxe_client(client_name,client_ip,client_mac,client_arch,service
       end
     end
   end
-  if $text_install == 1
+  if $text_mode == 1
     if service_name.match(/sles/)
       append_string = append_string+" textmode=1"
     else
       append_string = append_string+" text"
     end
-    if $use_serial == 1
+    if $serial_mode == 1
       append_string = append_string+" serial console=ttyS0"
     end
   end
@@ -393,6 +393,12 @@ def populate_ks_post_list(client_arch,service_name,publisher_host)
   post_list.push("  umount /mnt/cdrom")
   post_list.push("fi")
   post_list.push("")
+  if service_name.match(/rhel|centos/)
+    post_list.push("# Enable serial console")
+    post_list.push("")
+    post_list.push("grubby --update-kernel=ALL --args=\"console=ttyS0\"")
+    post_list.push("")
+  end
   if $use_alt_repo == 1
     post_list.push("mkdir /tmp/rpms")
     post_list.push("cd /tmp/rpms")

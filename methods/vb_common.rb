@@ -335,26 +335,36 @@ end
 
 def boot_vbox_vm(client_name)
   check_vbox_hostonly_network()
+  check_vbox_vm_exists(client_name)
   message = "Starting:\tVM "+client_name
-  if $text_install == 1
-    command = "VBoxManage startvm #{client_name} --type headless"
+  if $text_mode == 1 or $serial_mode == 1
+    puts
+    puts "Information:\tBooting and connecting to virtual serial port of "+client_name
+    puts
+    puts "To disconnect from this session use CTRL-Q"
+    puts
+    puts "If you wish to re-connect to the serial console of this machine,"
+    puts "run the following command"
+    puts
+    puts "socat UNIX-CONNECT:/tmp/#{client_name} STDIO,raw,echo=0,escape=0x11,icanon=0"
+    puts
+    %x[VBoxManage startvm #{client_name} --type headless ; sleep 1]
   else
     command = "VBoxManage startvm #{client_name}"
+    execute_command(message,command)
   end
-  execute_command(message,command)
-  if $use_serial == 1
-    if $verbose_mode == 1
-      puts "Information:\tConnecting to serial port of "+client_name
-    end
-    begin
-      socket = UNIXSocket.open("/tmp/#{client_name}")
-      socket.each_line do |line|
-        puts line
-      end
-    rescue
-      puts "Cannot open socket"
-      exit
-    end
+  if $serial_mode == 1
+    system("socat UNIX-CONNECT:/tmp/#{client_name} STDIO,raw,echo=0,escape=0x11,icanon=0")
+  else
+    puts
+    puts "If you wish to connect to the serial console of this machine,"
+    puts "run the following command"
+    puts
+    puts "socat UNIX-CONNECT:/tmp/#{client_name} STDIO,raw,echo=0,escape=0x11,icanon=0"
+    puts
+    puts "To disconnect from this session use CTRL-Q"
+    puts
+    puts
   end
   return
 end

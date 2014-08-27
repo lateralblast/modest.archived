@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.8.4
+# Version:      1.8.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -114,7 +114,7 @@ $default_nfs4_domain    = "dynamic"
 $default_auto_reg       = "disable"
 $q_struct               = {}
 $q_order                = []
-$text_install           = 1
+$text_mode           = 1
 $backup_dir             = ""
 $rpm2cpio_url           = "http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
 $rpm2cpio_bin           = ""
@@ -122,7 +122,7 @@ $vbox_disk_type         = "sas"
 $default_vm_size        = "12G"
 $default_vm_mem         = "1024"
 $default_vm_vcpu        = "1"
-$use_serial             = 0
+$serial_mode             = 0
 $os_name                = ""
 $yes_to_all             = 0
 $default_cdom_mau       = "1"
@@ -228,7 +228,7 @@ def print_usage()
   puts "-y: Override (destroy ZFS filesystem as part of uninstallation and delete clients)"
   puts "-D: Use default values for questions"
   puts "-T: Use text mode install"
-  puts "-u: Use serial connectivity (emulated)"
+  puts "-2: Use serial connectivity (emulated)"
   puts "-X: X Windows based install (default is text based)"
   puts "    or run VM in GUI mode (default is headless)"
   puts "-H: Provide detailed examples"
@@ -239,6 +239,7 @@ def print_usage()
   puts "-q: Set server size for client (e.g. small or large)"
   puts "-1: Check local configuration"
   puts "-2: Check server functions on OS X"
+  puts "-u: Specify username"
   puts
   exit
   return
@@ -446,6 +447,10 @@ begin
   opt = Getopt::Std.getopts($options)
 rescue
   print_usage()
+end
+
+if opt["u"]
+  $default_admin_user = opt["u"]
 end
 
 if opt["2"]
@@ -746,14 +751,14 @@ end
 
 if !opt["d"]
   if opt["X"]
-    $text_install = 0
+    $text_mode = 0
     if $verbose_mode == 1
-      puts "Information:\tSetting install type to X based"
+      puts "Information:\tRunning in windowed mode"
     end
   else
-    $text_install = 1
+    $text_mode = 1
     if $verbose_mode == 1
-      puts "Information:\tSetting install type to text based"
+      puts "Information:\tNot running in windowed mode"
     end
   end
 end
@@ -840,14 +845,14 @@ end
 # If give a -T use text base install
 
 if opt["T"]
-  $text_install = 1
+  $text_mode = 1
 end
 
-# If given -u use serial based install
+# If given -2 use serial based install
 
-if opt["u"]
-  $text_install = 1
-  $use_serial   = 1
+if opt["2"]
+  $text_mode = 1
+  $serial_mode   = 1
   if $verbose_mode == 1
     puts "Information:\tUse serial connectivity"
   end
@@ -928,6 +933,7 @@ if opt["O"] or opt["F"] and $os_arch.match(/i386|x86_64/)
     exit
   end
   if opt["d"]
+    remove_hosts_entry(client_name,client_ip)
     eval"[unconfigure_#{vfunct}_vm(client_name)]"
   end
   if opt["e"]
@@ -1102,7 +1108,17 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
       if opt["N"]
         funct = "nb"
       end
+      if opt["i"]
+        add_hosts_entry(client_name,client_ip)
+      end
       eval"[configure_#{funct}_#{vfunct}_vm(client_name,client_mac,client_arch,client_os,client_rel)]"
+      puts
+      puts "To connect to the serial console of this machine once booted run the following command:"
+      puts
+      puts "socat UNIX-CONNECT:/tmp/#{client_name} STDIO,raw,echo=0,escape=0x11,icanon=0"
+      puts
+      puts "If you wish to disconnect from this session use CTRL-Q"
+      puts
     end
     if opt["L"]
       eval"[list_#{funct}_#{vfunct}_vms()]"
@@ -1224,6 +1240,30 @@ if opt["A"] or opt["K"] or opt["J"] or opt["E"] or opt["G"] or opt["U"] or opt["
       check_client_ip(client_ip)
       check_dhcpd_config(publisher_host)
       eval"[configure_#{funct}_client(client_name,client_arch,client_mac,client_ip,client_model,publisher_host,service_name,image_file)]"
+      if client_arch.match(/i386|x86_64/)
+        if opt["2"]
+          puts
+          puts "This Client has been configured with serial support"
+          puts
+          puts "To view the installation you will need to connect to the VM via the serial port"
+          puts
+          puts "To boot the VM and connect to the serial port automatically boot the VM with the serial option"
+          puts
+          puts "If you want to boot the VM in headless mode without connecting to the serial port but want to"
+          puts "connect to the serial port at a later stage you can use the following socat command:"
+          puts
+          puts "socat UNIX-CONNECT:/tmp/#{client_name} STDIO,raw,echo=0,escape=0x11,icanon=0"
+          puts
+          puts "If you wish to disconnect from this session use CTRL-Q"
+          puts
+        else
+          puts
+          puts "To connect to the serial console of this machine once booted run the following command:"
+          puts
+          puts "If you wish to disconnect from this session use CTRL-Q"
+          puts
+        end
+      end
     end
   end
 end

@@ -218,6 +218,7 @@ Requirements
 
 All:
 
+- Socat
 - Ruby
   - Version 1.8 or greater
     - Although it's been coded with 2.x I've avoided using 2.x features

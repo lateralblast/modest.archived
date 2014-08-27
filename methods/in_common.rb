@@ -514,12 +514,19 @@ def add_hosts_entry(client_name,client_ip)
   if !output.match(/#{client_name}/)
     backup_file(hosts_file)
     message = "Adding:\t\tHost "+client_name+" to "+hosts_file
-    command = "echo '#{client_ip} #{client_name}.local #{client_name}' >> #{hosts_file}"
+    if $os_name.match(/Darwin/)
+      command = "sudo sh -c 'echo \"#{client_ip}\\t#{client_name}.local\\t#{client_name}\\t# #{$default_admin_user}\" >> #{hosts_file}'"
+    else
+      command = "echo \"#{client_ip}\\t#{client_name}.local\\t#{client_name}\\t# #{$default_admin_user}\" >> #{hosts_file}"
+    end
     output  = execute_command(message,command)
     if $os_name.match(/Darwin/)
-      service = "dnsmasq"
-      service = get_service_name(service)
-      refresh_service(service)
+      pfile   = "/Library/LaunchDaemons/homebrew.mxcl.dnsmasq.plist"
+      if File.exist?(pfile)
+        service = "dnsmasq"
+        service = get_service_name(service)
+        refresh_service(service)
+      end
     end
   end
   return
@@ -537,15 +544,23 @@ def remove_hosts_entry(client_name,client_ip)
   if output.match(/#{client_name}/)
     file_info=IO.readlines(hosts_file)
     file_info.each do |line|
-      if !line.match(/^#{client_ip}/)
-        if !line.match(/#{client_name}/)
+      if !line.match(/#{client_name}/)
+        if client_ip.match(/[0-9]/)
+          if !line.match(/^#{client_ip}/)
+            copy.push(line)
+          end
+        else
           copy.push(line)
         end
       end
     end
     File.open(tmp_file,"w") {|file| file.puts copy}
     message = "Updating:\tHosts file "+hosts_file
-    command = "cp #{tmp_file} #{hosts_file} ; rm #{tmp_file}"
+    if $os_name.match(/Darwin/)
+      command = "sudo sh -c 'cp #{tmp_file} #{hosts_file} ; rm #{tmp_file}'"
+    else
+      command = "cp #{tmp_file} #{hosts_file} ; rm #{tmp_file}"
+    end
     execute_command(message,command)
   end
   return

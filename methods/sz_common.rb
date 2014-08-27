@@ -368,7 +368,7 @@ def create_zone(client_name,client_ip,zone_dir,client_rel,image_file,service_nam
       end
     end
   end
-  if $use_serial == 1
+  if $serial_mode == 1
     boot_zone(client_name)
   end
   add_hosts_entry(client_name,client_ip)
@@ -418,7 +418,7 @@ def boot_zone(client_name)
   message = "Booting:\tZone "+client_name
   command = "zoneadm -z #{client_name} boot"
   execute_command(message,command)
-  if $use_serial == 1
+  if $serial_mode == 1
     system("zlogin #{client_name}")
   end
   return
