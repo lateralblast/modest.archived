@@ -36,6 +36,23 @@ def list_clients(service_type)
   return
 end
 
+# List appliances
+
+def list_ovas()
+  file_list = Dir.entries($iso_base_dir)
+  puts
+  puts "Virtual Appliances:"
+  puts
+  file_list.each do |file_name|
+    if file_name.match(/ova$/)
+      puts file_name
+    end
+  end
+  puts
+end
+
+# Check directory ownership
+
 def check_dir_owner(dir_name,uid)
   test_uid = File.stat(dir_name).uid
   if test_uid != "#{uid}"

@@ -1,5 +1,31 @@
 # VirtualBox VM support code
 
+# Clone VM
+
+def clone_vbox_vm(client_name,new_name)
+  check_vbox_vm_exists(client_name)
+  %x[VBoxManage clonevm #{client_name} --name #{new_name} --register]
+  return
+end
+
+# Import OVA
+
+def import_vbox_ova(client_name,ova_file)
+  if !ova_file.match(/\//)
+    ova_file = $iso_base_dir+"/"+ova_file
+  end
+  if File.exist?(ova_file)
+    if client_name.match(/[A-z]|[0-9]/)
+      %x[VBoxManage import #{ova_file} --vsys 0 --vmname #{client_name}]
+    else
+      %x[VBoxManage import #{ova_file}]
+    end
+  else
+    puts "Virtual Appliance "+ova_file+"does not exist"
+  end
+  return
+end
+
 # List Linux KS VirtualBox VMs
 
 def list_ks_vbox_vms()

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.8.7
+# Version:      1.8.8
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -205,8 +205,8 @@ def print_usage()
   puts "-e: Client MAC Address"
   puts "-i: Client IP Address"
   puts "-m: Client model (used for Jumpstart)"
-  puts "-S: Configure server"
-  puts "-C: Configure client services"
+  puts "-S: Configure server (or snapshot VMs when dealing with VMs)"
+  puts "-C: Configure client services (or clone VM when dealing with VMs)"
   puts "-O: Configure VirtualBox VM"
   puts "-F: Configure VMware Fusion VM"
   puts "-o: Specify OS type (used when creating VMs)"
@@ -218,9 +218,9 @@ def print_usage()
   puts "-l: Puplisher server Hostname/IP"
   puts "-t: Run it test mode (in client mode create files but don't import them)"
   puts "-v: Run in verbose mode"
-  puts "-f: ISO file to use"
+  puts "-f: ISO or or OVA file to use"
   puts "-d: Delete client"
-  puts "-n: Set service name"
+  puts "-n: Set service name (or set new name when dealing with cloning VMs)"
   puts "-z: Delete service name"
   puts "-P: Configure PXE"
   puts "-W: Update apache proxy entry for AI"
@@ -888,7 +888,7 @@ end
 # If given option O or F do VM related functions
 
 if opt["O"]
-  if $os_arch.match(/i386/)
+  if $os_arch.match(/i386|x86_64/)
     $default_vm_size = $default_vm_size.gsub(/G/,"000")
     $use_sudo     = 0
     vfunct        = "vbox"
@@ -910,6 +910,38 @@ if opt["F"]
   end
   $use_sudo = 0
   vfunct    = "fusion"
+end
+
+# List appliances
+
+if opt["O"] or opt["F"]
+  if $os_arch.match(/i386|x86_64/)
+    if opt["I"]
+      if opt["L"]
+        list_ovas()
+        exit
+      end
+      if opt["f"]
+        ova_file = opt["f"]
+        if opt["c"]
+          client_name = opt["c"]
+        else
+          client_name = ""
+        end
+        eval"[import_#{vfunct}_ova(client_name,ova_file)]"
+        exit
+      end
+      if opt["C"]
+        if !opt["c"] or !opt["n"]
+          puts "VM name not specified"
+        end
+        client_name = opt["c"]
+        new_name    = opt["n"]
+        eval"[clone_#{vfunct}_vm(client_name,new_name)]"
+        exit
+      end
+    end
+  end
 end
 
 # VirtualBox and VMware Fusion functions (not create)

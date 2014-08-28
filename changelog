@@ -373,3 +373,5 @@
 # Improved VirtualBox serial connectivity
 # 1.8.7: Thu 28 Aug 2014 12:47:27 EST
 # Fixed ESXi serial support
+# 1.8.8: Fri 29 Aug 2014 08:33:05 EST
+# Added VirtualBox import and clone code
