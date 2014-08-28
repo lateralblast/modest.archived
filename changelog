@@ -371,3 +371,5 @@
 # Improved addition and removal of hosts
 # 1.8.6: Wed 27 Aug 2014 17:39:03 EST
 # Improved VirtualBox serial connectivity
+# 1.8.7: Thu 28 Aug 2014 12:47:27 EST
+# Fixed ESXi serial support

@@ -319,6 +319,24 @@ def configure_vs_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel
   return
 end
 
+# Change VirtualBox VM Cores
+
+def change_vbox_vm_cpu(client_name,client_cpus)
+  message = "Setting:\tVirtualBox VM "+client_name+" CPUs to "+client_cpus
+  command = "VBoxManage modifyvm #{client_name} --cpus #{client_cpus}"
+  execute_command(message,command)
+  return
+end
+
+# Change VirtualBox VM Cores
+
+def change_vbox_vm_utc(client_name,client_utc)
+  message = "Setting:\tVirtualBox VM "+client_name+" RTC to "+client_utc
+  command = "VBoxManage modifyvm #{client_name} --rtcuseutc #{client_utc}"
+  execute_command(message,command)
+  return
+end
+
 # Change VirtualBox VM MAC address
 
 def change_vbox_vm_mac(client_name,client_mac)
@@ -462,6 +480,10 @@ def configure_vbox_vm(client_name,client_mac,client_os)
     change_vbox_vm_mac(client_name,client_mac)
   else
     client_mac = get_vbox_vm_mac(client_name)
+  end
+  if $client_os == "ESXi"
+    change_vbox_vm_cpu(client_name,$default_vm_vcpu)
+    change_vbox_vm_utc(client_name,$default_vm_utc)
   end
   puts "Created:\tVirtualBox VM "+client_name+" with MAC address "+client_mac
   return

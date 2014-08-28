@@ -1,23 +1,35 @@
 
 # VSphere client routines
 
-# List ks clients
-
-def list_vs_clients()
-  puts "Available vSphere clients:"
-  puts
+def get_vs_clients()
+  client_list  = []
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
     if service_name.match(/vmware/)
       repo_version_dir = $repo_base_dir+"/"+service_name
-      client_list      = Dir.entries(repo_version_dir)
-      client_list.each do |client_name|
-        if client_name.match(/\.cfg$/) and !client_name.match(/boot\.cfg|isolinux\.cfg/)
-          puts client_name+" service = "+service_name
+      file_list        = Dir.entries(repo_version_dir)
+      file_list.each do |file_name|
+        if file_name.match(/\.cfg$/) and !file_name.match(/boot\.cfg|isolinux\.cfg/)
+          client_info = file_name+" service = "+service_name
+          client_list.push(client_info)
         end
       end
     end
   end
+  return client_list
+end
+
+# List ks clients
+
+def list_vs_clients()
+  puts
+  puts "Available vSphere clients:"
+  puts
+  client_list = get_vs_clients()
+  client_list.each do |client_info|
+    puts client_info
+  end
+  puts
   return
 end
 
@@ -46,10 +58,21 @@ def configure_vs_pxe_client(client_name,client_mac,service_name)
     puts "Creating:\tMenu config file "+pxe_cfg_file
   end
   file = File.open(pxe_cfg_file,"w")
+  if $serial_mode == 1
+    file.write("serial 0 115200\n")
+  end
   file.write("DEFAULT ESX\n")
   file.write("LABEL ESX\n")
   file.write("KERNEL #{mboot_file}\n")
-  file.write("APPEND -c #{tftp_boot_file} ks=#{ks_url} +++\n")
+  if $text_mode == 1
+    if $serial_mode == 1
+      file.write("APPEND -c #{tftp_boot_file} text gdbPort=none logPort=none tty2Port=com1 ks=#{ks_url} +++\n")
+    else
+      file.write("APPEND -c #{tftp_boot_file} text ks=#{ks_url} +++\n")
+    end
+  else
+    file.write("APPEND -c #{tftp_boot_file} ks=#{ks_url} +++\n")
+  end
   file.write("IPAPPEND 1\n")
   file.close
   if $verbose_mode == 1
@@ -65,7 +88,21 @@ def configure_vs_pxe_client(client_name,client_mac,service_name)
   file=IO.readlines(esx_boot_file)
   file.each do |line|
     line=line.gsub(/\//,"")
-    if line.match(/title/)
+    if $text_mode == 1
+      if line.match(/^kernelopt/)
+        if !line.match(/text/)
+          line = line.chomp+" text\n"
+        end
+      end
+    end
+    if $serial_mode == 1
+      if line.match(/^kernelopt/)
+        if !line.match(/nofb/)
+          line = line.chomp+" nofb com1_baud=115200 com1_Port=0x3f8 tty2Port=com1 gdbPort=none logPort=none\n"
+        end
+      end
+    end
+    if line.match(/^title/)
       copy.push(line)
       copy.push("prefix=#{service_name}\n")
     else
@@ -83,7 +120,7 @@ end
 # Unconfigure client PXE boot
 
 def unconfigure_vs_pxe_client(client_name)
-  client_mac=get_client_mac(client_name)
+  client_mac = get_client_mac(client_name)
   if !client_mac
     puts "Warning:\tNo MAC Address entry found for "+client_name
     exit
@@ -105,6 +142,15 @@ def unconfigure_vs_pxe_client(client_name)
   if File.exists?(pxe_cfg_file)
     message = "Removing:\tPXE boot config file "+pxe_cfg_file+" for "+client_name
     command = "rm #{pxe_cfg_file}"
+    execute_command(message,command)
+  end
+  client_info  = get_vs_clients()
+  service_name = client_info.grep(/#{client_name}/)[0].split(/ = /)[1].chomp
+  ks_dir       = $tftp_dir+"/"+service_name
+  ks_cfg_file  = ks_dir+"/"+client_name+".cfg"
+  if File.exist?(ks_cfg_file)
+    message = "Removing:\tKickstart boot config file "+ks_cfg_file+" for "+client_name
+    command = "rm #{ks_cfg_file}"
     execute_command(message,command)
   end
   unconfigure_vs_dhcp_client(client_name)
@@ -240,6 +286,11 @@ def populate_vs_firstboot_list(service_name)
   post_list.push("cp /var/log/hostd.log \"/vmfs/volumes/$(hostname -s)-local-storage-1/firstboot-hostd.log\"")
   post_list.push("cp /var/log/esxi_install.log \"/vmfs/volumes/$(hostname -s)-local-storage-1/firstboot-esxi_install.log\"")
   post_list.push("")
+  if $serial_mode == 1
+    post_list.push("# Fix bootloader to run in serial mode")
+    post_list.push("sed -i '/no-auto-partition/ s/$/ text nofb com1_baud=115200 com1_Port=0x3f8 tty2Port=com1 gdbPort=none logPort=none/' /bootbank/boot.cfg")
+    post_list.push("")
+  end
   post_list.push("reboot")
   return post_list
 end

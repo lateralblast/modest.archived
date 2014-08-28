@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.8.6
+# Version:      1.8.7
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -98,7 +98,7 @@ $use_alt_repo           = 0
 $destroy_fs             = "n"
 $use_defaults           = 0
 $default_apache_allow   = ""
-$default_admin_name      = "Sys Admin"
+$default_admin_name     = "Sys Admin"
 $default_admin_user     = "sysadmin"
 $default_admin_group    = "wheel"
 $default_admin_home     = "/home/"+$default_admin_user
@@ -114,7 +114,7 @@ $default_nfs4_domain    = "dynamic"
 $default_auto_reg       = "disable"
 $q_struct               = {}
 $q_order                = []
-$text_mode           = 1
+$text_mode              = 1
 $backup_dir             = ""
 $rpm2cpio_url           = "http://svnweb.freebsd.org/ports/head/archivers/rpm2cpio/files/rpm2cpio?revision=259745&view=co"
 $rpm2cpio_bin           = ""
@@ -122,7 +122,7 @@ $vbox_disk_type         = "sas"
 $default_vm_size        = "12G"
 $default_vm_mem         = "1024"
 $default_vm_vcpu        = "1"
-$serial_mode             = 0
+$serial_mode            = 0
 $os_name                = ""
 $yes_to_all             = 0
 $default_cdom_mau       = "1"
@@ -496,6 +496,9 @@ end
 if opt["E"]
   $default_vm_mem  = "4096"
   $default_vm_vcpu = "2"
+  $default_vm_utc  = "on"
+  $client_os       = "ESXi"
+  $vbox_disk_type  = "ide"
 end
 
 # Enable / Disable downloads
