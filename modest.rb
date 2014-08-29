@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.8.8
+# Version:      1.9.1
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -641,7 +641,58 @@ if $verbose_mode == 1 and !opt["I"]
    puts "Information:\tSetting publisher host to "+publisher_port
 end
 
-# Check NAT configuration
+# Get MAC address if given
+
+if opt["e"]
+  client_mac = opt["e"]
+  if $verbose_mode == 1
+     puts "Information:\tClient ethernet MAC address is "+client_mac
+  end
+else
+  client_mac = ""
+end
+
+# Get IP address if given
+
+if opt["i"]
+  client_ip = opt["i"]
+  check_client_ip(client_ip)
+  if $verbose_mode == 1
+     puts "Information:\tClient IP address is "+client_ip
+  end
+else
+  client_ip = ""
+end
+
+# Get/set service name
+
+if opt["n"]
+  service_name = opt["n"]
+  if !service_name.match(/^[A-z]/)
+    puts "Warning:\tService name must start with letter"
+  end
+else
+  if !opt["z"]
+    service_name = ""
+  end
+end
+
+# Get architecture if given
+
+if opt["a"]
+  client_arch = opt["a"]
+  client_arch = client_arch.downcase
+  if client_arch.match(/sun4u|sun4v/)
+  client_arch = "sparc"
+  end
+  if $verbose_mode == 1
+     puts "Information:\tSetting architecture to "+client_arch
+  end
+else
+  client_arch = ""
+end
+
+# Check NAT and host configuration
 
 if opt["G"]
   test_arch = %x[uname -p].chomp
@@ -655,6 +706,27 @@ if opt["G"]
     check_local_config(mode,opt)
     eval"[check_#{vfunct}_natd]"
     exit
+  end
+  if opt["C"]
+    mode = "client"
+    check_local_config(mode,opt)
+    if opt["c"]
+      client_name = opt["c"]
+      if opt["i"]
+        add_hosts_entry(client_name,client_ip)
+      end
+      if opt["e"]
+        service_name = ""
+        add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
+      end
+      exit
+    end
+    if opt["d"]
+      client_name = opt["d"]
+      remove_hosts_entry(client_name,client_ip)
+      remove_dhcp_client(client_name)
+      exit
+    end
   end
 end
 
@@ -739,17 +811,6 @@ else
   end
 end
 
-# Get MAC address if given
-
-if opt["e"]
-  client_mac = opt["e"]
-  if $verbose_mode == 1
-     puts "Information:\tClient ethernet MAC address is "+client_mac
-  end
-else
-  client_mac = ""
-end
-
 # Get/set X based installer
 
 if !opt["d"]
@@ -763,31 +824,6 @@ if !opt["d"]
     if $verbose_mode == 1
       puts "Information:\tNot running in windowed mode"
     end
-  end
-end
-
-# Get IP address if given
-
-if opt["i"]
-  client_ip = opt["i"]
-  check_client_ip(client_ip)
-  if $verbose_mode == 1
-     puts "Information:\tClient IP address is "+client_ip
-  end
-else
-  client_ip = ""
-end
-
-# Get/set service name
-
-if opt["n"]
-  service_name = opt["n"]
-  if !service_name.match(/^[A-z]/)
-    puts "Warning:\tService name must start with letter"
-  end
-else
-  if !opt["z"]
-    service_name = ""
   end
 end
 
@@ -811,21 +847,6 @@ else
   else
     iso_file = ""
   end
-end
-
-# Get architecture if given
-
-if opt["a"]
-  client_arch = opt["a"]
-  client_arch = client_arch.downcase
-  if client_arch.match(/sun4u|sun4v/)
-  client_arch = "sparc"
-  end
-  if $verbose_mode == 1
-     puts "Information:\tSetting architecture to "+client_arch
-  end
-else
-  client_arch = ""
 end
 
 # If given -R use alternate repos
@@ -928,7 +949,7 @@ if opt["O"] or opt["F"]
         else
           client_name = ""
         end
-        eval"[import_#{vfunct}_ova(client_name,ova_file)]"
+        eval"[import_#{vfunct}_ova(client_name,client_mac,client_ip,ova_file)]"
         exit
       end
       if opt["C"]
@@ -937,7 +958,7 @@ if opt["O"] or opt["F"]
         end
         client_name = opt["c"]
         new_name    = opt["n"]
-        eval"[clone_#{vfunct}_vm(client_name,new_name)]"
+        eval"[clone_#{vfunct}_vm(client_name,new_name,client_mac,client_ip)]"
         exit
       end
     end

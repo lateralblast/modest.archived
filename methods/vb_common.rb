@@ -2,15 +2,22 @@
 
 # Clone VM
 
-def clone_vbox_vm(client_name,new_name)
+def clone_vbox_vm(client_name,new_name,client_mac,client_ip)
   check_vbox_vm_exists(client_name)
   %x[VBoxManage clonevm #{client_name} --name #{new_name} --register]
+  if client_ip.match(/[0-9]/)
+    add_hosts_entry(new_name,client_ip)
+  end
+  if client_mac.match(/[0-9]|[A-z]/)
+    change_vbox_vm_mac(new_name,client_mac)
+  end
   return
 end
 
 # Import OVA
 
-def import_vbox_ova(client_name,ova_file)
+def import_vbox_ova(client_name,client_mac,client_ip,ova_file)
+  check_vbox_vm_exists(client_name)
   if !ova_file.match(/\//)
     ova_file = $iso_base_dir+"/"+ova_file
   end
@@ -18,11 +25,36 @@ def import_vbox_ova(client_name,ova_file)
     if client_name.match(/[A-z]|[0-9]/)
       %x[VBoxManage import #{ova_file} --vsys 0 --vmname #{client_name}]
     else
-      %x[VBoxManage import #{ova_file}]
+      client_name = %x[VBoxManage import -n #{ova_file} |grep "Suggested VM name"].split(/\n/)[-1]
+      if !client_name.match(/[A-z]|[0-9]/)
+        puts "Could not determine VM name for Virtual Appliance "+ova_file
+        exit
+      else
+        client_name = client_name.split(/Suggested VM name /)[1].chomp
+        %x[VBoxManage import #{ova_file}]
+      end
     end
   else
     puts "Virtual Appliance "+ova_file+"does not exist"
   end
+  if client_ip.match(/[0-9]/)
+    add_hosts_entry(client_name,client_ip)
+  end
+  vbox_socket_name = add_socket_to_vbox_vm(client_name)
+  add_serial_to_vbox_vm(client_name)
+  if $default_vm_network.match(/bridged/)
+    vbox_nic_name = get_bridged_vbox_nic()
+    add_bridged_network_to_vbox_vm(client_name,vbox_nic_name)
+  else
+    vbox_nic_name = check_vbox_hostonly_network()
+    add_nonbridged_network_to_vbox_vm(client_name,vbox_nic_name)
+  end
+  if !client_mac.match(/[0-9]|[A-z]/)
+    client_mac = get_vbox_vm_mac(client_name)
+  else
+    change_vbox_vm_mac(client_name,client_mac)
+  end
+  puts "Virtual Appliance "+ova_file+" imported with VM name "+client_name+" and MAC address "+client_mac
   return
 end
 

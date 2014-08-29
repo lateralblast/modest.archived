@@ -375,3 +375,9 @@
 # Fixed ESXi serial support
 # 1.8.8: Fri 29 Aug 2014 08:33:05 EST
 # Added VirtualBox import and clone code
+# 1.8.9: Fri 29 Aug 2014 13:33:59 EST
+# Added IP, hostname and MAC address handling to VirtualBox import
+# 1.9.0: Fri 29 Aug 2014 13:44:21 EST
+# Added IP and MAC address handling to VirtualBox cloning
+# 1.9.1: Fri 29 Aug 2014 15:12:29 EST
+# Added code to add DHCP and hosts entries for standard clients

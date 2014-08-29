@@ -555,9 +555,13 @@ def remove_hosts_entry(client_name,client_ip)
   tmp_file   = "/tmp/hosts"
   hosts_file = "/etc/hosts"
   message    = "Checking:\tHosts file for "+client_name
-  command    = "cat #{hosts_file} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
-  output     = execute_command(message,command)
-  copy       = []
+  if client_ip.match(/[0-9]/)
+    command = "cat #{hosts_file} |grep -v '^#' |grep '#{client_name}' |grep '#{client_ip}'"
+  else
+    command = "cat #{hosts_file} |grep -v '^#' |grep '#{client_name}'"
+  end
+  output = execute_command(message,command)
+  copy   = []
   if output.match(/#{client_name}/)
     file_info=IO.readlines(hosts_file)
     file_info.each do |line|
@@ -586,6 +590,9 @@ end
 # Add host to DHCP config
 
 def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
+  if !client_mac.match(/:/)
+    client_mac = client_mac[0..1]+":"+client_mac[2..3]+":"+client_mac[4..5]+":"+client_mac[6..7]+":"+client_mac[8..9]+":"+client_mac[10..11]
+  end
   tmp_file = "/tmp/dhcp_"+client_name
   if !client_arch.match(/sparc/)
     tftp_pxe_file = client_mac.gsub(/:/,"")
@@ -617,7 +624,9 @@ def add_dhcp_client(client_name,client_mac,client_ip,client_arch,service_name)
     file.write("host #{client_name} {\n")
     file.write("  fixed-address #{client_ip};\n")
     file.write("  hardware ethernet #{client_mac};\n")
-    file.write("  filename \"#{tftp_pxe_file}\";\n")
+    if service_name.match(/[A-z]/)
+      file.write("  filename \"#{tftp_pxe_file}\";\n")
+    end
     file.write("}\n")
     file.close
     message = "Updating:\tDHCPd file "+$dhcpd_file
