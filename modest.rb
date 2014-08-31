@@ -35,7 +35,7 @@ require 'mechanize'
 # Set up some global variables/defaults
 
 $script                 = $0
-$options                = "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtuvwy12"
+$options                = "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q:r:s:x:z:ABCDEFGHIJKLMNOPQRSTUVWXYZtuvwy120"
 $verbose_mode           = 0
 $test_mode              = 0
 $download_mode          = 1
@@ -239,7 +239,8 @@ def print_usage()
   puts "-x: Set VM network type (e.g. hostonly or bridged or nat)"
   puts "-q: Set server size for client (e.g. small or large)"
   puts "-1: Check local configuration"
-  puts "-2: Check server functions on OS X"
+  puts "-2: Enable serial mode"
+  puts "-0: Check server functions on OS X"
   puts "-u: Specify username"
   puts
   exit
@@ -454,7 +455,7 @@ if opt["u"]
   $default_admin_user = opt["u"]
 end
 
-if opt["2"]
+if opt["0"]
   if $os_name.match(/Darwin/)
     check_osx_dnsmasq()
     check_osx_tftpd()
