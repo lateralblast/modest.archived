@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.9.3
+# Version:      1.9.4
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -225,7 +225,7 @@ def print_usage()
   puts "-z: Delete service name"
   puts "-P: Configure PXE"
   puts "-W: Update apache proxy entry for AI"
-  puts "-R: Use alternate package repository (additional packages like puppet)"
+  puts "-R: Use alternate package repository (or show running VMs when dealing with VMs)"
   puts "-y: Override (destroy ZFS filesystem as part of uninstallation and delete clients)"
   puts "-D: Use default values for questions"
   puts "-T: Use text mode install"
@@ -521,6 +521,7 @@ end
 if opt["O"] or opt["F"] and opt["p"]
   client_name = opt["p"]
   connect_to_virtual_serial(client_name)
+  exit
 end
 
 # Print examples
@@ -695,6 +696,18 @@ if opt["a"]
   end
 else
   client_arch = ""
+end
+
+# Show running VMs
+
+if opt["O"] or opt["F"] and opt["R"]
+  if opt["O"]
+    vfunct = "vbox"
+  else
+    vfunct = "fusion"
+  end
+  eval"[list_running_#{vfunct}_vms]"
+  exit
 end
 
 # Check NAT and host configuration

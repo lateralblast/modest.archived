@@ -1,5 +1,20 @@
 # VirtualBox VM support code
 
+# List running VMs
+
+def list_running_vbox_vms()
+  vm_list = %x[VBoxManage list runningvms].split("\n")
+  puts
+  puts "Running VMs:"
+  puts
+  vm_list.each do |vm_name|
+    vm_name = vm_name.split(/"/)[1]
+    puts vm_name
+  end
+  puts
+  return
+end
+
 # Set VirtualBox ESXi options
 
 def configure_vmware_vbox_vm(client_name)

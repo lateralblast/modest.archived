@@ -385,3 +385,5 @@
 # Added additional support for running ESX and vCenter under Virtual box
 # 1.9.3: Sun 31 Aug 2014 21:11:01 EST
 # Added function to connect to serial port of VM
+# 1.9.4: Sun 31 Aug 2014 23:00:24 EST
+# Added code to list running VMs
