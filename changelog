@@ -381,3 +381,5 @@
 # Added IP and MAC address handling to VirtualBox cloning
 # 1.9.1: Fri 29 Aug 2014 15:12:29 EST
 # Added code to add DHCP and hosts entries for standard clients
+# 1.9.2: Sun 31 Aug 2014 20:49:39 EST
+# Added additional support for running ESX and vCenter under Virtual box

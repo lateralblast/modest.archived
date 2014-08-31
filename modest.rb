@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.9.1
+# Version:      1.9.2
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -148,6 +148,7 @@ $default_x86_vm_net     = "enp0s3"
 $default_ext_network    = "192.168.1.0"
 $puppet_rpm_base_url    = "http://yum.puppetlabs.com"
 $centos_rpm_base_url    = "http://"+$local_centos_mirror+"/centos"
+$default_vm_utc         = "off"
 
 # Declare some package versions
 
@@ -494,11 +495,7 @@ end
 # If we building ESX set default memory to 4G and 2 vCPUs
 
 if opt["E"]
-  $default_vm_mem  = "4096"
-  $default_vm_vcpu = "2"
-  $default_vm_utc  = "on"
-  $client_os       = "ESXi"
-  $vbox_disk_type  = "ide"
+  configure_vmware_esxi_defaults()
 end
 
 # Enable / Disable downloads

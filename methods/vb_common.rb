@@ -1,9 +1,58 @@
 # VirtualBox VM support code
 
+# Set VirtualBox ESXi options
+
+def configure_vmware_vbox_vm(client_name)
+  modify_vbox_vm(client_name,"rtcuseutc","on")
+  modify_vbox_vm(client_name,"vtxvpid","on")
+  modify_vbox_vm(client_name,"vtxux","on")
+  modify_vbox_vm(client_name,"hwvirtex","on")
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiSystemVersion","None")
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiBoardVendor","Intel Corporation")
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiBoardProduct","440BX Desktop Reference Platform")
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiSystemVendor","VMware, Inc.")
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiSystemProduct","VMware Virtual Platform")
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiBIOSVendor","Phoenix Technologies LTD")
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiBIOSVersion","6.0")
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiChassisVendor","No Enclosure")
+  vbox_vm_uuid = get_vbox_vm_uuid(client_name)
+  vbox_vm_uuid = "VMware-"+vbox_vm_uuid
+  setextradata_vbox_vm(client_name,"VBoxInternal/Devices/pcbios/0/Config/DmiSystemSerial",vbox_vm_uuid)
+  return
+end
+
+# Get VirtualBox UUID
+
+def get_vbox_vm_uuid(client_name)
+  vbox_vm_uuid = %x[VBoxManage showvminfo "#{client_name}" |grep ^UUID |awk '{print $2}'].chomp
+  return vbox_vm_uuid
+end
+
+# Set VirtualBox ESXi options
+
+def configure_vmware_esxi_vbox_vm(client_name)
+  configure_vmware_esxi_defaults()
+  modify_vbox_vm(client_name,"cpus",$default_vm_vcpu)
+  configure_vmware_vbox_vm(client_name)
+  return
+end
+
+# Set VirtualBox vCenter option
+
+def configure_vmware_vcenter_vbox_vm(client_name)
+  configure_vmware_vcenter_defaults()
+  configure_vmware_vbox_vm(client_name)
+  return
+end
+
 # Clone VM
 
 def clone_vbox_vm(client_name,new_name,client_mac,client_ip)
-  check_vbox_vm_exists(client_name)
+  exists = check_vbox_vm_exists(client_name)
+  if exists == "no"
+    puts "VirtualBox VM "+client_name+" does not exist"
+    exit
+  end
   %x[VBoxManage clonevm #{client_name} --name #{new_name} --register]
   if client_ip.match(/[0-9]/)
     add_hosts_entry(new_name,client_ip)
@@ -17,25 +66,31 @@ end
 # Import OVA
 
 def import_vbox_ova(client_name,client_mac,client_ip,ova_file)
-  check_vbox_vm_exists(client_name)
-  if !ova_file.match(/\//)
-    ova_file = $iso_base_dir+"/"+ova_file
-  end
-  if File.exist?(ova_file)
-    if client_name.match(/[A-z]|[0-9]/)
-      %x[VBoxManage import #{ova_file} --vsys 0 --vmname #{client_name}]
-    else
-      client_name = %x[VBoxManage import -n #{ova_file} |grep "Suggested VM name"].split(/\n/)[-1]
-      if !client_name.match(/[A-z]|[0-9]/)
-        puts "Could not determine VM name for Virtual Appliance "+ova_file
-        exit
-      else
-        client_name = client_name.split(/Suggested VM name /)[1].chomp
-        %x[VBoxManage import #{ova_file}]
-      end
+  exists = check_vbox_vm_exists(client_name)
+  if exists == "no"
+    exists = check_vbox_vm_config_exists(client_name)
+    if exists == "yes"
+      delete_vbox_vm_config(client_name)
     end
-  else
-    puts "Virtual Appliance "+ova_file+"does not exist"
+    if !ova_file.match(/\//)
+      ova_file = $iso_base_dir+"/"+ova_file
+    end
+    if File.exist?(ova_file)
+      if client_name.match(/[A-z]|[0-9]/)
+        %x[VBoxManage import #{ova_file} --vsys 0 --vmname #{client_name}]
+      else
+        client_name = %x[VBoxManage import -n #{ova_file} |grep "Suggested VM name"].split(/\n/)[-1]
+        if !client_name.match(/[A-z]|[0-9]/)
+          puts "Could not determine VM name for Virtual Appliance "+ova_file
+          exit
+        else
+          client_name = client_name.split(/Suggested VM name /)[1].chomp
+          %x[VBoxManage import #{ova_file}]
+        end
+      end
+    else
+      puts "Virtual Appliance "+ova_file+"does not exist"
+    end
   end
   if client_ip.match(/[0-9]/)
     add_hosts_entry(client_name,client_ip)
@@ -53,6 +108,10 @@ def import_vbox_ova(client_name,client_mac,client_ip,ova_file)
     client_mac = get_vbox_vm_mac(client_name)
   else
     change_vbox_vm_mac(client_name,client_mac)
+  end
+  if ova_file.match(/VMware/)
+    configure_vmware_vcenter_defaults()
+    configure_vmware_vbox_vm(client_name)
   end
   puts "Virtual Appliance "+ova_file+" imported with VM name "+client_name+" and MAC address "+client_mac
   return
@@ -96,8 +155,11 @@ def check_vbox_vm_exists(client_name)
   host_list = execute_command(message,command)
   if !host_list.match(client_name)
     puts "Information:\tVirtualBox VM "+client_name+" does not exist"
-    exit
+    exists = "no"
+  else
+    exists = "yes"
   end
+  return exists
 end
 
 # Get VirtualBox bridged network interface
@@ -188,6 +250,33 @@ def get_vbox_vm_dir(client_name)
   end
   vbox_vm_dir      = "#{vbox_vm_base_dir}/#{client_name}"
   return vbox_vm_dir
+end
+
+# Delete VirtualBox config file
+
+def delete_vbox_vm_config(client_name)
+  vbox_vm_dir = get_vbox_vm_dir(client_name)
+  config_file = vbox_vm_dir+"/"+client_name+".vbox"
+  if File.exist?(config_file)
+    message = "Removing:\tVirtualbox configuration file "+config_file
+    command = "rm \"#{config_file}\""
+    execute_command(message,command)
+  end
+  return
+end
+
+# Check if VirtuakBox config file exists
+
+def check_vbox_vm_config_exists(client_name)
+  exists      = "no"
+  vbox_vm_dir = get_vbox_vm_dir(client_name)
+  config_file = vbox_vm_dir+"/"+client_name+".vbox"
+  if File.exist?(config_file)
+    exists = "yes"
+  else
+    exists = "no"
+  end
+  return exists
 end
 
 # Check VM doesn't exist
@@ -377,6 +466,20 @@ def configure_vs_vbox_vm(client_name,client_mac,client_arch,client_os,client_rel
   return
 end
 
+def modify_vbox_vm(client_name,param_name,param_value)
+  message = "Setting:\tVirtualBox Parameter "+param_name+" to "+param_value
+  command = "VBoxManage modifyvm #{client_name} --#{param_name} #{param_value}"
+  execute_command(message,command)
+  return
+end
+
+def setextradata_vbox_vm(client_name,param_name,param_value)
+  message = "Setting:\tVirtualBox Extradata "+param_name+" to "+param_value
+  command = "VBoxManage setextradata #{client_name} \"#{param_name}\" \"#{param_value}\""
+  execute_command(message,command)
+  return
+end
+
 # Change VirtualBox VM Cores
 
 def change_vbox_vm_cpu(client_name,client_cpus)
@@ -411,7 +514,11 @@ end
 
 def boot_vbox_vm(client_name)
   check_vbox_hostonly_network()
-  check_vbox_vm_exists(client_name)
+  exists = check_vbox_vm_exists(client_name)
+  if exists == "no"
+    puts "VirtualBox VM "+client_name+" does not exist"
+    exit
+  end
   message = "Starting:\tVM "+client_name
   if $text_mode == 1 or $serial_mode == 1
     puts
@@ -540,8 +647,7 @@ def configure_vbox_vm(client_name,client_mac,client_os)
     client_mac = get_vbox_vm_mac(client_name)
   end
   if $client_os == "ESXi"
-    change_vbox_vm_cpu(client_name,$default_vm_vcpu)
-    change_vbox_vm_utc(client_name,$default_vm_utc)
+    configure_vmware_esxi_vbox_vm(client_name)
   end
   puts "Created:\tVirtualBox VM "+client_name+" with MAC address "+client_mac
   return
@@ -562,7 +668,11 @@ end
 
 def unconfigure_vbox_vm(client_name)
   check_vbox_is_installed()
-  check_vbox_vm_exists(client_name)
+  exists = check_vbox_vm_exists(client_name)
+  if exists == "no"
+    puts "VirtualBox VM "+client_name+" does not exist"
+    exit
+  end
   stop_vbox_vm(client_name)
   message = "Deleting:\tVirtualBox VM "+client_name
   command = "VBoxManage unregistervm #{client_name} --delete"

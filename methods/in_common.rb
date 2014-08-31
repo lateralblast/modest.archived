@@ -1,6 +1,26 @@
 
 # Code common to all services
 
+# Set some VMware ESXi VM defaults
+
+def configure_vmware_esxi_defaults()
+  $default_vm_mem      = "4096"
+  $default_vm_vcpu     = "2"
+  $client_os           = "ESXi"
+  $vbox_disk_type      = "ide"
+  return
+end
+
+# Set some VMware vCenter defaults
+
+def configure_vmware_vcenter_defaults()
+  $default_vm_mem      = "4096"
+  $default_vm_vcpu     = "2"
+  $client_os           = "ESXi"
+  $vbox_disk_type      = "ide"
+  return
+end
+
 # List ks clients
 
 def list_clients(service_type)
