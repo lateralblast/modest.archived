@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.9.2
+# Version:      1.9.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -215,9 +215,9 @@ def print_usage()
   puts "-b: Boot VM"
   puts "-s: Stop VM"
   puts "-g: Halt VM"
-  puts "-p: Puplisher server port number"
+  puts "-p: Puplisher server port number (or connect to virtual serial port when dealing with VMs)"
   puts "-l: Puplisher server Hostname/IP"
-  puts "-t: Run it test mode (in client mode create files but don't import them)"
+  puts "-t: Run it test mode"
   puts "-v: Run in verbose mode"
   puts "-f: ISO or or OVA file to use"
   puts "-d: Delete client"
@@ -513,6 +513,13 @@ if opt["j"]
   if !$default_vm_size.match(/G$/)
     $default_vm_size = $default_vm_size+"G"
   end
+end
+
+# Connect to VirtualBox or VMware Fusion console
+
+if opt["O"] or opt["F"] and opt["p"]
+  client_name = opt["p"]
+  connect_to_virtual_serial(client_name)
 end
 
 # Print examples

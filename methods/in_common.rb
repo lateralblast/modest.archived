@@ -1,6 +1,28 @@
 
 # Code common to all services
 
+# Connect to virtual serial port
+
+def connect_to_virtual_serial(client_name)
+  puts
+  puts "Connecting to serial port of "+client_name
+  puts
+  puts "To disconnect from this session use CTRL-Q"
+  puts
+  puts "If you wish to re-connect to the serial console of this machine,"
+  puts "run the following command:"
+  puts
+  puts "modest -O -p "+client_name
+  puts
+  puts "or:"
+  puts
+  puts "socat UNIX-CONNECT:/tmp/"+client_name+" STDIO,raw,echo=0,escape=0x11,icanon=0"
+  puts
+  puts
+  system("socat UNIX-CONNECT:/tmp/#{client_name} STDIO,raw,echo=0,escape=0x11,icanon=0")
+  return
+end
+
 # Set some VMware ESXi VM defaults
 
 def configure_vmware_esxi_defaults()

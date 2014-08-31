@@ -383,3 +383,5 @@
 # Added code to add DHCP and hosts entries for standard clients
 # 1.9.2: Sun 31 Aug 2014 20:49:39 EST
 # Added additional support for running ESX and vCenter under Virtual box
+# 1.9.3: Sun 31 Aug 2014 21:11:01 EST
+# Added function to connect to serial port of VM
