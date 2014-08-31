@@ -9,7 +9,8 @@ def list_running_vbox_vms()
   puts
   vm_list.each do |vm_name|
     vm_name = vm_name.split(/"/)[1]
-    puts vm_name
+    os_info = %x[VBoxManage showvminfo "#{vm_name}" |grep '^Guest OS' |cut -f2 -d:].chomp.gsub(/^\s+/,"")
+    puts vm_name+"\t"+os_info
   end
   puts
   return
