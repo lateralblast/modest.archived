@@ -387,3 +387,7 @@
 # Added function to connect to serial port of VM
 # 1.9.4: Sun 31 Aug 2014 23:00:24 EST
 # Added code to list running VMs
+# 1.9.5: Tue  2 Sep 2014 08:31:51 EST
+# Added import for VMware Fusion VMs
+# 1.9.6: Tue  2 Sep 2014 09:37:37 EST
+# Added export for VirtualBox VMs

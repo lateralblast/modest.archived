@@ -1,5 +1,97 @@
 # VMware Fusion support code
 
+# Get/set vmrun path
+
+def set_vmrun_bin()
+  $vmrun_bin = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
+  if !File.exist?($vmrun_bin)
+    puts "Warning:\tCould not find vmrun"
+    exit
+  end
+  return
+end
+
+# Get/set ovftool path
+
+def set_ovftool_bin()
+  $ovftool_bin = "/Applications/VMware Fusion.app/Contents/Library/VMware OVF Tool/ovftool"
+  if !File.exist?($ovftool_bin)
+    puts "Warning:\tCould not find ovftool"
+    exit
+  end
+  return
+end
+
+# Get list of running vms
+
+def get_running_fusion_vms()
+  vm_list = %x["#{$vmrun_bin}" list |grep vmx].split("\n")
+  return vm_list
+end
+
+# List running VMs
+
+def list_running_fusion_vms()
+  vm_list = get_running_fusion_vms()
+  puts
+  puts "Running VMs:"
+  puts
+  vm_list.each do |vm_name|
+    vm_name = File.basename(vm_name,".vmx")
+    puts vm_name
+  end
+  puts
+  return
+end
+
+# Import OVA
+
+def import_fusion_ova(client_name,client_mac,client_ip,ova_file)
+  fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
+  fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
+  exists = check_fusion_vm_exists(client_name)
+  if exists == "no"
+    if !ova_file.match(/\//)
+      ova_file = $iso_base_dir+"/"+ova_file
+    end
+    if File.exist?(ova_file)
+      if client_name.match(/[A-z]|[0-9]/)
+        if !File.directory?(fusion_vm_dir)
+          Dir.mkdir(fusion_vm_dir)
+        end
+        %x["#{$ovftool_bin}" --acceptAllEulas --name="#{client_name}" "#{ova_file}" "#{fusion_vmx_file}"]
+      else
+        client_name     = %x["#{$ovftool_bin}" "#{ova_file}" |grep Name |tail -1 |cut -f2 -d:].chomp
+        client_name     = client_name.gsub(/\s+/,"")
+        fusion_vmx_file = fusion_vm_dir+"/"+client_name+".vmx"
+        if !client_name.match(/[A-z]|[0-9]/)
+          puts "Warning:\tCould not determine VM name for Virtual Appliance "+ova_file
+          exit
+        else
+          client_name = client_name.split(/Suggested VM name /)[1].chomp
+          if !File.directory?(fusion_vm_dir)
+            Dir.mkdir(fusion_vm_dir)
+          end
+          %x["#{$ovftool_bin}" --acceptAllEulas --name="#{client_name}" "#{ova_file}" "#{fusion_vmx_file}"]
+        end
+      end
+    else
+      puts "Warning:\tVirtual Appliance "+ova_file+"does not exist"
+    end
+  end
+  if client_ip.match(/[0-9]/)
+    add_hosts_entry(client_name,client_ip)
+  end
+  if client_mac.match(/[0-9]|[A-F,a-f]/)
+    change_fusion_vm_mac(client_name,client_mac)
+  else
+    client_mac = get_fusion_vm_mac(fusion_vmx_file)
+  end
+  change_fusion_vm_network(client_name,$default_vm_network)
+  puts "Information:\tVirtual Appliance "+ova_file+" imported with VM name "+client_name+" and MAC address "+client_mac
+  return
+end
+
 # List Solaris ESX VirtualBox VMs
 
 def list_vs_fusion_vms()
@@ -59,9 +151,7 @@ def get_fusion_vm_mac(vmx_file)
   return vm_mac
 end
 
-# List Fusion VMs
-
-# Get VMware Fusion VM MAC address
+# Change VMware Fusion VM MAC address
 
 def change_fusion_vm_mac(client_name,client_mac)
   fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
@@ -83,32 +173,106 @@ def change_fusion_vm_mac(client_name,client_mac)
   return
 end
 
+# Check Fusion hostonly networking
+
+def check_fusion_hostonly_network(if_name)
+  config_file     = "/Library/Preferences/VMware Fusion/networking"
+  network_address = $default_hostonly_ip.split(/\./)[0..2].join(".")+".0"
+  gw_if_name      = get_osx_gw_if_name()
+  test = 0
+  copy = []
+  file = IO.readlines(config_file)
+  file.each do |line|
+    case line
+    when /answer VNET_1_DHCP /
+      if !line.match(/no/)
+        test = 1
+        copy.push("answer VNET_1_DHCP no")
+      else
+        copy.push(line)
+      end
+    when /answer VNET_1_HOSTONLY_SUBNET/
+      if !line.match(/#{network_address}/)
+        test = 1
+        copy.push("answer VNET_1_HOSTONLY_SUBNET #{network_address}")
+      else
+        copy.push(line)
+      end
+    else
+      copy.push(line)
+    end
+  end
+  if test == 1
+    vmnet_cli = "/Applications/VMware Fusion.app/Contents/Library/vmnet-cli"
+    temp_file = "/tmp/networking"
+    File.open(temp_file,"w") {|file_data| file_data.puts copy}
+    message = "Configuring host only network on #{if_name} for network #{network_address}"
+    command = "sudo -c 'cp #{temp_file} \"#{config_file}\"'"
+    execute_command(message,command)
+    message = "Restarting VMware network"
+    command = "sudo sh -c '\"#{vmnet_cli} --configure\" ; \"#{vmnet_cli} --stop\" ; \"#{vmnet_cli}\" -- start'"
+    execute_command(message,command)
+  end
+  check_osx_nat(gw_if_name,if_name)
+  return
+end
+
+# Change VMware Fusion VM network type
+
+def change_fusion_vm_network(client_name,client_network)
+  fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
+  fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
+  test = 0
+  copy = []
+  file = IO.readlines(fusion_vmx_file)
+  file.each do |line|
+    if line.match(/ethernet0\.connectionType/)
+      if !line.match(/#{client_network}/)
+        test = 1
+        copy.push("ethernet0.connectionType = \""+client_network+"\"\n")
+      else
+        copy.push(line)
+      end
+    else
+      copy.push(line)
+    end
+  end
+  if test == 1
+    File.open(fusion_vmx_file,"w") {|file_data| file_data.puts copy}
+  end
+  return
+end
+
 # Boot VMware Fusion VM
 
 def boot_fusion_vm(client_name)
-  vmrun_bin        = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
-  fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
-  fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
-  message          = "Starting:\tVM "+client_name
-  if $text_mode == 1
-    command = "'#{vmrun_bin}' -T fusion start '#{fusion_vmx_file}' nogui"
-  else
-    command = "'#{vmrun_bin}' -T fusion start '#{fusion_vmx_file}'"
-  end
-  execute_command(message,command)
-  if $serial_mode == 1
-    if $verbose_mode == 1
-      puts "Information:\tConnecting to serial port of "+client_name
+  vm_list = get_available_fusion_vms()
+  if vm_list.to_s.match(/#{client_name}/)
+    fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
+    fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
+    message          = "Starting:\tVM "+client_name
+    if $text_mode == 1
+      command = "'#{$vmrun_bin}' -T fusion start '#{fusion_vmx_file}' nogui"
+    else
+      command = "'#{$vmrun_bin}' -T fusion start '#{fusion_vmx_file}'"
     end
-    begin
-      socket = UNIXSocket.open("/tmp/#{client_name}")
-      socket.each_line do |line|
-        puts line
+    execute_command(message,command)
+    if $serial_mode == 1
+      if $verbose_mode == 1
+        puts "Information:\tConnecting to serial port of "+client_name
       end
-    rescue
-      puts "Cannot open socket"
-      exit
+      begin
+        socket = UNIXSocket.open("/tmp/#{client_name}")
+        socket.each_line do |line|
+          puts line
+        end
+      rescue
+        puts "Warning:\tCannot open socket"
+        exit
+      end
     end
+  else
+    puts "VMware Fusion VM "+client_name+" does not exist"
   end
   return
 end
@@ -116,12 +280,16 @@ end
 # Stop VMware Fusion VM
 
 def stop_fusion_vm(client_name)
-  vmrun_bin        = "/Applications/VMware Fusion.app//Contents/Library/vmrun"
-  fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
-  fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
-  message          = "Stopping:\tVirtual Box VM "+client_name
-  command = "'#{vmrun_bin}' -T fusion stop '#{fusion_vmx_file}'"
-  execute_command(message,command)
+  vm_list = get_running_fusion_vms()
+  if vm_list.to_s.match(/#{client_name}/)
+    fusion_vm_dir   = $fusion_dir+"/"+client_name+".vmwarevm"
+    fusion_vmx_file = fusion_vm_dir+"/"+client_name+".vmx"
+    message = "Stopping:\tVirtual Box VM "+client_name
+    command = "'#{$vmrun_bin}' -T fusion stop '#{fusion_vmx_file}'"
+    execute_command(message,command)
+  else
+    puts "VMware Fusion VM "+client_name+" not running"
+  end
   return
 end
 
@@ -133,7 +301,7 @@ def create_fusion_vm_disk(client_name,fusion_vm_dir,fusion_disk_file)
     exit
   end
   check_dir_exists(fusion_vm_dir)
-  vdisk_bin = "/Applications/VMware Fusion.app//Contents/Library/vmware-vdiskmanager"
+  vdisk_bin = "/Applications/VMware Fusion.app/Contents/Library/vmware-vdiskmanager"
   message   = "Creating:\tVMware Fusion disk '"+fusion_disk_file+"' for "+client_name
   command   = "cd '#{fusion_vm_dir}' ; '#{vdisk_bin}' -c -s '#{$default_vm_size}' -a LsiLogic -t 1 '#{fusion_disk_file}'"
   execute_command(message,command)
@@ -144,12 +312,14 @@ end
 # Check VMware Fusion VM exists
 
 def check_fusion_vm_exists(client_name)
-  fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
-  fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
+  fusion_vm_dir   = $fusion_dir+"/"+client_name+".vmwarevm"
+  fusion_vmx_file = fusion_vm_dir+"/"+client_name+".vmx"
   if !File.exist?(fusion_vmx_file)
-    puts "Information:\tVMware Fusion VM "+client_name+" does not exist"
-    exit
+    exists = "no"
+  else
+    exists = "yes"
   end
+  return exists
 end
 
 # Check VMware Fusion VM doesn't exist
@@ -165,15 +335,24 @@ def check_fusion_vm_doesnt_exist(client_name)
   return fusion_vm_dir,fusion_vmx_file,fusion_disk_file
 end
 
+# Get a list of available VMware Fusion VMs
+
+def get_available_fusion_vms()
+  vm_list = %x[find "#{$fusion_dir}/" -name "*.vmx"].split("\n")
+  return vm_list
+end
+
+# List available VMware Fusion VMs
+
 def list_fusion_vms(search_string)
-  message = "Available VMware Fusion VMs:"
-  command = "find '#{$fusion_dir}' -name '*.vmx'"
-  vm_list = execute_command(message,command)
-  vm_list = vm_list.split(/\n/)
+  puts
+  puts "Available VMware Fusion VMs:"
+  puts
+  vm_list = get_available_fusion_vms()
   vm_list.each do |vmx_file|
     vm_name = File.basename(vmx_file,".vmx")
     vm_mac  = get_fusion_vm_mac(vmx_file)
-    output  = vm_name+" "+vm_mac
+    output  = vm_name+"\t"+vm_mac
     if search_string.match(/[A-z]/)
       if output.match(/#{search_string}/)
         puts output
@@ -182,6 +361,7 @@ def list_fusion_vms(search_string)
       puts output
     end
   end
+  puts
   return
 end
 
@@ -295,23 +475,6 @@ def check_fusion_is_installed()
   end
 end
 
-# Check VMware Fusion host only network
-
-def check_fusion_hostonly_network()
-  if_name = "vmnet1"
-  message = "Checking:\tVMware Fusion hostonly network "+if_name+" has address "+$default_hostonly_ip
-  command = "ifconfig en0 |grep inet |awk '{print $2}' |tail -1"
-  host_ip = execute_command(message,command)
-  host_ip = host_ip.chomp
-  gw_if_name = get_osx_gw_if_name()
-  if !host_ip.match(/#{$default_hostonly_ip}/)
-    message = "Configuring:\tVMware Fusion hostonly network "+if_name+" with IP "+$default_hostonly_ip
-    command = "ifconfig #{gw_if_name} inet #{$default_hostonly_ip} netmask #{$default_netmask} broadcast #{$deault_broadcast}"
-    execute_command(message,command)
-  end
-  check_osx_nat(gw_if_name,if_name)
-end
-
 # check VMware Fusion NAT
 
 def check_fusion_natd()
@@ -326,18 +489,21 @@ end
 
 def unconfigure_fusion_vm(client_name)
   check_fusion_is_installed()
-  check_fusion_vm_exists(client_name)
-  stop_fusion_vm(client_name)
-  vmrun_bin        = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
-  fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
-  fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
-  message          = "Deleting:\tVMware Fusion VM "+client_name
-  command          = "'#{vmrun_bin}' -T fusion deleteVM '#{fusion_vmx_file}'"
-  execute_command(message,command)
-  vm_dir   = client_name+".vmwarevm"
-  message  = "Removing:\tVMware Fusion VM "+client_name+" directory"
-  command  = "cd '#{$fusion_dir}' ; rm -rf '#{vm_dir}'"
-  execute_command(message,command)
+  exists = check_fusion_vm_exists(client_name)
+  if exists == "yes"
+    stop_fusion_vm(client_name)
+    fusion_vm_dir    = $fusion_dir+"/"+client_name+".vmwarevm"
+    fusion_vmx_file  = fusion_vm_dir+"/"+client_name+".vmx"
+    message          = "Deleting:\tVMware Fusion VM "+client_name
+    command          = "'#{$vmrun_bin}' -T fusion deleteVM '#{fusion_vmx_file}'"
+    execute_command(message,command)
+    vm_dir   = client_name+".vmwarevm"
+    message  = "Removing:\tVMware Fusion VM "+client_name+" directory"
+    command  = "cd '#{$fusion_dir}' ; rm -rf '#{vm_dir}'"
+    execute_command(message,command)
+  else
+    puts "VMware Fusion VM "+client_name+" does not exist"
+  end
   return
 end
 

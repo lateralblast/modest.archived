@@ -66,7 +66,7 @@ end
 def clone_vbox_vm(client_name,new_name,client_mac,client_ip)
   exists = check_vbox_vm_exists(client_name)
   if exists == "no"
-    puts "VirtualBox VM "+client_name+" does not exist"
+    puts "Warning:\tVirtualBox VM "+client_name+" does not exist"
     exit
   end
   %x[VBoxManage clonevm #{client_name} --name #{new_name} --register]
@@ -75,6 +75,27 @@ def clone_vbox_vm(client_name,new_name,client_mac,client_ip)
   end
   if client_mac.match(/[0-9]|[A-z]/)
     change_vbox_vm_mac(new_name,client_mac)
+  end
+  return
+end
+
+# Export OVA
+
+def export_vbox_ova(client_name,ova_file)
+  exists = check_vbox_vm_exists(client_name)
+  if exists == "yes"
+    stop_vbox_vm(client_name)
+    if !ova_file.match(/[A-z]|[0-9]/)
+      ova_file = "/tmp/"+client_name+".ova"
+      puts "Warning:\tNo ouput file given"
+      puts "Information:\tExporting VM "+client_name+" to "+ova_file
+    end
+    if !ova_file.match(/\.ova$/)
+      ova_file = ova_file+".ova"
+    end
+    %x[VBoxManage export "#{client_name}" -o "#{ova_file}"]
+  else
+    puts "Warning:\tVirtualBox VM "+client_name+"does not exist"
   end
   return
 end
@@ -97,7 +118,7 @@ def import_vbox_ova(client_name,client_mac,client_ip,ova_file)
       else
         client_name = %x[VBoxManage import -n #{ova_file} |grep "Suggested VM name"].split(/\n/)[-1]
         if !client_name.match(/[A-z]|[0-9]/)
-          puts "Could not determine VM name for Virtual Appliance "+ova_file
+          puts "Warning:\tCould not determine VM name for Virtual Appliance "+ova_file
           exit
         else
           client_name = client_name.split(/Suggested VM name /)[1].chomp
@@ -105,7 +126,7 @@ def import_vbox_ova(client_name,client_mac,client_ip,ova_file)
         end
       end
     else
-      puts "Virtual Appliance "+ova_file+"does not exist"
+      puts "Warning:\tVirtual Appliance "+ova_file+"does not exist"
     end
   end
   if client_ip.match(/[0-9]/)
@@ -129,7 +150,7 @@ def import_vbox_ova(client_name,client_mac,client_ip,ova_file)
     configure_vmware_vcenter_defaults()
     configure_vmware_vbox_vm(client_name)
   end
-  puts "Virtual Appliance "+ova_file+" imported with VM name "+client_name+" and MAC address "+client_mac
+  puts "Warning:\tVirtual Appliance "+ova_file+" imported with VM name "+client_name+" and MAC address "+client_mac
   return
 end
 
@@ -587,6 +608,8 @@ def get_vbox_vm_mac(client_name)
   vbox_vm_mac = vbox_vm_mac.gsub(/\,/,"")
   return vbox_vm_mac
 end
+
+# Check VirtualBox hostonly network
 
 def check_vbox_hostonly_network()
   message = "Checking:\tVirtualBox hostonly network exists"

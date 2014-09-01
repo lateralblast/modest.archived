@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.9.4
+# Version:      1.9.6
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -138,6 +138,7 @@ $default_gdom_vnet      = "vnet0"
 $use_sudo               = 1
 $do_ssh_keys            = 0
 $default_vm_network     = "hostonly"
+$default_vm_hw_version  = "8"
 $default_hostonly_ip    = "192.168.2.254"
 $default_server_size    = "small"
 $default_manifest_name  = "modest"
@@ -219,12 +220,12 @@ def print_usage()
   puts "-l: Puplisher server Hostname/IP"
   puts "-t: Run it test mode"
   puts "-v: Run in verbose mode"
-  puts "-f: ISO or or OVA file to use"
+  puts "-f: ISO or or OVA file to import or export"
   puts "-d: Delete client"
   puts "-n: Set service name (or set new name when dealing with cloning VMs)"
   puts "-z: Delete service name"
   puts "-P: Configure PXE"
-  puts "-W: Update apache proxy entry for AI"
+  puts "-W: Update apache proxy entry for AI (or export OVA when used dealing with VMs)"
   puts "-R: Use alternate package repository (or show running VMs when dealing with VMs)"
   puts "-y: Override (destroy ZFS filesystem as part of uninstallation and delete clients)"
   puts "-D: Use default values for questions"
@@ -242,6 +243,7 @@ def print_usage()
   puts "-2: Enable serial mode"
   puts "-0: Check server functions on OS X"
   puts "-u: Specify username"
+  puts "-I: Handle ISOs or OVAs"
   puts
   exit
   return
@@ -464,6 +466,22 @@ if opt["0"]
   end
 end
 
+# Set default network so that VMware and VirtualBox VMs can run at the same time
+
+if opt["O"]
+  $default_hostonly_ip = "192.168.2.254"
+end
+
+if opt["F"]
+  $default_hostonly_ip = "192.168.2.1"
+end
+
+# Set vmrun bin
+
+if opt["F"]
+  set_vmrun_bin()
+end
+
 if opt["1"]
   mode = "server"
   check_local_config(mode,opt)
@@ -475,7 +493,12 @@ if opt["1"]
       if_name = "vboxnet0"
     end
     gw_if_name = get_osx_gw_if_name()
-    check_vbox_hostonly_network()
+    if opt["O"]
+      check_vbox_hostonly_network()
+    end
+    if opt["F"]
+      check_fusion_hostonly_network(if_name)
+    end
     check_osx_nat(gw_if_name,if_name)
   end
   exit
@@ -955,19 +978,27 @@ end
 
 if opt["O"] or opt["F"]
   if $os_arch.match(/i386|x86_64/)
-    if opt["I"]
+    if opt["I"] or opt["W"]
       if opt["L"]
         list_ovas()
         exit
       end
       if opt["f"]
+        if opt["F"]
+          set_ovftool_bin()
+        end
         ova_file = opt["f"]
         if opt["c"]
           client_name = opt["c"]
         else
           client_name = ""
         end
-        eval"[import_#{vfunct}_ova(client_name,client_mac,client_ip,ova_file)]"
+        if opt["I"]
+          eval"[import_#{vfunct}_ova(client_name,client_mac,client_ip,ova_file)]"
+        end
+        if opt["W"]
+          eval"[export_#{vfunct}_ova(client_name,ova_file)]"
+        end
         exit
       end
       if opt["C"]
