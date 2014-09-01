@@ -34,11 +34,13 @@ def print_examples(examples)
     puts "Managing VirtualBox VM examples:"
     puts
     puts "Boot headless Linux VM:\t\t\t"+$script+" -O -b centos510vm01"
-    puts "Boot headless serial enabled Linux VM:\t"+$script+" -O -b centos510vm01 -B"
+    puts "Boot headless serial enabled Linux VM:\t"+$script+" -O -b centos510vm01 -2"
     puts "Boot non headless Linux VM:\t\t"+$script+" -O -b centos510vm01 -X"
+    puts "Connect to serial port of running VM:\t"+$script+" -O -p centos510vm01"
     puts "Halt Linux VM:\t\t\t\t"+$script+" -O -s centos510vm01"
     puts "Modify VM MAC Address:\t\t\t"+$script+" -O -c centos510vm01 -e 00:50:56:34:4E:7A"
     puts "Check VirtualBox Configuration:\t\t"+$script+" -G -O"
+    puts "List running VirtualBox VMs:\t\t"+$script+" -O -R"
     puts
   end
   if examples.match(/fusion|all/)
@@ -75,7 +77,7 @@ def print_examples(examples)
     puts "Managing VMware Fusion VM examples:"
     puts
     puts "Boot headless Linux VM:\t\t\t"+$script+" -F -b centos510vm01"
-    puts "Boot headless serial enabled Linux VM:\t"+$script+" -F -b centos510vm01 -B"
+    puts "Boot headless serial enabled Linux VM:\t"+$script+" -F -b centos510vm01 -2"
     puts "Boot non headless Linux VM:\t\t"+$script+" -F -b centos510vm01 -X"
     puts "Halt Linux VM:\t\t\t\t"+$script+" -F -s centos510vm01"
     puts "Boot Windows VM:\t\t\t"+$script+" -F -b win2008r2vm01 -X"

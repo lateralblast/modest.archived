@@ -111,6 +111,12 @@ Wiki Index
 
 [Video Examples](https://github.com/lateralblast/modest/wiki/7.-Video-Examples)
 
+- [ESXi](https://github.com/lateralblast/modest/wiki/7.1.-ESXi-Video-Examples)
+
+[Other Examples](https://github.com/lateralblast/modest/wiki/8.-Other-Examples)
+
+- [Deploying VCSA](https://github.com/lateralblast/modest/wiki/8.1.-Deploying-VCSA)
+
 Features
 --------
 
