@@ -44,6 +44,31 @@ def list_running_fusion_vms()
   return
 end
 
+# Export OVA
+
+def export_fusion_ova(client_name,ova_file)
+  exists = check_fusion_vm_exists(client_name)
+  if exists == "yes"
+    stop_vbox_vm(client_name)
+    if !ova_file.match(/[A-z]|[0-9]/)
+      ova_file = "/tmp/"+client_name+".ova"
+      puts "Warning:\tNo ouput file given"
+      puts "Information:\tExporting VM "+client_name+" to "+ova_file
+    end
+    if !ova_file.match(/\.ova$/)
+      ova_file = ova_file+".ova"
+    end
+    message = "Information:\tExporting VMware Fusion VM "+client_name+" to "+fusion_vmx_file
+    command = "\"#{$ovftool_bin}\" --acceptAllEulas --name=\"#{client_name}\" \"#{fusion_vmx_file}\" \"#{ova_file}\""
+    execute_command(message,command)
+  else
+    message = "Information:\tExporting VMware Fusion VM "+client_name+" to "+fusion_vmx_file
+    command = "\"#{$ovftool_bin}\" --acceptAllEulas --name=\"#{client_name}\" \"#{fusion_vmx_file}\" \"#{ova_file}\""
+    execute_command(message,command)
+  end
+  return
+end
+
 # Import OVA
 
 def import_fusion_ova(client_name,client_mac,client_ip,ova_file)
@@ -59,7 +84,9 @@ def import_fusion_ova(client_name,client_mac,client_ip,ova_file)
         if !File.directory?(fusion_vm_dir)
           Dir.mkdir(fusion_vm_dir)
         end
-        %x["#{$ovftool_bin}" --acceptAllEulas --name="#{client_name}" "#{ova_file}" "#{fusion_vmx_file}"]
+        message = "Information:\tImporting VMware Fusion VM "+client_name+" from "+fusion_vmx_file
+        command = "\"#{$ovftool_bin}\" --acceptAllEulas --name=\"#{client_name}\" \"#{ova_file}\" \"#{fusion_vmx_file}\""
+        execute_command(message,command)
       else
         client_name     = %x["#{$ovftool_bin}" "#{ova_file}" |grep Name |tail -1 |cut -f2 -d:].chomp
         client_name     = client_name.gsub(/\s+/,"")
@@ -72,7 +99,9 @@ def import_fusion_ova(client_name,client_mac,client_ip,ova_file)
           if !File.directory?(fusion_vm_dir)
             Dir.mkdir(fusion_vm_dir)
           end
-          %x["#{$ovftool_bin}" --acceptAllEulas --name="#{client_name}" "#{ova_file}" "#{fusion_vmx_file}"]
+          message = "Information:\tImporting VMware Fusion VM "+client_name+" from "+fusion_vmx_file
+          command = "\"#{$ovftool_bin}\" --acceptAllEulas --name=\"#{client_name}\" \"#{ova_file}\" \"#{fusion_vmx_file}\""
+          execute_command(message,command)
         end
       end
     else

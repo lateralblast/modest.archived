@@ -391,3 +391,5 @@
 # Added import for VMware Fusion VMs
 # 1.9.6: Tue  2 Sep 2014 09:37:37 EST
 # Added export for VirtualBox VMs
+# 1.9.7: Wed  3 Sep 2014 07:28:30 EST
+# Cleaned up OVA code

@@ -88,12 +88,14 @@ def export_vbox_ova(client_name,ova_file)
     if !ova_file.match(/[A-z]|[0-9]/)
       ova_file = "/tmp/"+client_name+".ova"
       puts "Warning:\tNo ouput file given"
-      puts "Information:\tExporting VM "+client_name+" to "+ova_file
+      puts "Information:\tExporting VirtualBox VM "+client_name+" to "+ova_file
     end
     if !ova_file.match(/\.ova$/)
       ova_file = ova_file+".ova"
     end
-    %x[VBoxManage export "#{client_name}" -o "#{ova_file}"]
+    message = "Information:\tExporting VirtualBox VM "+client_name+" to "+ova_file
+    command = "VBoxManage export \"#{client_name}\" -o \"#{ova_file}\""
+    execute_command(message,command)
   else
     puts "Warning:\tVirtualBox VM "+client_name+"does not exist"
   end
@@ -114,7 +116,9 @@ def import_vbox_ova(client_name,client_mac,client_ip,ova_file)
     end
     if File.exist?(ova_file)
       if client_name.match(/[A-z]|[0-9]/)
-        %x[VBoxManage import #{ova_file} --vsys 0 --vmname #{client_name}]
+        message = "Information:\tImporting VirtualBox VM "+client_name+" from "+ova_file
+        command = "VBoxManage import \"#{ova_file}\" --vsys 0 --vmname \"#{client_name}\""
+        execute_command(message,command)
       else
         client_name = %x[VBoxManage import -n #{ova_file} |grep "Suggested VM name"].split(/\n/)[-1]
         if !client_name.match(/[A-z]|[0-9]/)
@@ -122,7 +126,9 @@ def import_vbox_ova(client_name,client_mac,client_ip,ova_file)
           exit
         else
           client_name = client_name.split(/Suggested VM name /)[1].chomp
-          %x[VBoxManage import #{ova_file}]
+          message = "Information:\tImporting VirtualBox VM "+client_name+" from "+ova_file
+          command = "VBoxManage import \"#{ova_file}\""
+          execute_command(message,command)
         end
       end
     else
