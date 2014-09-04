@@ -243,15 +243,15 @@ def configure_ks_puppet_repo(service_name,iso_arch)
   puppet_rpm_list["dependencies"].push("ruby-shadow")
   puppet_rpm_list["dependencies"].push("ruby-rgen")
   puppet_rpm_list["dependencies"].push("libselinux-ruby")
-  check_zfs_fs_exists(puppet_dir)
-  add_apache_alias(puppet_dir)
+  check_zfs_fs_exists(puppet_base_dir)
+  add_apache_alias(puppet_base_dir)
   rpm_list   = populate_puppet_rpm_list(service_name,iso_arch)
-  if !File.directory?(puppet_dir)
-    check_dir_exists(puppet_dir)
+  if !File.directory?(puppet_base_dir)
+    check_dir_exists(puppet_base_dir)
   end
   release    = service_name.split(/_/)[1]
   [ "products", "dependency" ].each do |remote_dir|
-    puppet_rpm_list[sub_dir].each do |pkg_name|
+    puppet_rpm_list[remote_dir].each do |pkg_name|
       if pkg_name.match(/libselinux-ruby/)
         remote_url = $puppet_rpm_base_url+"/el/"+release+"/"+remote_dir+"/"+iso_arch+"/"
       else
@@ -312,7 +312,9 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
         if service_name.match(/centos|fedora|rhel|sl_|oel/)
           configure_ks_vmware_repo(service_name,iso_arch)
         end
-        configure_ks_puppet_repo(service_name,iso_arch)
+        if !service_name.match(/ubuntu/)
+          configure_ks_puppet_repo(service_name,iso_arch)
+        end
       else
         mount_iso(iso_file)
         copy_iso(iso_file,repo_version_dir)

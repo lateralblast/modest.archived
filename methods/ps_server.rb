@@ -20,13 +20,16 @@ end
 # List Preseed services
 
 def list_ps_services()
-  puts "Kickstart services:"
+  puts
+  puts "Preseed services:"
+  puts
   service_list = Dir.entries($repo_base_dir)
   service_list.each do |service_name|
     if service_name.match(/ubuntu/)
       puts service_name
     end
   end
+  puts
   return
 end
 

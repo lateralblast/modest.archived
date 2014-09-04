@@ -83,12 +83,25 @@ def populate_ps_questions(service_name,client_name,client_ip)
   $q_struct[name] = config
   $q_order.push(name)
 
-  name = "autoconfig"
+  name = "disable_autoconfig"
   config = Ks.new(
     type      = "boolean",
     question  = "Disable network autoconfig",
     ask       = "yes",
     parameter = "netcfg/disable_autoconfig",
+    value     = "true",
+    valid     = "",
+    eval      = "no"
+    )
+  $q_struct[name] = config
+  $q_order.push(name)
+
+  name = "disable_dhcp"
+  config = Ks.new(
+    type      = "boolean",
+    question  = "Disable DHCP",
+    ask       = "yes",
+    parameter = "netcfg/disable_dhcp",
     value     = "true",
     valid     = "",
     eval      = "no"
@@ -102,7 +115,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
     question  = "Nameservers",
     ask       = "yes",
     parameter = "netcfg/get_nameservers",
-    value     = "#{$default_host} #{$default_nameserver}",
+    value     = "#{$default_nameserver}",
     valid     = "",
     eval      = "no"
     )
@@ -127,7 +140,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
     type      = "string",
     question  = "Netmask",
     ask       = "yes",
-    parameter = "netcfg/get_ipaddress",
+    parameter = "netcfg/get_netmask",
     value     = $default_netmask,
     valid     = "",
     eval      = "no"
@@ -185,7 +198,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
     type      = "boolean",
     question  = "Confirm Static",
     ask       = "yes",
-    parameter = "inetcfg/confirm_static",
+    parameter = "netcfg/confirm_static",
     value     = "true",
     valid     = "",
     eval      = "no"
@@ -296,7 +309,7 @@ def populate_ps_questions(service_name,client_name,client_ip)
     question  = "Mirror country",
     ask       = "yes",
     parameter = "mirror/country",
-    value     = $default_country,
+    value     = "manual",
     valid     = "",
     eval      = "no"
     )

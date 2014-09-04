@@ -61,11 +61,27 @@ def configure_ks_pxe_client(client_name,client_ip,client_mac,client_arch,service
   autoyast_url = "http://"+$default_host+"/clients/"+service_name+"/"+client_name+"/"+client_name+".xml"
   install_url  = "http://"+$default_host+"/"+service_name
   file         = File.open(tmp_file,"w")
+  if $serial_mode == 1
+    file.write("serial 0 115200\n")
+    file.write("prompt 0\n")
+  end
   file.write("DEFAULT LINUX\n")
   file.write("LABEL LINUX\n")
   file.write("  KERNEL #{vmlinuz_file}\n")
   if service_name.match(/ubuntu/)
-    append_string = "  APPEND auto=true priority=critical preseed/url=#{ks_url} console-keymaps-at/keymap=us locale=en_US hostname=#{client_name} initrd=#{initrd_file}"
+    client_ip         = $q_struct["ip"].value
+    client_domain     = $q_struct["domain"].value
+    client_nic        = $q_struct["nic"].value
+    client_gateway    = $q_struct["gateway"].value
+    client_netmask    = $q_struct["netmask"].value
+    client_network    = $q_struct["network_address"].value
+    client_nameserver = $q_struct["nameserver"].value
+    disable_dhcp      = $q_struct["disable_dhcp"].value
+    if disable_dhcp == "true"
+      append_string = "  APPEND auto=true priority=critical preseed/url=#{ks_url} console-keymaps-at/keymap=us locale=en_US hostname=#{client_name} domain=#{client_domain} interface=#{client_nic} netcfg/get_ipaddress=#{client_ip} netcfg/get_netmask=#{client_netmask} netcfg/get_gateway=#{client_gateway} netcfg/get_nameservers=#{client_nameserver} netcfg/disable_dhcp=true initrd=#{initrd_file}"
+    else
+      append_string = "  APPEND auto=true priority=critical preseed/url=#{ks_url} console-keymaps-at/keymap=us locale=en_US hostname=#{client_name} initrd=#{initrd_file}"
+    end
   else
     if service_name.match(/sles/)
       append_string = "  APPEND initrd=#{initrd_file} install=#{install_url} autoyast=#{autoyast_url} language=#{$default_language}"
@@ -83,9 +99,9 @@ def configure_ks_pxe_client(client_name,client_ip,client_mac,client_arch,service
     else
       append_string = append_string+" text"
     end
-    if $serial_mode == 1
-      append_string = append_string+" serial console=ttyS0"
-    end
+  end
+  if $serial_mode == 1
+    append_string = append_string+" serial console=ttyS0"
   end
   append_string = append_string+"\n"
   file.write(append_string)

@@ -719,6 +719,7 @@ def unconfigure_vbox_vm(client_name)
     exit
   end
   stop_vbox_vm(client_name)
+  sleep(5)
   message = "Deleting:\tVirtualBox VM "+client_name
   command = "VBoxManage unregistervm #{client_name} --delete"
   execute_command(message,command)
