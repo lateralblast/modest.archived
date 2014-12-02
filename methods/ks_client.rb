@@ -46,6 +46,13 @@ def configure_ks_pxe_client(client_name,client_ip,client_mac,client_arch,service
     else
       initrd_file  = "/"+service_name+"/images/pxeboot/netboot/ubuntu-installer/i386/initrd.gz"
     end
+    if service_name.match(/14_10/)
+      ldlinux_link = $tftp_dir+"/ldlinux.c32"
+      if !File.exist(ldlinux_link) and !File.symlink(ldlinux_link)
+        ldlinux_file = "/"+service_name+"/images/pxeboot/netboot/ldlinux.c32"
+        File.symlink(ldlinux_file,ldlinux_link)
+      end
+    end
   else
     if service_name.match(/sles/)
       initrd_file  = "/"+service_name+"/boot/#{client_arch}/loader/initrd"
@@ -178,7 +185,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     output_file = client_dir+"/"+client_name+".cfg"
   end
   delete_file(output_file)
-  if service_name.match(/fedora|fedora|rhel|centos|sl_|oel/)
+  if service_name.match(/fedora|rhel|centos|sl_|oel/)
     populate_ks_questions(service_name,client_name,client_ip)
     process_questions(service_name)
     output_ks_header(client_name,output_file)
@@ -190,7 +197,7 @@ def configure_ks_client(client_name,client_arch,client_mac,client_ip,client_mode
     if service_name.match(/sles/)
       populate_ks_questions(service_name,client_name,client_ip)
       process_questions(service_name)
-      output_ay_client_profile(client_name,client_ip,client_mac,output_file)
+      output_ay_client_profile(client_name,client_ip,client_mac,output_file,service_name)
     else
       if service_name.match(/ubuntu/)
         populate_ps_questions(service_name,client_name,client_ip)

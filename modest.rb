@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         modest (Multi OS Deployment Engine Server Tool)
-# Version:      1.9.8
+# Version:      2.0.3
 # Release:      1
 # License:      CC-BA (Creative Commons By Attribution)
 #               http://creativecommons.org/licenses/by/4.0/legalcode
@@ -312,6 +312,7 @@ def check_local_config(mode,opt)
   end
   # Get OS name and set system settings appropriately
   check_dir_exists($work_dir)
+  check_dir_owner($work_dir,$id)
   check_dir_exists($tmp_dir)
   $os_name = %x[uname].chomp
   $os_arch = %x[uname -p].chomp

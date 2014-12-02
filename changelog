@@ -395,3 +395,13 @@
 # Cleaned up OVA code
 # 1.9.8: Thu  4 Sep 2014 14:42:59 AEST
 # Fixed bugs with preseed
+# 1.9.9: Wed 29 Oct 2014 14:40:33 AEDT
+# Added code to delete repository directory if not deleted as part of zfs destroy
+# 2.0.0: Wed 29 Oct 2014 15:50:00 AEDT
+# Added initial server support for SLES 12
+# 2.0.1: Mon  1 Dec 2014 16:58:40 AEDT
+# Added directory permissions checks for work directory
+# 2.0.2: Mon  1 Dec 2014 17:54:47 AEDT
+# Added initial client support for SLES 12
+# 2.0.3: Tue  2 Dec 2014 13:05:24 AEDT
+# Added workaround for Ubuntu 14.10 PXE boot bug

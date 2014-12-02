@@ -288,8 +288,12 @@ def get_linux_version_info(iso_file_name)
   end
   if linux_distro.match(/centos|ubuntu|sles|sl|oel|rhel/)
     if linux_distro.match(/sles/)
-      iso_version = iso_info[1]+"."+iso_info[2]
-      iso_version = iso_version.gsub(/SP/,"")
+      if iso_info[2] == "Server"
+        iso_version = iso_info[1]+".0"
+      else
+        iso_version = iso_info[1]+"."+iso_info[2]
+        iso_version = iso_version.gsub(/SP/,"")
+      end
     else
       if linux_distro.match(/sl$/)
         iso_version = iso_info[1].split(//).join(".")
@@ -845,6 +849,9 @@ def destroy_zfs_fs(dir_name)
       end
     end
   end
+  if File.directory?(dir_name)
+    Dir.rmdir(dir_name)
+  end
   return output
 end
 
@@ -1300,14 +1307,14 @@ def mount_iso(iso_file)
     end
   else
     case iso_file
+    when /SLES/
+      iso_test_dir = $iso_mount_dir+"/suse"
     when /CentOS|SL/
       iso_test_dir = $iso_mount_dir+"/repodata"
     when /rhel|OracleLinux|Fedora/
       iso_test_dir = $iso_mount_dir+"/Packages"
     when /VM/
       iso_test_dir = $iso_mount_dir+"/upgrade"
-    when /SLES/
-      iso_test_dir = $iso_mount_dir+"/suse"
     when /install|FreeBSD/
       iso_test_dir = $iso_mount_dir+"/etc"
     when /coreos/
@@ -1373,6 +1380,8 @@ def copy_iso(iso_file,repo_version_dir)
       test_dir = repo_version_dir+"/etc"
     when /coreos/
       test_dir = repo_version_dir+"/coreos"
+    when /SLES/
+      test_dir = repo_version_dir+"/suse"
     else
       test_dir = repo_version_dir+"/install"
     end
@@ -1403,7 +1412,14 @@ def copy_iso(iso_file,repo_version_dir)
       check_dir_exists(test_dir)
       message = "Copying:\t"+iso_repo_dir+" contents to "+repo_version_dir
       command = "rsync -a #{iso_repo_dir}/* #{repo_version_dir}"
-      output  = execute_command(message,command)
+      if repo_version_dir.match(/sles_12/) 
+        if !iso_file.match(/2\.iso/)
+          output  = execute_command(message,command)
+        end
+      else
+        puts message
+        output  = execute_command(message,command)
+      end
     end
   end
   return

@@ -312,7 +312,7 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
         if service_name.match(/centos|fedora|rhel|sl_|oel/)
           configure_ks_vmware_repo(service_name,iso_arch)
         end
-        if !service_name.match(/ubuntu/)
+        if !service_name.match(/ubuntu|sles/)
           configure_ks_puppet_repo(service_name,iso_arch)
         end
       else
@@ -332,7 +332,9 @@ def configure_linux_server(client_arch,publisher_host,publisher_port,service_nam
       if service_name.match(/centos|fedora|rhel|sl_|oel/)
         configure_ks_vmware_repo(service_name,client_arch)
       end
-      configure_ks_puppet_repo(service_name,client_arch)
+      if !service_name.match(/ubuntu|sles/)
+        configure_ks_puppet_repo(service_name,client_arch)
+      end
     else
       puts "Warning:\tISO file and/or Service name not found"
       exit

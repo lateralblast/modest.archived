@@ -864,13 +864,15 @@ end
 
 # Populate patterns
 
-def populate_ay_patterns()
+def populate_ay_patterns(service_name)
   patterns = []
   patterns.push("Basis-Devel")
   patterns.push("Minimal")
   patterns.push("base")
-  patterns.push("gnome")
-  patterns.push("print_server")
+  if !service_name.match(/sles_12/)
+    patterns.push("gnome")
+    patterns.push("print_server")
+  end
   patterns.push("x11")
   return patterns
 end
@@ -895,7 +897,7 @@ def populate_ay_users()
     warn          = "7",
     shell         = $default_admin_shell,
     uid           = "",
-    user_password = $q_struct["admincrypt"].value,
+    user_password = $q_struct["admin_crypt"].value,
     username      = $default_admin_user
     )
   $u_struct[user]=config
@@ -1105,7 +1107,7 @@ def populate_ay_users()
     warn          = "",
     shell         = "/bin/bash",
     uid           = "0",
-    user_password = $q_struct["crypt"].value,
+    user_password = $q_struct["root_crypt"].value,
     username      = user
     )
   $u_struct[user]=config
@@ -1379,9 +1381,17 @@ def populate_ay_enabled_http_modules()
   return enabled_http_modules
 end
 
+# Populate services to disable
+
+def populate_ay_disabled_services()
+  disabled_services = []
+  disabled_services.push("display_manager")
+  return disabled_services
+end
+
 # Output client profile file
 
-def output_ay_client_profile(client_name,client_ip,client_mac,output_file)
+def output_ay_client_profile(client_name,client_ip,client_mac,output_file,service_name)
   populate_ay_users()
   populate_ay_groups()
   populate_ay_inetd()
@@ -1390,7 +1400,8 @@ def output_ay_client_profile(client_name,client_ip,client_mac,output_file)
   hosts                 = populate_ay_hosts(client_name,client_ip)
   add_packages          = populate_ay_add_packages()
   remove_packages       = populate_ay_remove_packages()
-  patterns              = populate_ay_patterns()
+  patterns              = populate_ay_patterns(service_name)
+  disable_services      = populate_ay_disabled_services()
   disabled_http_modules = populate_ay_disabled_http_modules()
   enabled_http_modules  = populate_ay_enabled_http_modules()
   xml = Builder::XmlMarkup.new(:target => xml_output, :indent => 2)
@@ -1445,7 +1456,7 @@ def output_ay_client_profile(client_name,client_ip,client_mac,output_file)
       xml.global {
         xml.activate("true")
         xml.boot_root("true")
-        xml.default("SUSE Linux Enterprise Server 11 SP2 - 3.0.13-0.27")
+        xml.default("SUSE Linux Enterprise Server")
         xml.generic_mbr("true")
         xml.gfxmenu("/boot/message")
         xml.lines_cache_id("3")
@@ -1474,39 +1485,43 @@ def output_ay_client_profile(client_name,client_ip,client_mac,output_file)
           xml.module("vmxnet")
         }
       }
-      xml.loader_type("grub")
+      if service_name.match(/sles_12/)
+        xml.loader_type("grub2")
+      else
+        xml.loader_type("grub")
+      end
       xml.sections(:"config:type" => "list") {
-        xml.section {
-          xml.append("resume=/dev/sda1 splash=silent showopts")
-          xml.image("/boot/vmlinuz-3.0.13-0.27-default")
-          xml.initial("1")
-          xml.initrd("/boot/initrd-3.0.13-0.27-default")
-          xml.lines_cache_id("0")
-          xml.name("SUSE Linux Enterprise Server 11 SP2 - 3.0.13-0.27")
-          xml.original_name("linux")
-          xml.root("/dev/sda2")
-          xml.type("image")
-        }
-        xml.section {
-          xml.append("showopts ide=nodma apm=off noresume edd=off powersaved=off nohz=off highres=off processor.max_cstate=1 nomodeset x11failsafe")
-          xml.image("/boot/vmlinuz-3.0.13-0.27-default")
-          xml.initrd("/boot/initrd-3.0.13-0.27-default")
-          xml.lines_cache_id("1")
-          xml.name("Failsafe -- SUSE Linux Enterprise Server 11 SP2 - 3.0.13-0.27")
-          xml.original_name("failsafe")
-          xml.root("/dev/sda2")
-          xml.type("image")
-        }
-        xml.section {
-          xml.blockoffset("1")
-          xml.chainloader("/dev/fd0")
-          xml.lines_cache_id("2")
-          xml.name("Floppy")
-          xml.noverifyroot("true")
-          xml.original_name("floppy")
-          xml.root("")
-          xml.type("other")
-        }
+        #xml.section {
+        #  xml.append("resume=/dev/sda1 splash=silent showopts")
+        #  xml.image("/boot/vmlinuz-3.0.13-0.27-default")
+        #  xml.initial("1")
+        #  xml.initrd("/boot/initrd-3.0.13-0.27-default")
+        #  xml.lines_cache_id("0")
+        #  xml.name("SUSE Linux Enterprise Server 11 SP2 - 3.0.13-0.27")
+        #  xml.original_name("linux")
+        #  xml.root("/dev/sda2")
+        #  xml.type("image")
+        #}
+        #xml.section {
+        #  xml.append("showopts ide=nodma apm=off noresume edd=off powersaved=off nohz=off highres=off processor.max_cstate=1 nomodeset x11failsafe")
+        #  xml.image("/boot/vmlinuz-3.0.13-0.27-default")
+        #  xml.initrd("/boot/initrd-3.0.13-0.27-default")
+        #  xml.lines_cache_id("1")
+        #  xml.name("Failsafe -- SUSE Linux Enterprise Server 11 SP2 - 3.0.13-0.27")
+        #  xml.original_name("failsafe")
+        #  xml.root("/dev/sda2")
+        #  xml.type("image")
+        #}
+        #xml.section {
+        #  xml.blockoffset("1")
+        #  xml.chainloader("/dev/fd0")
+        #  xml.lines_cache_id("2")
+        #  xml.name("Floppy")
+        #  xml.noverifyroot("true")
+        #  xml.original_name("floppy")
+        #  xml.root("")
+        #  xml.type("other")
+        #}
       }
     }
     xml.ca_mgm {
@@ -2007,6 +2022,12 @@ def output_ay_client_profile(client_name,client_ip,client_mac,output_file)
     }
     xml.runlevel {
       xml.default("5")
+      disabled_services.each do |name|
+        xml.service {
+          xml.service_name(name)
+          xml.service_status("disabled")
+        }
+      end
     }
     xml.tag!("samba-server") {
     }
